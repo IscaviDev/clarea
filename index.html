@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<script>window.CLAREA_VERSION = "20261112003845";</script>
+<script>window.CLAREA_VERSION = "20261112005131";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -184,7 +184,7 @@ details.fr2>summary::-webkit-details-marker{display:none}
 @media (prefers-reduced-motion: no-preference){
   .pg.enter{animation:pg-in .3s cubic-bezier(.2,.8,.2,1) both}
   .pg.enter.back{--dx:-22px}
-  .pg.enter .scard,.pg.enter .tdi,.pg.enter .lcard,.pg.enter .tt .cl,.pg.enter .tt .fr,.pg.enter .fr2{animation:it-in .38s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 28ms + 60ms)}
+  .pg.enter .scard,.pg.enter .tdi,.pg.enter .lcard,.pg.enter .tt .cl,.pg.enter .tt .fr,.pg.enter .fr2{animation:it-in .38s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i,0) * 28ms + 60ms)}
   .sheetbg{animation:sh-bg .22s ease both}
   .sheetbg .sheet{animation:sh-up .3s cubic-bezier(.2,.8,.2,1) both}
   .sheetbg.closing{animation:sh-bg .22s ease reverse both}
@@ -194,6 +194,28 @@ details.fr2>summary::-webkit-details-marker{display:none}
   .stchip{transition:background-color .3s ease,color .3s ease}
 }
 .noanim>:not(summary){animation:none!important}
+
+/* ---------- tablet and PC: use the extra width ---------- */
+@media (min-width:720px){
+  .pg.v-asig{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px}
+  .pg.v-asig>.back,.pg.v-asig>.sban,.pg.v-asig>.empty{grid-column:1/-1}
+  .tdi{min-width:104px;padding:9px 13px}.tdi b{font-size:15.5px}
+}
+@media (min-width:1024px){
+  .wrap{max-width:1180px}
+  main .wrap{padding-block:26px 64px}
+  .hello h1{font-size:32px}.hello p{font-size:15.5px}
+  .sgrid{grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
+  .scard{min-height:132px;padding:18px 18px 16px}.scard b{font-size:24px}.scard span{font-size:14.5px}
+  .sban{padding:24px 22px}.sban b{font-size:36px}
+  .pg.v-asig{grid-template-columns:repeat(3,minmax(0,1fr))}
+  /* absences: summary fixed on the left, subjects on the right */
+  .pg.v-faltas{display:grid;grid-template-columns:minmax(300px,380px) minmax(0,1fr);grid-template-areas:"back back" "head head" "sum note" "sum list";gap:14px 22px;align-items:start}
+  .pg.v-faltas>.back{grid-area:back}.pg.v-faltas>.thead{grid-area:head}
+  .pg.v-faltas>.fsum{grid-area:sum;position:sticky;top:78px}
+  .pg.v-faltas>.fnote{grid-area:note}.pg.v-faltas>.flist{grid-area:list}
+  .tt{height:min(680px,calc(100dvh - 200px));min-height:520px}
+}
 </style>
 <style>
 /* ---------- login + account bar (offline app only) ---------- */
@@ -269,6 +291,36 @@ html,body{margin:0}
   .toast.closing{animation:cl-toast .2s ease reverse both}
   .theme-anim,.theme-anim *,.theme-anim *::before,.theme-anim *::after{transition:background-color .35s ease,color .35s ease,border-color .35s ease,fill .35s ease,stroke .35s ease!important}
 }
+
+/* ---------- show / hide password ---------- */
+.pwbox{position:relative;display:flex}
+.pwbox input{flex:1;min-width:0;padding-right:46px}
+.pweye{position:absolute;right:3px;top:0;bottom:0;margin:auto 0;width:40px;height:40px;border:0;background:none;color:var(--muted);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.pweye svg{width:20px;height:20px}
+.pweye[aria-pressed="true"]{color:var(--accent)}
+
+/* ---------- hover (computers and tablets with a mouse) ---------- */
+@media (hover:hover) and (pointer:fine){
+  .scard:hover,.tdi:hover,.tt .cl:hover{box-shadow:0 8px 22px rgba(0,0,0,.2);filter:brightness(1.04)}
+  .lcard:hover,.authimp:hover,.thbtn:hover,.ubtn:hover,.authknown button:hover{border-color:var(--accent)}
+  .lcard:hover{box-shadow:0 6px 18px rgba(0,0,0,.12)}
+  details.fr2:hover{border-color:var(--accent)}
+  .btn:hover,.updgo:hover{filter:brightness(1.1);box-shadow:0 4px 14px rgba(31,95,191,.35)}
+  .authtabs button:not([aria-pressed="true"]):hover{background:var(--surface)}
+  .authalt:hover,.updno:hover,.pweye:hover{color:var(--fg);background:var(--sunk)}
+  .back:hover,.rback:hover,.xback:hover{text-decoration:underline;text-underline-offset:3px}
+  .tab:not([aria-selected="true"]):hover,.segb:not([aria-pressed="true"]):hover,.ghb:not([aria-pressed="true"]):hover,.xdiff:hover,.xex:hover,.xresume:hover,.opt:hover,.row.file:hover,.fnode:hover,.use:hover,.guse2:hover{border-color:var(--accent)}
+  details>summary:hover{color:var(--accent-ink,inherit)}
+}
+@media (hover:hover) and (pointer:fine) and (prefers-reduced-motion: no-preference){
+  .scard,.tdi,.tt .cl,.lcard,details.fr2,.thbtn svg,.back,.rback,.xback{transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease,border-color .2s ease,filter .2s ease,background-color .2s ease,color .2s ease}
+  .scard:hover,.tdi:hover,.tt .cl:hover{transform:translateY(-3px)}
+  .lcard:hover,.xdiff:hover,.xex:hover{transform:translateY(-2px)}
+  .btn:hover,.updgo:hover{transform:translateY(-1px)}
+  .thbtn:hover svg{transform:rotate(25deg)}
+  .back:hover,.rback:hover,.xback:hover{transform:translateX(-3px)}
+  .scard:hover:active,.tdi:hover:active,.lcard:hover:active,.btn:hover:active{transform:scale(.97)}
+}
 </style>
 <script>
 /* ---------- offline accounts: everything stays in this device ---------- */
@@ -328,6 +380,26 @@ html,body{margin:0}
   function toast(msg){ var t = el('<div class="toast" role="status"></div>'); t.textContent = msg; document.body.appendChild(t); setTimeout(function(){ t.classList.add("closing"); setTimeout(function(){ t.remove(); }, 220); }, 3000); }
   var LOGO = '<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="8" y="4" width="22" height="6" rx="3" fill="var(--clarea-blue,#1f5fbf)"/><rect x="2" y="14" width="14" height="6" rx="3" fill="var(--clarea-blue,#1f5fbf)"/><rect x="20" y="14" width="6" height="6" rx="1.5" fill="var(--clarea-orange,#b4561b)"/><rect x="8" y="24" width="22" height="6" rx="3" fill="var(--clarea-blue,#1f5fbf)"/></svg>';
   var ICO_FILE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 18v-6M9 15l3 3 3-3"/></svg>';
+
+  var EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.6 5.1A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-2.6 3.5M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2M3 3l18 18"/></svg>';
+  // adds the eye button that shows or hides what is typed in each password field
+  function addEyes(root){
+    root.querySelectorAll('input[type="password"]').forEach(function(inp){
+      var box = document.createElement("span"); box.className = "pwbox";
+      inp.parentNode.insertBefore(box, inp); box.appendChild(inp);
+      var b = el('<button type="button" class="pweye" aria-pressed="false" aria-label="Mostrar contraseña" title="Mostrar contraseña">' + EYE + '</button>');
+      box.appendChild(b);
+      b.addEventListener("mousedown", function(e){ e.preventDefault(); }); // keep the keyboard open on the field
+      b.addEventListener("click", function(e){
+        e.preventDefault();
+        var show = inp.type === "password";
+        inp.type = show ? "text" : "password";
+        b.innerHTML = show ? EYE_OFF : EYE; b.setAttribute("aria-pressed", show);
+        b.setAttribute("aria-label", show ? "Ocultar contraseña" : "Mostrar contraseña"); b.title = b.getAttribute("aria-label");
+      });
+    });
+  }
 
   /* ----- local copy of each account: lets you enter without internet ----- */
   function saveLocal(user, pass){
@@ -600,7 +672,7 @@ html,body{margin:0}
       + '<button type="button" class="authimp" data-imp>' + ICO_FILE + 'Importar progreso de un archivo</button>'
       + '<p class="authnote">Tu cuenta se guarda en la nube: entra con el mismo usuario en el móvil o en el PC y el progreso se sincroniza solo. Sin internet también funciona.</p>'
       + '</div></div>');
-    document.body.appendChild(w);
+    document.body.appendChild(w); addEyes(w);
     var form = w.querySelector("form"), err = w.querySelector(".autherr"), btn = form.querySelector('button[type="submit"]'), info = w.querySelector(".authinfo");
     function setMode(m){
       mode = m; err.textContent = "";
@@ -694,7 +766,7 @@ html,body{margin:0}
       + '<label>Contraseña<input name="pass" type="password" autocomplete="current-password" maxlength="64"></label>'
       + '<p class="autherr" aria-live="polite"></p><button class="btn" type="submit">Activar sincronización</button>'
       + '<button type="button" class="authalt">Ahora no</button></form></div></div>');
-    document.body.appendChild(w);
+    document.body.appendChild(w); addEyes(w);
     var form = w.querySelector("form"), err = w.querySelector(".autherr"), btn = form.querySelector(".btn");
     function close(){ w.classList.add("closing"); setTimeout(function(){ w.remove(); }, 220); }
     w.querySelector(".authalt").addEventListener("click", close);
@@ -936,7 +1008,8 @@ function render(){
   else h = viewHome();
   // a new screen slides in (from the right going forward, from the left going back); edits on the same screen don't move
   const isNew = r !== lastRoute, back = lastRoute !== null && depth(r) < depth(lastRoute);
-  $("#app").innerHTML = '<div class="pg'+(isNew ? ' enter'+(back ? ' back' : '') : '')+'">'+h+'</div>';
+  const vcls = r.startsWith("asig/") ? "v-asig" : r === "horario" ? "v-horario" : r === "faltas" ? "v-faltas" : "v-home";
+  $("#app").innerHTML = '<div class="pg '+vcls+(isNew ? ' enter'+(back ? ' back' : '') : '')+'">'+h+'</div>';
   lastRoute = r;
   if (isNew) [".scard", ".tdi", ".lcard", ".tt .cl", ".tt .fr", ".fr2"].forEach(sel=>document.querySelectorAll("#app "+sel).forEach((el,i)=>el.style.setProperty("--i", Math.min(i, 16))));
 }
