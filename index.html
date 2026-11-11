@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<script>window.CLAREA_VERSION = "20261112005131";</script>
+<script>window.CLAREA_VERSION = "20261112005236";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -808,9 +808,7 @@ html,body{margin:0}
       menu = el('<div class="umenu" role="menu">'
         + (on ? '<button type="button" role="menuitem" data-a="sync">Sincronizar ahora<small><span class="sdot ' + sl.dot + '"></span>' + escT(sl.text) + '</small></button><hr>'
               : '<button type="button" role="menuitem" data-a="act">Activar sincronización<small><span class="sdot off"></span>Usa tu cuenta en todos tus dispositivos</small></button><hr>')
-        + '<button type="button" role="menuitem" data-a="exp">Exportar progreso<small>Guarda una copia en un archivo</small></button>'
-        + '<button type="button" role="menuitem" data-a="imp">Importar progreso<small>Carga un archivo exportado en esta cuenta</small></button><hr>'
-        + (lsGet(TH) ? '<button type="button" role="menuitem" data-a="sys">Usar el tema del sistema<small>Claro u oscuro según el iPhone</small></button><hr>' : '')
+        + (lsGet(TH) ? '<button type="button" role="menuitem" data-a="sys">Usar el tema del sistema<small>Claro u oscuro según el dispositivo</small></button><hr>' : '')
         + '<button type="button" role="menuitem" data-a="upd">Buscar actualizaciones<small>Comprueba si hay una versión nueva de Clarea</small></button><hr>'
         + '<button type="button" role="menuitem" data-a="out">Cerrar sesión<small>' + (on ? 'Tu progreso sigue en la nube y en este dispositivo' : 'Tu progreso se queda guardado') + '</small></button>'
         + (window.CLAREA_VERSION ? '<p class="uver">Versión del ' + window.CLAREA_VERSION.replace(/^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d).*/, "$3/$2/$1 · $4:$5") + '</p>' : '') + '</div>');
@@ -823,7 +821,7 @@ html,body{margin:0}
         else if (act === "exp") exportProgress();
         else if (act === "imp") importProgress();
         else if (act === "upd"){ if (window.clareaCheckUpdate) window.clareaCheckUpdate(toast); else location.reload(); }
-        else if (act === "sys"){ try { localStorage.removeItem(TH); } catch(e){} applyTheme(null); toast("Tema automático: sigue el del iPhone."); }
+        else if (act === "sys"){ try { localStorage.removeItem(TH); } catch(e){} applyTheme(null); toast("Tema automático: sigue el del dispositivo."); }
         else {
           // upload pending changes first (if there is internet), then forget this device's cloud session
           var done = false, out = function(){ if (done) return; done = true; cloudSet(u, null); try { localStorage.removeItem(SES); } catch(e){} location.reload(); };
