@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<script>window.CLAREA_VERSION = "20261111233352";</script>
+<script>window.CLAREA_VERSION = "20261111233844";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -172,7 +172,10 @@ details.fr2>summary::-webkit-details-marker{display:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
 /* ---------- screen transitions + small motion ---------- */
-.pg{display:flex;flex-direction:column;gap:16px;min-width:0}
+.pg{display:flex;flex-direction:column;align-items:stretch;gap:16px;min-width:0;width:100%}
+/* Safari: give every block the full width explicitly instead of relying on flex stretch */
+.pg>*{width:100%;max-width:100%;box-sizing:border-box}
+.pg>.back{width:auto;align-self:flex-start}
 @keyframes pg-in{from{opacity:0;transform:translateX(var(--dx,22px))}to{opacity:1;transform:none}}
 @keyframes it-in{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
 @keyframes sh-bg{from{opacity:0}to{opacity:1}}
