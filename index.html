@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<script>window.CLAREA_VERSION = "20261112005236";</script>
+<script>window.CLAREA_VERSION = "20261112005610";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -183,7 +183,7 @@ details.fr2>summary::-webkit-details-marker{display:none}
 @keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}
 @media (prefers-reduced-motion: no-preference){
   .pg.enter{animation:pg-in .3s cubic-bezier(.2,.8,.2,1) both}
-  .pg.enter.back{--dx:-22px}
+  .pg.enter.rev{--dx:-22px}
   .pg.enter .scard,.pg.enter .tdi,.pg.enter .lcard,.pg.enter .tt .cl,.pg.enter .tt .fr,.pg.enter .fr2{animation:it-in .38s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i,0) * 28ms + 60ms)}
   .sheetbg{animation:sh-bg .22s ease both}
   .sheetbg .sheet{animation:sh-up .3s cubic-bezier(.2,.8,.2,1) both}
@@ -1007,7 +1007,7 @@ function render(){
   // a new screen slides in (from the right going forward, from the left going back); edits on the same screen don't move
   const isNew = r !== lastRoute, back = lastRoute !== null && depth(r) < depth(lastRoute);
   const vcls = r.startsWith("asig/") ? "v-asig" : r === "horario" ? "v-horario" : r === "faltas" ? "v-faltas" : "v-home";
-  $("#app").innerHTML = '<div class="pg '+vcls+(isNew ? ' enter'+(back ? ' back' : '') : '')+'">'+h+'</div>';
+  $("#app").innerHTML = '<div class="pg '+vcls+(isNew ? ' enter'+(back ? ' rev' : '') : '')+'">'+h+'</div>';
   lastRoute = r;
   if (isNew) [".scard", ".tdi", ".lcard", ".tt .cl", ".tt .fr", ".fr2"].forEach(sel=>document.querySelectorAll("#app "+sel).forEach((el,i)=>el.style.setProperty("--i", Math.min(i, 16))));
 }
