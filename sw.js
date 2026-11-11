@@ -2,7 +2,7 @@
    - Each published version has its own cache, filled when the new version is downloaded.
    - The new version waits until the user taps "Actualizar" (message SKIP_WAITING), then the page reloads.
    - Works without internet: everything is answered from the cache. */
-const CACHE = "clarea-20261111235005";
+const CACHE = "clarea-20261112003845";
 const CORE = ["./", "./index.html", "./repaso-pj6.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 function pageKey(req){ return /repaso-pj6\.html/.test(new URL(req.url).pathname) ? "./repaso-pj6.html" : "./index.html"; }
@@ -33,6 +33,9 @@ self.addEventListener("activate", e => {
 self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET") return;
+  // only this app's files and its fonts are cached; the cloud (sync) always goes to the network
+  const host = new URL(req.url);
+  if (host.origin !== self.location.origin && !/^fonts\.(googleapis|gstatic)\.com$/.test(host.hostname)) return;
   const isPage = req.mode === "navigate";
   e.respondWith(caches.open(CACHE).then(c =>
     c.match(isPage ? pageKey(req) : req).then(hit => hit || fetch(req).then(res => {

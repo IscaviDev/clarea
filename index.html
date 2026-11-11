@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<script>window.CLAREA_VERSION = "20261111235005";</script>
+<script>window.CLAREA_VERSION = "20261112003845";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -215,6 +215,15 @@ html,body{margin:0}
 .authknown{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
 .authknown button{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:3px 10px;font-size:13px;cursor:pointer;color:var(--fg)}
 .authnote{margin:0;font-size:12px;color:var(--muted);line-height:1.4}
+.authtxt{margin:0;font-size:14px;line-height:1.45}
+.authimp{border:1.5px dashed var(--line);background:none;color:var(--fg);border-radius:9px;padding:10px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.authimp svg{width:18px;height:18px}
+.authinfo{margin:0;font-size:13px;background:var(--sunk);border-radius:9px;padding:9px 11px;line-height:1.4}
+.authalt{border:0;background:none;color:var(--muted);font-size:14px;padding:6px;cursor:pointer}
+.authform .btn[disabled]{opacity:.65}
+.sdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px;background:#2e9d5b}
+.sdot.warn{background:#c98a12}.sdot.off{background:var(--muted)}.sdot.busy{background:#1f5fbf}
+.syncbar{border-left-color:#b4561b}.syncbar .updgo{background:#b4561b}
 .thbtn{margin-left:auto;flex:none;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--fg);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
 .thbtn svg{width:19px;height:19px}
 .ubar{margin-left:8px;position:relative}
@@ -318,76 +327,243 @@ html,body{margin:0}
   function escT(s){ return String(s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
   function toast(msg){ var t = el('<div class="toast" role="status"></div>'); t.textContent = msg; document.body.appendChild(t); setTimeout(function(){ t.classList.add("closing"); setTimeout(function(){ t.remove(); }, 220); }, 3000); }
   var LOGO = '<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="8" y="4" width="22" height="6" rx="3" fill="var(--clarea-blue,#1f5fbf)"/><rect x="2" y="14" width="14" height="6" rx="3" fill="var(--clarea-blue,#1f5fbf)"/><rect x="20" y="14" width="6" height="6" rx="1.5" fill="var(--clarea-orange,#b4561b)"/><rect x="8" y="24" width="22" height="6" rx="3" fill="var(--clarea-blue,#1f5fbf)"/></svg>';
+  var ICO_FILE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 18v-6M9 15l3 3 3-3"/></svg>';
 
-  /* ----- login screen ----- */
-  function showLogin(){
-    var accs = lsGet(ACC) || {}, names = Object.keys(accs);
-    var mode = names.length ? "in" : "up";
-    var w = el('<div class="authwrap" role="dialog" aria-modal="true" aria-label="Iniciar sesión"><div class="authcard">'
-      + '<div class="authlogo">' + LOGO + '<div><h1>Clarea</h1><p>Tus asignaturas de DAW2 · funciona sin internet</p></div></div>'
-      + '<div class="authtabs"><button type="button" data-m="in">Entrar</button><button type="button" data-m="up">Crear cuenta</button></div>'
-      + '<form class="authform" novalidate><label>Usuario<input id="auth-user" name="user" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="20"></label>'
-      + '<label>Contraseña<input id="auth-pass" name="pass" type="password" autocomplete="current-password" maxlength="64"></label>'
-      + '<label class="auth-rep">Repite la contraseña<input id="auth-pass2" name="pass2" type="password" autocomplete="new-password" maxlength="64"></label>'
-      + '<p class="autherr" aria-live="polite"></p><button class="btn" type="submit"></button></form>'
-      + (names.length ? '<div class="authknown">En este dispositivo: ' + names.map(function(n){ return '<button type="button" data-pick="' + escT(n) + '">' + escT(n) + '</button>'; }).join("") + '</div>' : '')
-      + '<p class="authnote">Las cuentas y el progreso se guardan solo en este dispositivo. Para llevarlos a otro, usa «Exportar progreso» desde el menú de tu cuenta.</p>'
-      + '</div></div>');
-    document.body.appendChild(w);
-    var form = w.querySelector("form"), err = w.querySelector(".autherr"), btn = form.querySelector('button[type="submit"]');
-    function setMode(m){
-      mode = m; err.textContent = "";
-      w.querySelectorAll(".authtabs button").forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.m === m); });
-      w.querySelector(".auth-rep").hidden = m !== "up";
-      w.querySelector("#auth-pass").setAttribute("autocomplete", m === "up" ? "new-password" : "current-password");
-      btn.textContent = m === "up" ? "Crear cuenta y entrar" : "Entrar";
-    }
-    setMode(mode);
-    w.addEventListener("click", function(e){
-      var t = e.target.closest("[data-m]"); if (t){ setMode(t.dataset.m); return; }
-      var p = e.target.closest("[data-pick]"); if (p){ setMode("in"); form.user.value = p.dataset.pick; form.pass.focus(); }
-    });
-    form.addEventListener("submit", function(e){
-      e.preventDefault();
-      var user = form.user.value.trim().toLowerCase(), pass = form.pass.value;
+  /* ----- local copy of each account: lets you enter without internet ----- */
+  function saveLocal(user, pass){
+    var salt = newSalt();
+    return hashPw(salt, pass).then(function(h){
       var accs = lsGet(ACC) || {};
-      if (!/^[a-z0-9._-]{3,20}$/.test(user)){ err.textContent = "El usuario debe tener de 3 a 20 letras, números, puntos o guiones (sin espacios)."; form.user.focus(); return; }
-      if (pass.length < 4){ err.textContent = "La contraseña debe tener al menos 4 caracteres."; form.pass.focus(); return; }
-      if (mode === "up"){
-        if (accs[user]){ err.textContent = "Ya existe una cuenta con ese usuario en este dispositivo. Entra con ella o elige otro nombre."; return; }
-        if (pass !== form.pass2.value){ err.textContent = "Las dos contraseñas no coinciden."; form.pass2.focus(); return; }
-        var salt = newSalt();
-        hashPw(salt, pass).then(function(h){
-          accs[user] = {salt: salt, hash: h, created: Date.now()};
-          if (!lsSet(ACC, accs)){ err.textContent = "Este navegador no deja guardar datos (¿modo privado?). Así no se puede guardar el progreso."; return; }
-          enter(user, w, true);
-        });
-      } else {
-        var a = accs[user];
-        if (!a){ err.textContent = "No hay ninguna cuenta con ese usuario en este dispositivo. Créala en «Crear cuenta»."; return; }
-        hashPw(a.salt, pass).then(function(h){
-          if (h !== a.hash){ err.textContent = "Contraseña incorrecta."; form.pass.value = ""; form.pass.focus(); return; }
-          enter(user, w, false);
-        });
-      }
+      accs[user] = {salt: salt, hash: h, created: (accs[user] && accs[user].created) || Date.now()};
+      return lsSet(ACC, accs);
     });
-    setTimeout(function(){ (mode === "in" && names.length === 1 ? form.pass : form.user).focus(); if (mode === "in" && names.length === 1) form.user.value = names[0]; }, 50);
   }
-  function enter(user, w, isNew){
-    lsSet(SES, user); window.PJ6USER = user;
-    w.classList.add("closing"); setTimeout(function(){ w.remove(); }, 220); addBar();
-    if (typeof renderExamTab === "function") renderExamTab();
-    if (typeof window.clareaRefresh === "function") window.clareaRefresh();
-    toast(isNew ? "Cuenta creada. ¡A estudiar, " + user + "!" : "Hola de nuevo, " + user + ".");
+  function checkLocal(user, pass){
+    var a = (lsGet(ACC) || {})[user];
+    if (!a) return Promise.resolve(false);
+    return hashPw(a.salt, pass).then(function(h){ return h === a.hash; });
   }
 
-  /* ----- account bar: export / import / logout ----- */
+  /* ----- cloud account: Firebase Authentication + Firestore, used through their web APIs.
+     The key below is public by design (it only identifies the project); the Firestore rules
+     make sure each account can only read and write its own data. ----- */
+  var FB_KEY = "AIzaSyD1wNdx_8Kn_IU5YaRtl0XX8WWLpaL70P8", FB_PROJECT = "clarea-6ec91";
+  var DEV = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? (function(){ try { return localStorage.getItem("clarea-dev-api"); } catch(e){ return null; } })() : null;
+  var IDT = (DEV || "https://identitytoolkit.googleapis.com") + "/v1/accounts:";
+  var STK = (DEV || "https://securetoken.googleapis.com") + "/v1/token?key=" + FB_KEY;
+  var FSDB = "projects/" + FB_PROJECT + "/databases/(default)/documents";
+  var FS = (DEV || "https://firestore.googleapis.com") + "/v1/" + FSDB;
+  var CLOUD = "clarea-cloud/", SYNC = "clarea-sync/";
+  function email(user){ return user + "@" + FB_PROJECT + ".firebaseapp.com"; }
+  function api(url, opt){
+    return fetch(url, opt).then(function(r){
+      return r.json().catch(function(){ return {}; }).then(function(j){
+        if (r.ok) return j;
+        var m = (j && j.error && (j.error.message || j.error.status)) || ("HTTP_" + r.status);
+        throw {code: String(m).split(/[ :]/)[0], status: r.status};
+      });
+    }, function(){ throw {net: true}; });
+  }
+  function postJSON(url, body, tok){
+    var h = {"Content-Type": "application/json"}; if (tok) h.Authorization = "Bearer " + tok;
+    return api(url, {method: "POST", headers: h, body: JSON.stringify(body)});
+  }
+  function cloudGet(u){ return lsGet(CLOUD + u); }
+  function cloudSet(u, v){ if (v) lsSet(CLOUD + u, v); else try { localStorage.removeItem(CLOUD + u); } catch(e){} }
+  function keepTokens(u, j){
+    cloudSet(u, {uid: j.localId || j.user_id, it: j.idToken || j.id_token, rt: j.refreshToken || j.refresh_token,
+                 exp: Date.now() + (+(j.expiresIn || j.expires_in) || 3600) * 1000});
+  }
+  function cloudAuth(kind, user, pass){
+    return postJSON(IDT + kind + "?key=" + FB_KEY, {email: email(user), password: pass, returnSecureToken: true})
+      .then(function(j){ keepTokens(user, j); return j; });
+  }
+  // an account that so far only exists on this device is uploaded the first time it logs in with internet
+  function cloudLogin(user, pass, localOk){
+    return cloudAuth("signInWithPassword", user, pass).catch(function(e){
+      if (e.net || !localOk || !/INVALID_LOGIN_CREDENTIALS|EMAIL_NOT_FOUND|INVALID_PASSWORD/.test(e.code)) throw e;
+      return cloudAuth("signUp", user, pass).then(function(j){ j.uploaded = true; return j; });
+    });
+  }
+  function idToken(u){
+    var c = cloudGet(u);
+    if (!c) return Promise.reject({code: "NO_CLOUD"});
+    if (c.exp - 60000 > Date.now()) return Promise.resolve(c.it);
+    return api(STK, {method: "POST", headers: {"Content-Type": "application/x-www-form-urlencoded"}, body: "grant_type=refresh_token&refresh_token=" + encodeURIComponent(c.rt)})
+      .then(function(j){ keepTokens(u, j); return cloudGet(u).it; },
+            function(e){ if (!e.net && e.status >= 400 && e.status < 500) cloudSet(u, null); throw e; });
+  }
+  function authMsg(e, mode){
+    var c = (e && e.code) || "";
+    if (/EMAIL_EXISTS/.test(c)) return mode === "up" ? "Ya existe una cuenta con ese usuario. Entra con ella en «Entrar»." : "Contraseña incorrecta.";
+    if (/INVALID_LOGIN_CREDENTIALS|EMAIL_NOT_FOUND|INVALID_PASSWORD/.test(c)) return "Usuario o contraseña incorrectos.";
+    if (/WEAK_PASSWORD/.test(c)) return "La contraseña debe tener al menos 6 caracteres.";
+    if (/TOO_MANY_ATTEMPTS/.test(c)) return "Demasiados intentos seguidos. Espera unos minutos y vuelve a probar.";
+    if (/USER_DISABLED/.test(c)) return "Esta cuenta está desactivada.";
+    if (/INVALID_EMAIL/.test(c)) return "Ese nombre de usuario no es válido.";
+    if (c === "STORAGE") return "Este navegador no deja guardar datos (¿modo privado?). Así no se puede guardar el progreso.";
+    return "No se ha podido conectar con la nube (" + (c || "error") + "). Prueba otra vez en un momento.";
+  }
+  var pendingPw = null; // password kept only in memory after an offline login, to connect to the cloud when internet comes back
+
+  /* ----- sync: every saved item of the account (exams, absences…) is one document in Firestore.
+     Each change is stamped with the time it was made; the newest version of each item wins. ----- */
+  var applying = false, syncing = null, again = false, syncTimer = 0;
+  var sstate = {s: "idle", at: 0};
+  function metaGet(u){ var m = lsGet(SYNC + u) || {}; m.times = m.times || {}; m.dirty = m.dirty || {}; return m; }
+  function metaSet(u, m){ lsSet(SYNC + u, m); }
+  // notice every change the app saves for the logged-in account
+  (function(){
+    var SP = window.Storage && Storage.prototype; if (!SP) return;
+    var oSet = SP.setItem, oRem = SP.removeItem;
+    function note(store, k){
+      if (applying) return;
+      try { if (store !== window.localStorage) return; } catch(e){ return; }
+      var u = window.PJ6USER, pre = "u/" + u + "/";
+      if (!u || String(k).indexOf(pre) !== 0) return;
+      var key = String(k).slice(pre.length), m = metaGet(u);
+      m.times[key] = Math.max(Date.now(), (m.times[key] || 0) + 1); m.dirty[key] = 1; metaSet(u, m);
+      clearTimeout(syncTimer); syncTimer = setTimeout(function(){ syncNow(); }, 1500);
+    }
+    SP.setItem = function(k, v){ oSet.call(this, k, v); note(this, k); };
+    SP.removeItem = function(k){ oRem.call(this, k); note(this, k); };
+  })();
+  function localItems(u){
+    var pre = "u/" + u + "/", out = {};
+    try { for (var i = 0; i < localStorage.length; i++){ var k = localStorage.key(i); if (k.indexOf(pre) === 0) out[k.slice(pre.length)] = localStorage.getItem(k); } } catch(e){}
+    return out;
+  }
+  function stampOf(raw){ try { var x = JSON.parse(raw); return x && typeof x.t === "number" ? x.t : 0; } catch(e){ return 0; } }
+  function docName(uid, k){ return FSDB + "/users/" + uid + "/data/" + encodeURIComponent(k); }
+  function pull(u, uid, tok, since){
+    var q = {from: [{collectionId: "data"}]};
+    if (since) q.where = {fieldFilter: {field: {fieldPath: "s"}, op: "GREATER_THAN", value: {timestampValue: since}}};
+    return postJSON(FS + "/users/" + uid + ":runQuery", {structuredQuery: q}, tok).then(function(rows){
+      var out = {}, maxS = since || "";
+      (rows || []).forEach(function(r){
+        var d = r.document; if (!d || !d.fields) return;
+        var k = decodeURIComponent(d.name.split("/").pop()), f = d.fields;
+        out[k] = {v: f.v && "stringValue" in f.v ? f.v.stringValue : null, t: +((f.t && f.t.integerValue) || 0)};
+        var s = f.s && f.s.timestampValue; if (s && (!maxS || Date.parse(s) > Date.parse(maxS))) maxS = s;
+      });
+      return {items: out, since: maxS};
+    });
+  }
+  function push(uid, tok, writes){
+    if (!writes.length) return Promise.resolve();
+    return postJSON(FS + ":commit", {writes: writes.map(function(w){
+      return {update: {name: docName(uid, w.k), fields: {v: w.v === null ? {nullValue: null} : {stringValue: w.v}, t: {integerValue: String(w.t)}}},
+              updateTransforms: [{fieldPath: "s", setToServerValue: "REQUEST_TIME"}]};
+    })}, tok);
+  }
+  function refreshUI(keys){
+    if (!keys.length) return;
+    if (keys.some(function(k){ return k.indexOf("pj6x") === 0; }) && typeof renderExamTab === "function") renderExamTab();
+    if (keys.some(function(k){ return k.indexOf("clarea-") === 0; }) && typeof window.clareaRefresh === "function") window.clareaRefresh();
+  }
+  function setState(s){ sstate = {s: s, at: Date.now()}; }
+  function syncNow(){
+    var u = window.PJ6USER;
+    if (!u) return Promise.resolve();
+    if (!cloudGet(u)){
+      if (pendingPw && pendingPw.user === u){ // logged in without internet: connect now
+        var pw = pendingPw.pass;
+        return cloudLogin(u, pw, true).then(function(){ pendingPw = null; return syncNow(); }, function(e){ if (!e.net) pendingPw = null; setState(e.net ? "offline" : "off"); });
+      }
+      setState("off"); return Promise.resolve();
+    }
+    if (syncing){ again = true; return syncing; }
+    setState("busy");
+    syncing = idToken(u).then(function(tok){
+      var uid = cloudGet(u).uid, m0 = metaGet(u);
+      return pull(u, uid, tok, m0.since).then(function(r){
+        // 1) take what is newer in the cloud, 2) collect what is newer here
+        var m = metaGet(u), pre = "u/" + u + "/", changed = [], writes = [], local = localItems(u);
+        Object.keys(local).forEach(function(k){ if (!(k in m.times)){ m.times[k] = stampOf(local[k]) || 1; m.dirty[k] = 1; } });
+        Object.keys(r.items).forEach(function(k){
+          var it = r.items[k];
+          if (it.t <= (m.times[k] || 0)) return;
+          applying = true;
+          try { if (it.v === null) localStorage.removeItem(pre + k); else localStorage.setItem(pre + k, it.v); } catch(e){}
+          applying = false;
+          if (typeof MEMSTORE === "object"){ if (it.v === null) delete MEMSTORE[pre + k]; else try { MEMSTORE[pre + k] = JSON.parse(it.v); } catch(e){} }
+          m.times[k] = it.t; delete m.dirty[k]; changed.push(k);
+        });
+        Object.keys(m.dirty).forEach(function(k){ var v = null; try { v = localStorage.getItem(pre + k); } catch(e){} writes.push({k: k, v: v, t: m.times[k]}); });
+        // read again a few seconds back next time, so nothing saved at the same moment is missed
+        if (r.since) m.since = new Date(Date.parse(r.since) - 5000).toISOString();
+        metaSet(u, m);
+        refreshUI(changed);
+        return push(uid, tok, writes).then(function(){
+          var m2 = metaGet(u);
+          writes.forEach(function(w){ if (m2.times[w.k] === w.t) delete m2.dirty[w.k]; });
+          m2.last = Date.now(); metaSet(u, m2);
+        });
+      });
+    }).then(function(){ setState("ok"); }, function(e){ setState(e && e.net ? "offline" : (cloudGet(u) ? "error" : "off")); })
+      .then(function(){ syncing = null; if (again){ again = false; return syncNow(); } });
+    return syncing;
+  }
+  function pendingCount(u){ return Object.keys(metaGet(u).dirty).length; }
+  function ago(t){
+    var s = Math.round((Date.now() - t) / 1000);
+    return s < 60 ? "ahora mismo" : s < 3600 ? "hace " + Math.round(s / 60) + " min" : s < 86400 ? "hace " + Math.round(s / 3600) + " h" : "hace " + Math.round(s / 86400) + " días";
+  }
+  function syncLabel(u){
+    if (!cloudGet(u)) return {dot: "off", text: "Sin sincronizar: solo en este dispositivo"};
+    var n = pendingCount(u), last = metaGet(u).last;
+    if (sstate.s === "busy") return {dot: "busy", text: "Sincronizando…"};
+    if (sstate.s === "offline" || !navigator.onLine) return {dot: "warn", text: "Sin internet" + (n ? " · " + n + " cambio" + (n > 1 ? "s" : "") + " por subir" : "")};
+    if (sstate.s === "error") return {dot: "warn", text: "No se pudo sincronizar" + (last ? " · última vez " + ago(last) : "")};
+    return {dot: "", text: last ? "Sincronizado " + ago(last) : "Sincronizado"};
+  }
+  var lastAuto = 0;
+  function autoSync(){ if (Date.now() - lastAuto < 15000) return; lastAuto = Date.now(); syncNow(); }
+  document.addEventListener("visibilitychange", function(){ if (document.visibilityState === "visible") autoSync(); });
+  window.addEventListener("online", function(){ lastAuto = 0; autoSync(); });
+  setInterval(function(){ if (document.visibilityState === "visible" && window.PJ6USER) autoSync(); }, 120000);
+
+  /* ----- progress files (export / import) ----- */
   function progressKeys(user){
     var pre = "u/" + user + "/", out = {};
     try { for (var i = 0; i < localStorage.length; i++){ var k = localStorage.key(i); if (k.indexOf(pre) === 0) out[k.slice(pre.length)] = JSON.parse(localStorage.getItem(k)); } } catch(e){}
     if (typeof MEMSTORE === "object") Object.keys(MEMSTORE).forEach(function(k){ if (k.indexOf(pre) === 0) out[k.slice(pre.length)] = MEMSTORE[k]; });
     return out;
   }
+  function readProgressFile(cb){
+    var inp = document.createElement("input"); inp.type = "file"; inp.accept = ".json,application/json";
+    inp.addEventListener("change", function(){
+      var f = inp.files && inp.files[0]; if (!f) return;
+      f.text().then(function(txt){
+        var j; try { j = JSON.parse(txt); } catch(e){ cb(null, "Ese archivo no es un progreso válido."); return; }
+        if (!j || (j.app !== "pj6-repaso" && j.app !== "clarea") || !j.data){ cb(null, "Ese archivo no es un progreso de Clarea."); return; }
+        cb(j);
+      });
+    });
+    inp.click();
+  }
+  // adds the file's progress to the logged-in account: for each item, the newest or most complete version stays
+  function applyImport(j){
+    var pre = "u/" + window.PJ6USER + "/", added = 0;
+    Object.keys(j.data).forEach(function(k){
+      if (k.indexOf("pj6x") !== 0 && k.indexOf("clarea-") !== 0) return;
+      var inc = j.data[k], cur = null; try { cur = JSON.parse(localStorage.getItem(pre + k)); } catch(e){}
+      if (k === "clarea-faltas"){
+        if (cur && (inc.t || 0) <= (cur.t || 0)) return;
+        added++;
+      } else if (k !== "pj6x-last"){
+        var take = !cur || (inc.graded && !cur.graded) || (!!inc.graded === !!cur.graded && (inc.t || 0) > (cur.t || 0));
+        if (!take) return;
+        added++;
+      }
+      try { localStorage.setItem(pre + k, JSON.stringify(inc)); } catch(e){}
+      if (typeof MEMSTORE === "object") MEMSTORE[pre + k] = inc;
+    });
+    if (typeof renderExamTab === "function") renderExamTab();
+    if (typeof window.clareaRefresh === "function") window.clareaRefresh();
+    return added;
+  }
+  function importMsg(j, added){ return added ? "Importados " + added + " elementos" + (j.user && j.user !== window.PJ6USER ? " de «" + j.user + "»" : "") + "." : "No había nada nuevo que importar."; }
   function exportProgress(){
     var user = window.PJ6USER, data = progressKeys(user);
     var n = Object.keys(data).filter(function(k){ return k !== "pj6x-last"; }).length;
@@ -404,35 +580,144 @@ html,body{margin:0}
     toast("Archivo «" + name + "» descargado (" + n + " elementos).");
   }
   function importProgress(){
-    var inp = document.createElement("input"); inp.type = "file"; inp.accept = ".json,application/json";
-    inp.addEventListener("change", function(){
-      var f = inp.files && inp.files[0]; if (!f) return;
-      f.text().then(function(txt){
-        var j; try { j = JSON.parse(txt); } catch(e){ toast("Ese archivo no es un progreso válido."); return; }
-        if (!j || (j.app !== "pj6-repaso" && j.app !== "clarea") || !j.data){ toast("Ese archivo no es un progreso de Clarea."); return; }
-        var pre = "u/" + window.PJ6USER + "/", added = 0;
-        Object.keys(j.data).forEach(function(k){
-          if (k.indexOf("pj6x") !== 0 && k.indexOf("clarea-") !== 0) return;
-          var inc = j.data[k], cur = null; try { cur = JSON.parse(localStorage.getItem(pre + k)); } catch(e){}
-          if (k === "clarea-faltas"){
-            var take2 = !cur || (inc.t || 0) > (cur.t || 0);
-            if (!take2) return;
-            added++;
-          } else if (k !== "pj6x-last"){
-            var take = !cur || (inc.graded && !cur.graded) || (!!inc.graded === !!cur.graded && (inc.t || 0) > (cur.t || 0));
-            if (!take) return;
-            added++;
-          }
-          try { localStorage.setItem(pre + k, JSON.stringify(inc)); } catch(e){}
-          if (typeof MEMSTORE === "object") MEMSTORE[pre + k] = inc;
-        });
-        if (typeof renderExamTab === "function") renderExamTab();
-        if (typeof window.clareaRefresh === "function") window.clareaRefresh();
-        toast(added ? "Importados " + added + " elementos" + (j.user && j.user !== window.PJ6USER ? " de «" + j.user + "»" : "") + "." : "No había nada nuevo que importar.");
+    readProgressFile(function(j, msg){ if (!j){ toast(msg); return; } toast(importMsg(j, applyImport(j))); });
+  }
+
+  /* ----- login screen ----- */
+  var pendingImport = null;
+  function showLogin(){
+    var accs = lsGet(ACC) || {}, names = Object.keys(accs);
+    var mode = "in";
+    var w = el('<div class="authwrap" role="dialog" aria-modal="true" aria-label="Iniciar sesión"><div class="authcard">'
+      + '<div class="authlogo">' + LOGO + '<div><h1>Clarea</h1><p>Tus asignaturas de DAW2 · funciona sin internet</p></div></div>'
+      + '<div class="authtabs"><button type="button" data-m="in">Entrar</button><button type="button" data-m="up">Crear cuenta</button></div>'
+      + '<form class="authform" novalidate><label>Usuario<input id="auth-user" name="user" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="20"></label>'
+      + '<label>Contraseña<input id="auth-pass" name="pass" type="password" autocomplete="current-password" maxlength="64"></label>'
+      + '<label class="auth-rep">Repite la contraseña<input id="auth-pass2" name="pass2" type="password" autocomplete="new-password" maxlength="64"></label>'
+      + '<p class="autherr" aria-live="polite"></p><button class="btn" type="submit"></button></form>'
+      + (names.length ? '<div class="authknown">En este dispositivo: ' + names.map(function(n){ return '<button type="button" data-pick="' + escT(n) + '">' + escT(n) + '</button>'; }).join("") + '</div>' : '')
+      + '<p class="authinfo" hidden></p>'
+      + '<button type="button" class="authimp" data-imp>' + ICO_FILE + 'Importar progreso de un archivo</button>'
+      + '<p class="authnote">Tu cuenta se guarda en la nube: entra con el mismo usuario en el móvil o en el PC y el progreso se sincroniza solo. Sin internet también funciona.</p>'
+      + '</div></div>');
+    document.body.appendChild(w);
+    var form = w.querySelector("form"), err = w.querySelector(".autherr"), btn = form.querySelector('button[type="submit"]'), info = w.querySelector(".authinfo");
+    function setMode(m){
+      mode = m; err.textContent = "";
+      w.querySelectorAll(".authtabs button").forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.m === m); });
+      w.querySelector(".auth-rep").hidden = m !== "up";
+      w.querySelector("#auth-pass").setAttribute("autocomplete", m === "up" ? "new-password" : "current-password");
+      btn.textContent = m === "up" ? "Crear cuenta y entrar" : "Entrar";
+    }
+    setMode(mode);
+    function busy(on){ btn.disabled = on; btn.textContent = on ? "Conectando…" : (mode === "up" ? "Crear cuenta y entrar" : "Entrar"); }
+    w.addEventListener("click", function(e){
+      var t = e.target.closest("[data-m]"); if (t){ setMode(t.dataset.m); return; }
+      var p = e.target.closest("[data-pick]"); if (p){ setMode("in"); form.user.value = p.dataset.pick; form.pass.focus(); return; }
+      if (e.target.closest("[data-imp]")) readProgressFile(function(j, msg){
+        if (!j){ err.textContent = msg; return; }
+        pendingImport = j; err.textContent = "";
+        var n = Object.keys(j.data).filter(function(k){ return k !== "pj6x-last"; }).length;
+        info.hidden = false;
+        info.textContent = "Archivo" + (j.user ? " de «" + j.user + "»" : "") + " listo (" + n + " elementos). Entra o crea tu cuenta y se añadirá a ella.";
+        if (j.user && !form.user.value) form.user.value = j.user;
+        form.pass.focus();
       });
     });
-    inp.click();
+    form.addEventListener("submit", function(e){
+      e.preventDefault();
+      if (btn.disabled) return;
+      var user = form.user.value.trim().toLowerCase(), pass = form.pass.value;
+      var hasLocal = !!(lsGet(ACC) || {})[user];
+      if (!/^[a-z0-9][a-z0-9._-]{2,19}$/.test(user) || /\.\.|\.$/.test(user)){ err.textContent = "El usuario debe tener de 3 a 20 letras, números, puntos o guiones (sin espacios) y empezar por letra o número."; form.user.focus(); return; }
+      if (pass.length < (mode === "up" ? 6 : 4)){ err.textContent = "La contraseña debe tener al menos " + (mode === "up" ? 6 : 4) + " caracteres."; form.pass.focus(); return; }
+      if (mode === "up"){
+        if (hasLocal){ err.textContent = "Ya existe una cuenta con ese usuario en este dispositivo. Entra con ella en «Entrar»."; return; }
+        if (pass !== form.pass2.value){ err.textContent = "Las dos contraseñas no coinciden."; form.pass2.focus(); return; }
+      }
+      err.textContent = ""; busy(true);
+      checkLocal(user, pass).then(function(localOk){
+        var p = mode === "up" ? cloudAuth("signUp", user, pass) : cloudLogin(user, pass, localOk);
+        return p.then(function(j){
+          return saveLocal(user, pass).then(function(ok){
+            if (!ok) throw {code: "STORAGE"};
+            enter(user, w, mode === "up" ? "new" : j.uploaded ? "uploaded" : "in");
+          });
+        }, function(e){
+          if (!e.net) throw e;
+          // no internet: only accounts already saved on this device; they connect to the cloud when internet comes back
+          if (mode === "up") return saveLocal(user, pass).then(function(ok){ if (!ok) throw {code: "STORAGE"}; pendingPw = {user: user, pass: pass}; enter(user, w, "offline-new"); });
+          if (!hasLocal){ err.textContent = "Sin internet solo puedes entrar con cuentas que ya hayas usado en este dispositivo. Conéctate la primera vez."; return; }
+          if (!localOk){ err.textContent = "Contraseña incorrecta."; form.pass.value = ""; form.pass.focus(); return; }
+          pendingPw = {user: user, pass: pass}; enter(user, w, "offline");
+        });
+      }).catch(function(e){
+        err.textContent = authMsg(e, mode);
+        if (/INVALID|EMAIL_EXISTS/.test(e.code || "") && mode === "in"){ form.pass.value = ""; form.pass.focus(); }
+      }).then(function(){ if (document.body.contains(w)) busy(false); });
+    });
+    setTimeout(function(){ (names.length === 1 ? form.pass : form.user).focus(); if (names.length === 1) form.user.value = names[0]; }, 50);
   }
+  function enter(user, w, how){
+    lsSet(SES, user); window.PJ6USER = user;
+    w.classList.add("closing"); setTimeout(function(){ w.remove(); }, 220); addBar();
+    if (typeof renderExamTab === "function") renderExamTab();
+    if (typeof window.clareaRefresh === "function") window.clareaRefresh();
+    var msg = {"new": "Cuenta creada. ¡A estudiar, " + user + "!",
+               uploaded: "Tu cuenta ya está en la nube: entra con ella en tus otros dispositivos.",
+               "in": "Hola de nuevo, " + user + ".",
+               offline: "Hola, " + user + ". Sin internet: se sincronizará al volver la conexión.",
+               "offline-new": "Cuenta creada sin internet. Se subirá a la nube al volver la conexión."}[how];
+    var imp = pendingImport; pendingImport = null;
+    // first bring the account's progress from the cloud, then add the imported file on top
+    toast(msg);
+    syncNow().then(function(){ if (imp){ var n = applyImport(imp); setTimeout(function(){ toast(importMsg(imp, n)); }, 3300); } });
+  }
+
+  /* ----- one-time invitation for accounts created before the cloud existed ----- */
+  function maybeInvite(){
+    var u = window.PJ6USER;
+    if (!u || cloudGet(u) || !navigator.onLine || document.querySelector(".updbar")) return;
+    var seen = lsGet("clarea-syncask/" + u); if (seen && Date.now() - seen < 3 * 86400000) return;
+    var b = el('<div class="updbar syncbar" role="status"><div><b>Sincroniza tu cuenta</b><span>Úsala en el móvil y en el PC con el mismo progreso.</span></div><button type="button" class="updgo">Activar</button><button type="button" class="updno" aria-label="Ahora no">✕</button></div>');
+    document.body.appendChild(b);
+    function close(){ b.classList.add("closing"); setTimeout(function(){ b.remove(); }, 220); }
+    b.querySelector(".updgo").addEventListener("click", function(){ close(); openActivate(); });
+    b.querySelector(".updno").addEventListener("click", function(){ lsSet("clarea-syncask/" + u, Date.now()); close(); });
+  }
+  function openActivate(){
+    var u = window.PJ6USER;
+    var w = el('<div class="authwrap" role="dialog" aria-modal="true" aria-label="Activar sincronización"><div class="authcard">'
+      + '<div class="authlogo">' + LOGO + '<div><h1>Sincronizar</h1><p>Cuenta «' + escT(u) + '»</p></div></div>'
+      + '<p class="authtxt">Escribe tu contraseña <b>una vez</b>. Tu cuenta se guardará en la nube: entra con ella en cualquier dispositivo y el progreso se sincroniza solo.</p>'
+      + '<form class="authform" novalidate><input type="text" name="user" autocomplete="username" value="' + escT(u) + '" hidden>'
+      + '<label>Contraseña<input name="pass" type="password" autocomplete="current-password" maxlength="64"></label>'
+      + '<p class="autherr" aria-live="polite"></p><button class="btn" type="submit">Activar sincronización</button>'
+      + '<button type="button" class="authalt">Ahora no</button></form></div></div>');
+    document.body.appendChild(w);
+    var form = w.querySelector("form"), err = w.querySelector(".autherr"), btn = form.querySelector(".btn");
+    function close(){ w.classList.add("closing"); setTimeout(function(){ w.remove(); }, 220); }
+    w.querySelector(".authalt").addEventListener("click", close);
+    form.addEventListener("submit", function(e){
+      e.preventDefault(); if (btn.disabled) return;
+      var pass = form.pass.value; if (!pass){ form.pass.focus(); return; }
+      btn.disabled = true; btn.textContent = "Conectando…"; err.textContent = "";
+      checkLocal(u, pass).then(function(localOk){
+        return cloudLogin(u, pass, localOk).then(function(j){
+          return saveLocal(u, pass).then(function(){
+            close(); toast(j.uploaded ? "Listo: tu cuenta ya está en la nube." : "Listo: sincronización activada.");
+            syncNow();
+          });
+        });
+      }).catch(function(e){
+        err.textContent = e.net ? "Sin internet. Prueba cuando tengas conexión." : authMsg(e, "in");
+        form.pass.value = ""; form.pass.focus();
+      }).then(function(){ btn.disabled = false; btn.textContent = "Activar sincronización"; });
+    });
+    setTimeout(function(){ form.pass.focus(); }, 50);
+  }
+
+  /* ----- account bar: sync / export / import / logout ----- */
   function addBar(){
     var head = document.querySelector("[data-ubar]") || document.querySelector(".top .wrap"); if (!head || document.querySelector(".ubar")) return;
     var u = window.PJ6USER;
@@ -447,26 +732,39 @@ html,body{margin:0}
     btn.addEventListener("click", function(e){
       e.stopPropagation();
       if (menu){ close(); return; }
+      var on = !!cloudGet(u), sl = syncLabel(u);
       menu = el('<div class="umenu" role="menu">'
-        + '<button type="button" role="menuitem" data-a="exp">Exportar progreso<small>Guarda un archivo para llevarlo a otro dispositivo</small></button>'
+        + (on ? '<button type="button" role="menuitem" data-a="sync">Sincronizar ahora<small><span class="sdot ' + sl.dot + '"></span>' + escT(sl.text) + '</small></button><hr>'
+              : '<button type="button" role="menuitem" data-a="act">Activar sincronización<small><span class="sdot off"></span>Usa tu cuenta en todos tus dispositivos</small></button><hr>')
+        + '<button type="button" role="menuitem" data-a="exp">Exportar progreso<small>Guarda una copia en un archivo</small></button>'
         + '<button type="button" role="menuitem" data-a="imp">Importar progreso<small>Carga un archivo exportado en esta cuenta</small></button><hr>'
         + (lsGet(TH) ? '<button type="button" role="menuitem" data-a="sys">Usar el tema del sistema<small>Claro u oscuro según el iPhone</small></button><hr>' : '')
         + '<button type="button" role="menuitem" data-a="upd">Buscar actualizaciones<small>Comprueba si hay una versión nueva de Clarea</small></button><hr>'
-        + '<button type="button" role="menuitem" data-a="out">Cerrar sesión<small>Tu progreso se queda guardado</small></button>'
+        + '<button type="button" role="menuitem" data-a="out">Cerrar sesión<small>' + (on ? 'Tu progreso sigue en la nube y en este dispositivo' : 'Tu progreso se queda guardado') + '</small></button>'
         + (window.CLAREA_VERSION ? '<p class="uver">Versión del ' + window.CLAREA_VERSION.replace(/^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d).*/, "$3/$2/$1 · $4:$5") + '</p>' : '') + '</div>');
       bar.appendChild(menu); btn.setAttribute("aria-expanded", "true");
       menu.addEventListener("click", function(ev){
         var a = ev.target.closest("[data-a]"); if (!a) return; close();
-        if (a.dataset.a === "exp") exportProgress();
-        else if (a.dataset.a === "imp") importProgress();
-        else if (a.dataset.a === "upd"){ if (window.clareaCheckUpdate) window.clareaCheckUpdate(toast); else location.reload(); }
-        else if (a.dataset.a === "sys"){ try { localStorage.removeItem(TH); } catch(e){} applyTheme(null); toast("Tema automático: sigue el del iPhone."); }
-        else { try { localStorage.removeItem(SES); } catch(e){} location.reload(); }
+        var act = a.dataset.a;
+        if (act === "sync"){ toast("Sincronizando…"); syncNow().then(function(){ toast(syncLabel(u).text + "."); }); }
+        else if (act === "act") openActivate();
+        else if (act === "exp") exportProgress();
+        else if (act === "imp") importProgress();
+        else if (act === "upd"){ if (window.clareaCheckUpdate) window.clareaCheckUpdate(toast); else location.reload(); }
+        else if (act === "sys"){ try { localStorage.removeItem(TH); } catch(e){} applyTheme(null); toast("Tema automático: sigue el del iPhone."); }
+        else {
+          // upload pending changes first (if there is internet), then forget this device's cloud session
+          var done = false, out = function(){ if (done) return; done = true; cloudSet(u, null); try { localStorage.removeItem(SES); } catch(e){} location.reload(); };
+          syncNow().then(out, out); setTimeout(out, 4000);
+        }
       });
     });
     document.addEventListener("click", function(e){ if (menu && !bar.contains(e.target)) close(); });
   }
-  document.addEventListener("DOMContentLoaded", function(){ if (window.PJ6USER) addBar(); else showLogin(); });
+  document.addEventListener("DOMContentLoaded", function(){
+    if (window.PJ6USER){ addBar(); lastAuto = Date.now(); syncNow().then(function(){ setTimeout(maybeInvite, 1200); }); }
+    else showLogin();
+  });
 })();
 </script>
 
