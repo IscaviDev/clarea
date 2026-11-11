@@ -10,6 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
+<script>window.CLAREA_VERSION = "20261111232726";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -222,6 +223,7 @@ html,body{margin:0}
 .umenu button:hover{background:var(--sunk)}
 .umenu small{display:block;font-size:12px;color:var(--muted)}
 .umenu hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+.uver{margin:4px 12px 4px;font-size:11.5px;color:var(--muted)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:120;background:var(--fg);color:var(--bg);border-radius:10px;padding:10px 16px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:90vw}
 
 /* ---------- "new version" banner ---------- */
@@ -435,7 +437,8 @@ html,body{margin:0}
         + '<button type="button" role="menuitem" data-a="imp">Importar progreso<small>Carga un archivo exportado en esta cuenta</small></button><hr>'
         + (lsGet(TH) ? '<button type="button" role="menuitem" data-a="sys">Usar el tema del sistema<small>Claro u oscuro según el iPhone</small></button><hr>' : '')
         + '<button type="button" role="menuitem" data-a="upd">Buscar actualizaciones<small>Comprueba si hay una versión nueva de Clarea</small></button><hr>'
-        + '<button type="button" role="menuitem" data-a="out">Cerrar sesión<small>Tu progreso se queda guardado</small></button></div>');
+        + '<button type="button" role="menuitem" data-a="out">Cerrar sesión<small>Tu progreso se queda guardado</small></button>'
+        + (window.CLAREA_VERSION ? '<p class="uver">Versión del ' + window.CLAREA_VERSION.replace(/^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d).*/, "$3/$2/$1 · $4:$5") + '</p>' : '') + '</div>');
       bar.appendChild(menu); btn.setAttribute("aria-expanded", "true");
       menu.addEventListener("click", function(ev){
         var a = ev.target.closest("[data-a]"); if (!a) return; close();
