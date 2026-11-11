@@ -434,12 +434,14 @@ html,body{margin:0}
         + '<button type="button" role="menuitem" data-a="exp">Exportar progreso<small>Guarda un archivo para llevarlo a otro dispositivo</small></button>'
         + '<button type="button" role="menuitem" data-a="imp">Importar progreso<small>Carga un archivo exportado en esta cuenta</small></button><hr>'
         + (lsGet(TH) ? '<button type="button" role="menuitem" data-a="sys">Usar el tema del sistema<small>Claro u oscuro según el iPhone</small></button><hr>' : '')
+        + '<button type="button" role="menuitem" data-a="upd">Buscar actualizaciones<small>Comprueba si hay una versión nueva de Clarea</small></button><hr>'
         + '<button type="button" role="menuitem" data-a="out">Cerrar sesión<small>Tu progreso se queda guardado</small></button></div>');
       bar.appendChild(menu); btn.setAttribute("aria-expanded", "true");
       menu.addEventListener("click", function(ev){
         var a = ev.target.closest("[data-a]"); if (!a) return; close();
         if (a.dataset.a === "exp") exportProgress();
         else if (a.dataset.a === "imp") importProgress();
+        else if (a.dataset.a === "upd"){ if (window.clareaCheckUpdate) window.clareaCheckUpdate(toast); else location.reload(); }
         else if (a.dataset.a === "sys"){ try { localStorage.removeItem(TH); } catch(e){} applyTheme(null); toast("Tema automático: sigue el del iPhone."); }
         else { try { localStorage.removeItem(SES); } catch(e){} location.reload(); }
       });
@@ -583,19 +585,23 @@ function viewTimetable(){
 }
 function faltaRow(c, r){
   const k = calc(r), s = SUBJ[c];
-  return '<details class="fr2" data-f="'+c+'" style="'+sv(c)+'"><summary><span class="fcode">'+c+'</span><span class="fname">'+esc(s.n)+'</span><span class="fhrs">'+num(r.f)+' h <small>/ '+num(k.max)+'</small></span><span class="fmeter st-'+k.st+'"><span class="fbar"><i style="width:'+Math.round(k.use*100)+'%"></i></span>'+stChip(k.st)+'</span></summary>'
+  return '<details class="fr2" name="faltas" data-f="'+c+'" style="'+sv(c)+'"><summary><span class="fcode">'+c+'</span><span class="fname">'+esc(s.n)+'</span><span class="fhrs">'+num(r.f)+' h <small>/ '+num(k.max)+'</small></span><span class="fmeter st-'+k.st+'"><span class="fbar"><i style="width:'+Math.round(k.use*100)+'%"></i></span>'+stChip(k.st)+'</span></summary>'
    + '<div class="fbody"><div class="step"><button type="button" data-fadd="-0.5" aria-label="Quitar media hora">−</button><label><small>Horas faltadas</small><input type="text" inputmode="decimal" value="'+num(r.f)+'" data-fin aria-label="Horas faltadas de '+c+'"></label><button type="button" data-fadd="0.5" aria-label="Añadir media hora">+</button></div>'
    + '<div class="kv"><div><small>Máximo (20 %)</small><b>'+num(k.max)+' h</b></div><div><small>Te quedan</small><b>'+num(Math.max(0,k.rest))+' h</b></div><div><small>% faltas</small><b>'+num(k.pct*100)+' %</b></div></div>'
    + '<label class="ftot">Horas totales de la asignatura <input type="text" inputmode="decimal" value="'+num(r.tot)+'" data-ftot></label></div></details>';
 }
-function viewFaltas(){
-  const F = faltas(); let tf = 0, tmax = 0, ttot = 0; const cnt = {ok:0, aviso:0, limite:0, susp:0};
+function fsumHtml(F){
+  let tf = 0, tmax = 0, ttot = 0; const cnt = {ok:0, aviso:0, limite:0, susp:0};
   FALTAS_ORDER.forEach(c=>{ const k = calc(F[c]); tf += F[c].f; tmax += k.max; ttot += F[c].tot; cnt[k.st]++; });
   const risk = FALTAS_ORDER.map(c=>[c, calc(F[c])]).filter(x=>x[1].use>0).sort((a,b)=>b[1].use-a[1].use).slice(0,3);
-  let h = '<button class="back" data-go="#/asig/TUT">← Tutoría</button><div class="thead"><h1>Faltas de asistencia</h1><span>Límite: 20 % de las horas de cada asignatura</span></div>';
-  h += '<div class="fsum st-'+(cnt.susp?'susp':cnt.limite?'limite':cnt.aviso?'aviso':'ok')+'"><div class="big"><b>'+num(tf)+' h</b><span>faltadas de '+num(tmax)+' h permitidas · '+num(ttot? tf/ttot*100 : 0)+' % del total</span></div><div class="fbar"><i style="width:'+Math.round(Math.min(1, tmax? tf/tmax : 0)*100)+'%"></i></div>'
+  return '<div class="fsum st-'+(cnt.susp?'susp':cnt.limite?'limite':cnt.aviso?'aviso':'ok')+'"><div class="big"><b>'+num(tf)+' h</b><span>faltadas de '+num(tmax)+' h permitidas · '+num(ttot? tf/ttot*100 : 0)+' % del total</span></div><div class="fbar"><i style="width:'+Math.round(Math.min(1, tmax? tf/tmax : 0)*100)+'%"></i></div>'
    + '<div class="stchips">'+["ok","aviso","limite","susp"].filter(s=>cnt[s]).map(s=>'<span class="stchip st-'+s+'">'+STL[s]+': '+cnt[s]+' asignatura'+(cnt[s]>1?'s':'')+'</span>').join("")+'</div>'
    + (risk.length ? '<p class="fnote">Más cerca del límite: '+risk.map(x=>'<b>'+x[0]+'</b> '+Math.round(x[1].use*100)+' %').join(" · ")+'</p>' : '')+'</div>';
+}
+function viewFaltas(){
+  const F = faltas();
+  let h = '<button class="back" data-go="#/asig/TUT">← Tutoría</button><div class="thead"><h1>Faltas de asistencia</h1><span>Límite: 20 % de las horas de cada asignatura</span></div>';
+  h += fsumHtml(F);
   h += '<p class="fnote">Toca una asignatura para apuntar o quitar horas. Se guarda solo, en tu cuenta.</p>';
   h += '<div class="flist">'+FALTAS_ORDER.map(c=>faltaRow(c, F[c])).join("")+'</div>';
   return h;
@@ -677,16 +683,37 @@ document.addEventListener("change", e=>{
   if (e.target.matches("[data-ftot]")){ const v = parseNum(e.target.value); if (!v){ toast("Las horas totales deben ser mayores que 0."); refreshRow(c); return; } saveFalta(c, {tot:v}); refreshRow(c); }
 });
 function refreshRow(c){
-  // rebuild the page but keep this row open and in place; the bars glide from their old width to the new one
-  const bars = sel => [...document.querySelectorAll(sel)].map(i=>i.style.width);
-  const oldRow = bars('[data-f="'+c+'"] .fbar i'), oldSum = bars('.fsum .fbar i');
-  const y = window.scrollY; render();
-  const row = document.querySelector('[data-f="'+c+'"]'); if (row){ row.classList.add("noanim"); row.open = true; }
-  window.scrollTo(0, y);
-  const glide = (sel, olds)=>document.querySelectorAll(sel).forEach((i,k)=>{ const to = i.style.width; if (olds[k] === undefined || olds[k] === to) return; i.style.width = olds[k]; requestAnimationFrame(()=>requestAnimationFrame(()=>{ i.style.width = to; })); });
-  glide('[data-f="'+c+'"] .fbar i', oldRow); glide('.fsum .fbar i', oldSum);
-  const num = document.querySelector('[data-f="'+c+'"] .step input'); if (num){ num.classList.remove("bump"); void num.offsetWidth; num.classList.add("bump"); }
+  // update only this subject and the summary in place: nothing else closes or moves, the bars glide
+  const row = document.querySelector('[data-f="'+c+'"]'); if (!row){ render(); return; }
+  const r = faltas()[c], k = calc(r);
+  row.querySelector(".fhrs").innerHTML = num(r.f)+' h <small>/ '+num(k.max)+'</small>';
+  const meter = row.querySelector(".fmeter"); meter.className = "fmeter st-"+k.st;
+  meter.querySelector(".fbar i").style.width = Math.round(k.use*100)+"%";
+  const chip = meter.querySelector(".stchip"); chip.className = "stchip st-"+k.st; chip.textContent = STL[k.st];
+  const inp = row.querySelector("[data-fin]"); if (document.activeElement !== inp) inp.value = num(r.f);
+  const tot = row.querySelector("[data-ftot]"); if (document.activeElement !== tot) tot.value = num(r.tot);
+  const kv = row.querySelectorAll(".kv b"); kv[0].textContent = num(k.max)+" h"; kv[1].textContent = num(Math.max(0,k.rest))+" h"; kv[2].textContent = num(k.pct*100)+" %";
+  inp.classList.remove("bump"); void inp.offsetWidth; inp.classList.add("bump");
+  const old = document.querySelector(".fsum");
+  if (old){
+    const w0 = old.querySelector(".fbar i").style.width;
+    const tmp = document.createElement("div"); tmp.innerHTML = fsumHtml(faltas()); const fresh = tmp.firstChild;
+    const w1 = fresh.querySelector(".fbar i").style.width; fresh.querySelector(".fbar i").style.width = w0;
+    old.replaceWith(fresh);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ fresh.querySelector(".fbar i").style.width = w1; }));
+  }
 }
+/* absences: only one subject open at a time, and the one you tap stays where it is on screen */
+document.addEventListener("click", e=>{
+  const sm = e.target.closest("details.fr2 > summary"); if (!sm) return;
+  const d = sm.parentElement; if (d.open) return;          // closing: nothing to compensate
+  const before = sm.getBoundingClientRect().top;
+  requestAnimationFrame(()=>{
+    document.querySelectorAll("details.fr2[open]").forEach(o=>{ if (o !== d) o.open = false; });
+    const after = sm.getBoundingClientRect().top;
+    if (Math.abs(after - before) > 1) window.scrollBy(0, after - before);
+  });
+}, true);
 render();
 </script>
 <script>
@@ -716,6 +743,18 @@ render();
       reg.addEventListener("updatefound", function () { watch(reg.installing); });
       // look for a new version now and every time the app comes back to the screen
       reg.update().catch(function () {});
+      // manual check from the account menu
+      window.clareaCheckUpdate = function (say) {
+        if (reg.waiting) { banner(reg.waiting); return; }
+        say("Buscando actualizaciones…");
+        reg.update().then(function () {
+          setTimeout(function () {
+            if (reg.waiting) banner(reg.waiting);
+            else if (reg.installing) say("Descargando la versión nueva…");
+            else say("Ya tienes la última versión.");
+          }, 1500);
+        }).catch(function () { say("Sin conexión: no se puede comprobar ahora."); });
+      };
       document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") reg.update().catch(function () {}); });
     }).catch(function () {});
   });
