@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<script>window.CLAREA_VERSION = "20261111233144";</script>
+<script>window.CLAREA_VERSION = "20261111233352";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -600,7 +600,7 @@ function viewTimetable(){
 }
 function faltaRow(c, r){
   const k = calc(r), s = SUBJ[c];
-  return '<details class="fr2" name="faltas" data-f="'+c+'" style="'+sv(c)+'"><summary><span class="fcode">'+c+'</span><span class="fname">'+esc(s.n)+'</span><span class="fhrs">'+num(r.f)+' h <small>/ '+num(k.max)+'</small></span><span class="fmeter st-'+k.st+'"><span class="fbar"><i style="width:'+Math.round(k.use*100)+'%"></i></span>'+stChip(k.st)+'</span></summary>'
+  return '<details class="fr2" data-f="'+c+'" style="'+sv(c)+'"><summary><span class="fcode">'+c+'</span><span class="fname">'+esc(s.n)+'</span><span class="fhrs">'+num(r.f)+' h <small>/ '+num(k.max)+'</small></span><span class="fmeter st-'+k.st+'"><span class="fbar"><i style="width:'+Math.round(k.use*100)+'%"></i></span>'+stChip(k.st)+'</span></summary>'
    + '<div class="fbody"><div class="step"><button type="button" data-fadd="-0.5" aria-label="Quitar media hora">−</button><label><small>Horas faltadas</small><input type="text" inputmode="decimal" value="'+num(r.f)+'" data-fin aria-label="Horas faltadas de '+c+'"></label><button type="button" data-fadd="0.5" aria-label="Añadir media hora">+</button></div>'
    + '<div class="kv"><div><small>Máximo (20 %)</small><b>'+num(k.max)+' h</b></div><div><small>Te quedan</small><b>'+num(Math.max(0,k.rest))+' h</b></div><div><small>% faltas</small><b>'+num(k.pct*100)+' %</b></div></div>'
    + '<label class="ftot">Horas totales de la asignatura <input type="text" inputmode="decimal" value="'+num(r.tot)+'" data-ftot></label></div></details>';
@@ -718,16 +718,42 @@ function refreshRow(c){
     requestAnimationFrame(()=>requestAnimationFrame(()=>{ fresh.querySelector(".fbar i").style.width = w1; }));
   }
 }
-/* absences: only one subject open at a time, and the one you tap stays where it is on screen */
+/* absences: one subject open at a time; the box grows and shrinks smoothly, and the one you tap stays where it is */
+const noMotion = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+const EASE = "cubic-bezier(.2,.8,.2,1)";
+function closedHeight(d){ const s = d.querySelector("summary"); return s.offsetHeight + (d.offsetHeight - d.clientHeight); }
+function grow(d){
+  if (d._anim) d._anim.cancel();
+  const from = d.offsetHeight; d.open = true; const to = d.offsetHeight;
+  if (noMotion() || !d.animate) return;
+  d.style.overflow = "hidden";
+  d._anim = d.animate({height:[from+"px", to+"px"]}, {duration:300, easing:EASE});
+  d._anim.onfinish = d._anim.oncancel = ()=>{ d.style.overflow = ""; d._anim = null; };
+}
+function shrink(d){
+  if (d._anim) d._anim.cancel();
+  if (noMotion() || !d.animate){ d.open = false; return; }
+  const from = d.offsetHeight, to = closedHeight(d);
+  d.style.overflow = "hidden";
+  d._anim = d.animate({height:[from+"px", to+"px"]}, {duration:240, easing:EASE});
+  d._anim.onfinish = ()=>{ d.open = false; d.style.overflow = ""; d._anim = null; };
+  d._anim.oncancel = ()=>{ d.style.overflow = ""; d._anim = null; };
+}
 document.addEventListener("click", e=>{
   const sm = e.target.closest("details.fr2 > summary"); if (!sm) return;
-  const d = sm.parentElement; if (d.open) return;          // closing: nothing to compensate
+  e.preventDefault();
+  const d = sm.parentElement;
+  if (d.open && !d._anim){ shrink(d); return; }
   const before = sm.getBoundingClientRect().top;
-  requestAnimationFrame(()=>{
-    document.querySelectorAll("details.fr2[open]").forEach(o=>{ if (o !== d) o.open = false; });
-    const after = sm.getBoundingClientRect().top;
-    if (Math.abs(after - before) > 1) window.scrollBy(0, after - before);
+  document.querySelectorAll("details.fr2[open]").forEach(o=>{
+    if (o === d) return;
+    // a box above closes at once (so the tapped one doesn't slide away); one below folds smoothly
+    if (o.compareDocumentPosition(d) & Node.DOCUMENT_POSITION_FOLLOWING){ if (o._anim) o._anim.cancel(); o.open = false; }
+    else shrink(o);
   });
+  const after = sm.getBoundingClientRect().top;
+  if (Math.abs(after - before) > 1) window.scrollBy(0, after - before);
+  grow(d);
 }, true);
 render();
 </script>
