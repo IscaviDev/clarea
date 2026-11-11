@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<script>window.CLAREA_VERSION = "20261111234620";</script>
+<script>window.CLAREA_VERSION = "20261111235005";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -738,14 +738,15 @@ function reveal(d, fullHeight, ms){
   const step = now => { const t = Math.min(1, (now - t0) / ms); window.scrollTo(0, y0 + delta * ease(t)); if (t < 1) requestAnimationFrame(step); };
   requestAnimationFrame(step);
 }
-function grow(d){
+function grow(d, withReveal = true){
   if (d._anim) d._anim.cancel();
   const from = d.offsetHeight; d.open = true; const to = d.offsetHeight;
-  if (noMotion() || !d.animate){ reveal(d, to, 0); return; }
+  if (noMotion() || !d.animate){ if (withReveal) reveal(d, to, 0); return to; }
   d.style.overflow = "hidden";
   d._anim = d.animate({height:[from+"px", to+"px"]}, {duration:300, easing:EASE});
   d._anim.onfinish = d._anim.oncancel = ()=>{ d.style.overflow = ""; d._anim = null; };
-  reveal(d, to, 300);
+  if (withReveal) reveal(d, to, 300);
+  return to;
 }
 function shrink(d){
   if (d._anim) d._anim.cancel();
@@ -761,16 +762,32 @@ document.addEventListener("click", e=>{
   e.preventDefault();
   const d = sm.parentElement;
   if (d.open && !d._anim){ shrink(d); return; }
-  const before = sm.getBoundingClientRect().top;
+  const above = [];
   document.querySelectorAll("details.fr2[open]").forEach(o=>{
     if (o === d) return;
-    // a box above closes at once (so the tapped one doesn't slide away); one below folds smoothly
-    if (o.compareDocumentPosition(d) & Node.DOCUMENT_POSITION_FOLLOWING){ if (o._anim) o._anim.cancel(); o.open = false; }
-    else shrink(o);
+    if (o._anim) o._anim.cancel();
+    if (o.compareDocumentPosition(d) & Node.DOCUMENT_POSITION_FOLLOWING) above.push(o);   // open box above the tapped one
+    else shrink(o);                                                                      // below: folds on its own, nothing moves
   });
-  const after = sm.getBoundingClientRect().top;
-  if (Math.abs(after - before) > 1) window.scrollBy(0, after - before);
-  grow(d);
+  const full = grow(d, false);
+  // boxes above fold smoothly while the page scrolls up by the same amount, so the tapped one stays under the finger;
+  // if the tapped box would end below the screen, the same movement also scrolls it into view
+  const parts = above.map(o=>({o, from:o.offsetHeight, to:closedHeight(o)}));
+  const lost = parts.reduce((s,p)=>s + p.from - p.to, 0);
+  const top = sm.getBoundingClientRect().top, bar = (document.querySelector(".cbar") || {offsetHeight:0}).offsetHeight;
+  const show = Math.max(0, Math.min(top + full + 12 - window.innerHeight, top - bar - 12));
+  const y0 = window.scrollY, shift = show - lost;
+  const finish = ()=>parts.forEach(p=>{ p.o.open = false; p.o.style.height = ""; p.o.style.overflow = ""; });
+  if (noMotion()){ finish(); window.scrollTo(0, Math.max(0, y0 + shift)); return; }
+  parts.forEach(p=>{ p.o.style.overflow = "hidden"; p.o.style.height = p.from + "px"; });
+  const t0 = performance.now(), ms = 300, ease = t => 1 - Math.pow(1 - t, 3);
+  const step = now => {
+    const t = Math.min(1, (now - t0) / ms), k = ease(t);
+    parts.forEach(p=>{ p.o.style.height = (p.from + (p.to - p.from) * k) + "px"; });
+    window.scrollTo(0, Math.max(0, y0 + shift * k));
+    if (t < 1) requestAnimationFrame(step); else finish();
+  };
+  requestAnimationFrame(step);
 }, true);
 render();
 </script>
