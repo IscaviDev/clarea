@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<script>window.CLAREA_VERSION = "20261111233844";</script>
+<script>window.CLAREA_VERSION = "20261111234620";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -725,13 +725,27 @@ function refreshRow(c){
 const noMotion = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 const EASE = "cubic-bezier(.2,.8,.2,1)";
 function closedHeight(d){ const s = d.querySelector("summary"); return s.offsetHeight + (d.offsetHeight - d.clientHeight); }
+// if the opened box would end below the screen, scroll down at the same pace as it grows
+// (never so far that the tapped title goes under the top bar)
+function reveal(d, fullHeight, ms){
+  const top = d.getBoundingClientRect().top, bar = (document.querySelector(".cbar") || {offsetHeight:0}).offsetHeight;
+  const need = top + fullHeight + 12 - window.innerHeight;
+  const room = top - bar - 12;
+  const delta = Math.min(need, room);
+  if (delta <= 0) return;
+  if (!ms){ window.scrollBy(0, delta); return; }
+  const y0 = window.scrollY, t0 = performance.now(), ease = t => 1 - Math.pow(1 - t, 3);
+  const step = now => { const t = Math.min(1, (now - t0) / ms); window.scrollTo(0, y0 + delta * ease(t)); if (t < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
 function grow(d){
   if (d._anim) d._anim.cancel();
   const from = d.offsetHeight; d.open = true; const to = d.offsetHeight;
-  if (noMotion() || !d.animate) return;
+  if (noMotion() || !d.animate){ reveal(d, to, 0); return; }
   d.style.overflow = "hidden";
   d._anim = d.animate({height:[from+"px", to+"px"]}, {duration:300, easing:EASE});
   d._anim.onfinish = d._anim.oncancel = ()=>{ d.style.overflow = ""; d._anim = null; };
+  reveal(d, to, 300);
 }
 function shrink(d){
   if (d._anim) d._anim.cancel();
