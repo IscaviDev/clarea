@@ -110,7 +110,8 @@ h1,h2{margin:0;line-height:1.15;text-wrap:balance}
 .tt .cl{border:0;border-radius:8px;background:var(--sbg);color:var(--sfg);padding:5px 4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;text-align:center;cursor:pointer;min-width:0;overflow:hidden;position:relative}
 .tt .cl b{font-size:13px;font-weight:800;line-height:1.1}
 .tt .cl span{font-size:10.5px;font-weight:600;line-height:1.15;opacity:.9;overflow-wrap:break-word}
-.tt .cl small{font-size:9.5px;opacity:.75}
+.tt .cl small{font-size:9.5px;font-weight:600;opacity:.75;line-height:1.1;margin-top:1px}
+@media (min-width:600px){.tt .cl small{font-size:11px}}
 .tt .cl.now{box-shadow:0 0 0 3px var(--clarea-orange)}
 .tt .cl.now::after{content:"ahora";position:absolute;top:2px;right:3px;font-size:8.5px;font-weight:800;background:var(--clarea-orange);color:#fff;border-radius:4px;padding:0 3px}
 .tt .fr{border-radius:8px;background:var(--sunk);opacity:.55}
@@ -491,7 +492,7 @@ function viewTimetable(){
   CLASSES.forEach((c,ci)=>{
     const r0 = rowOf(c[1]), r1 = rowOf(c[1]+c[2]-1) + 1;
     for (let k=0;k<c[2];k++) used[c[0]+"-"+(c[1]+k)] = 1;
-    h += '<button class="cl'+(N.isNow(c[0],c[1],c[2])?' now':'')+'" style="grid-column:'+(c[0]+2)+';grid-row:'+r0+' / '+r1+';'+sv(c[3])+'" data-cls="'+ci+'"><b>'+(c[3]==="TUT"?"TUT":c[3])+'</b><span>'+esc(c[4])+'</span>'+(c[2]>1?'<small>'+esc(c[5])+'</small>':'')+'</button>';
+    h += '<button class="cl'+(N.isNow(c[0],c[1],c[2])?' now':'')+'" style="grid-column:'+(c[0]+2)+';grid-row:'+r0+' / '+r1+';'+sv(c[3])+'" data-cls="'+ci+'"><b>'+(c[3]==="TUT"?"TUT":c[3])+'</b><span>'+esc(c[4])+'</span><small>'+esc(c[5])+'</small></button>';
   });
   for (let d=0; d<5; d++) for (let sl=0; sl<6; sl++) if (!used[d+"-"+sl]) h += '<div class="fr" style="grid-column:'+(d+2)+';grid-row:'+rowOf(sl)+'"></div>';
   return h + '</div>';
