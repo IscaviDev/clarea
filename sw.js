@@ -1,6 +1,6 @@
 /* Service worker: keeps the whole study app on the device so it opens without internet.
    Cached copy first; when there is connection it refreshes the cache for next time. */
-const CACHE = "clarea-20261111221431";
+const CACHE = "clarea-20261111221809";
 const CORE = ["./", "./index.html", "./repaso-pj6.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
