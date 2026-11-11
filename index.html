@@ -169,6 +169,27 @@ details.fr2>summary::-webkit-details-marker{display:none}
 .ftot{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
 .ftot input{width:72px;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:5px 8px;font:inherit;font-size:16px;color:var(--fg)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ---------- screen transitions + small motion ---------- */
+.pg{display:flex;flex-direction:column;gap:16px;min-width:0}
+@keyframes pg-in{from{opacity:0;transform:translateX(var(--dx,22px))}to{opacity:1;transform:none}}
+@keyframes it-in{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes sh-bg{from{opacity:0}to{opacity:1}}
+@keyframes sh-up{from{transform:translateY(100%)}to{transform:none}}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion: no-preference){
+  .pg.enter{animation:pg-in .3s cubic-bezier(.2,.8,.2,1) both}
+  .pg.enter.back{--dx:-22px}
+  .pg.enter .scard,.pg.enter .tdi,.pg.enter .lcard,.pg.enter .tt .cl,.pg.enter .tt .fr,.pg.enter .fr2{animation:it-in .38s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 28ms + 60ms)}
+  .sheetbg{animation:sh-bg .22s ease both}
+  .sheetbg .sheet{animation:sh-up .3s cubic-bezier(.2,.8,.2,1) both}
+  .sheetbg.closing{animation:sh-bg .22s ease reverse both}
+  .sheetbg.closing .sheet{animation:sh-up .22s ease-in reverse both}
+  .fbar i{transition:width .45s cubic-bezier(.2,.8,.2,1)}
+  .step input.bump{animation:bump .3s ease}
+  .stchip{transition:background-color .3s ease,color .3s ease}
+}
+.noanim>:not(summary){animation:none!important}
 </style>
 <style>
 /* ---------- login + account bar (offline app only) ---------- */
@@ -202,6 +223,37 @@ html,body{margin:0}
 .umenu small{display:block;font-size:12px;color:var(--muted)}
 .umenu hr{border:0;border-top:1px solid var(--line);margin:4px 0}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:120;background:var(--fg);color:var(--bg);border-radius:10px;padding:10px 16px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:90vw}
+
+/* ---------- "new version" banner ---------- */
+.updbar{position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:110;max-width:520px;margin:0 auto;display:flex;align-items:center;gap:10px;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-left:5px solid #1f5fbf;border-radius:14px;padding:12px 10px 12px 14px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.updbar>div{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
+.updbar b{font-size:14.5px}
+.updbar span{font-size:12.5px;color:var(--muted)}
+.updgo{flex:none;border:0;background:#1f5fbf;color:#fff;border-radius:10px;padding:10px 14px;font-weight:700;font-size:14px;cursor:pointer}
+.updno{flex:none;border:0;background:none;color:var(--muted);font-size:16px;width:32px;height:32px;border-radius:8px;cursor:pointer}
+@keyframes upd-in{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: no-preference){.updbar{animation:upd-in .32s cubic-bezier(.2,.8,.2,1) both}.updbar.closing{animation:upd-in .2s ease reverse both}}
+
+/* ---------- motion shared by every page (off when the phone asks for reduced motion) ---------- */
+@keyframes cl-fade{from{opacity:0}to{opacity:1}}
+@keyframes cl-up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes cl-pop{from{opacity:0;transform:translateY(-6px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes cl-toast{from{opacity:0;transform:translate(-50%,14px)}to{opacity:1;transform:translate(-50%,0)}}
+@media (prefers-reduced-motion: no-preference){
+  /* press feedback on anything tappable */
+  button,.lcard,.scard,a.rback,a.clogo{transition:transform .14s ease,box-shadow .2s ease,background-color .2s ease,border-color .2s ease,color .2s ease,opacity .2s ease}
+  button:not([disabled]):active,.lcard:active,.scard:active{transform:scale(.97)}
+  /* folded sections slide their content in when opened */
+  details[open]>:not(summary){animation:cl-up .24s cubic-bezier(.2,.8,.2,1) both}
+  details>summary::after{transition:transform .2s ease}
+  .authwrap{animation:cl-fade .25s ease both}
+  .authcard{animation:cl-up .35s cubic-bezier(.2,.8,.2,1) both}
+  .authwrap.closing{animation:cl-fade .22s ease reverse both}
+  .umenu{animation:cl-pop .18s cubic-bezier(.2,.8,.2,1) both;transform-origin:top right}
+  .toast{animation:cl-toast .25s cubic-bezier(.2,.8,.2,1) both}
+  .toast.closing{animation:cl-toast .2s ease reverse both}
+  .theme-anim,.theme-anim *,.theme-anim *::before,.theme-anim *::after{transition:background-color .35s ease,color .35s ease,border-color .35s ease,fill .35s ease,stroke .35s ease!important}
+}
 </style>
 <script>
 /* ---------- offline accounts: everything stays in this device ---------- */
@@ -225,7 +277,9 @@ html,body{margin:0}
   applyTheme(lsGet(TH));
   window.clareaToggleTheme = function(){
     var dark = document.documentElement.getAttribute("data-theme") ? document.documentElement.getAttribute("data-theme") === "dark" : !!(window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
-    var t = dark ? "light" : "dark"; lsSet(TH, t); applyTheme(t);
+    var t = dark ? "light" : "dark"; lsSet(TH, t);
+    var root = document.documentElement; root.classList.add("theme-anim"); applyTheme(t);
+    clearTimeout(window.__thT); window.__thT = setTimeout(function(){ root.classList.remove("theme-anim"); }, 450);
   };
   if (window.matchMedia) try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function(){ applyTheme(lsGet(TH)); }); } catch(e){}
   var ses = lsGet(SES);
@@ -245,7 +299,7 @@ html,body{margin:0}
   function newSalt(){ var a = new Uint8Array(16); (window.crypto || {}).getRandomValues ? crypto.getRandomValues(a) : a.forEach(function(_, i){ a[i] = Math.random() * 256; }); return hex(a); }
   function el(html){ var d = document.createElement("div"); d.innerHTML = html.trim(); return d.firstChild; }
   function escT(s){ return String(s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
-  function toast(msg){ var t = el('<div class="toast" role="status"></div>'); t.textContent = msg; document.body.appendChild(t); setTimeout(function(){ t.remove(); }, 3200); }
+  function toast(msg){ var t = el('<div class="toast" role="status"></div>'); t.textContent = msg; document.body.appendChild(t); setTimeout(function(){ t.classList.add("closing"); setTimeout(function(){ t.remove(); }, 220); }, 3000); }
   var LOGO = '<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="8" y="4" width="22" height="6" rx="3" fill="var(--clarea-blue,#1f5fbf)"/><rect x="2" y="14" width="14" height="6" rx="3" fill="var(--clarea-blue,#1f5fbf)"/><rect x="20" y="14" width="6" height="6" rx="1.5" fill="var(--clarea-orange,#b4561b)"/><rect x="8" y="24" width="22" height="6" rx="3" fill="var(--clarea-blue,#1f5fbf)"/></svg>';
 
   /* ----- login screen ----- */
@@ -304,7 +358,7 @@ html,body{margin:0}
   }
   function enter(user, w, isNew){
     lsSet(SES, user); window.PJ6USER = user;
-    w.remove(); addBar();
+    w.classList.add("closing"); setTimeout(function(){ w.remove(); }, 220); addBar();
     if (typeof renderExamTab === "function") renderExamTab();
     if (typeof window.clareaRefresh === "function") window.clareaRefresh();
     toast(isNew ? "Cuenta creada. ¡A estudiar, " + user + "!" : "Hola de nuevo, " + user + ".");
@@ -548,6 +602,8 @@ function viewFaltas(){
 }
 
 /* ===================== router ===================== */
+let lastRoute = null;
+const depth = r => r.startsWith("asig/") ? 1 : (r === "horario" || r === "faltas") ? 2 : 0;
 function render(){
   if (!window.PJ6USER){ $("#app").innerHTML = ""; return; }
   const r = location.hash.replace(/^#\/?/, "");
@@ -556,7 +612,11 @@ function render(){
   else if (r === "horario") h = viewTimetable();
   else if (r === "faltas") h = viewFaltas();
   else h = viewHome();
-  $("#app").innerHTML = h;
+  // a new screen slides in (from the right going forward, from the left going back); edits on the same screen don't move
+  const isNew = r !== lastRoute, back = lastRoute !== null && depth(r) < depth(lastRoute);
+  $("#app").innerHTML = '<div class="pg'+(isNew ? ' enter'+(back ? ' back' : '') : '')+'">'+h+'</div>';
+  lastRoute = r;
+  if (isNew) [".scard", ".tdi", ".lcard", ".tt .cl", ".tt .fr", ".fr2"].forEach(sel=>document.querySelectorAll("#app "+sel).forEach((el,i)=>el.style.setProperty("--i", Math.min(i, 16))));
 }
 window.clareaRefresh = render;
 window.addEventListener("hashchange", ()=>{ render(); window.scrollTo(0,0); });
@@ -571,10 +631,11 @@ function openClass(ci){
         + '<div class="row2"><button class="btn" data-sadd="'+code+'" data-h="'+c[2]+'">+ Apuntar falta ('+c[2]+' h)</button><button class="btn2" data-close>Cerrar</button></div>'
         : '<button class="btn2" data-close>Cerrar</button>')
    + '</div>';
+  const close = ()=>{ bg.classList.add("closing"); setTimeout(()=>bg.remove(), 230); };
   bg.addEventListener("click", e=>{
-    if (e.target === bg || e.target.closest("[data-close]")) { bg.remove(); return; }
+    if (e.target === bg || e.target.closest("[data-close]")) { close(); return; }
     const a = e.target.closest("[data-sadd]");
-    if (a){ const cur = faltas()[a.dataset.sadd]; saveFalta(a.dataset.sadd, {f: Math.round((cur.f + +a.dataset.h)*2)/2}); bg.remove(); render(); toast("Apuntada "+a.dataset.h+" h de falta en "+a.dataset.sadd+"."); }
+    if (a){ const cur = faltas()[a.dataset.sadd]; saveFalta(a.dataset.sadd, {f: Math.round((cur.f + +a.dataset.h)*2)/2}); close(); render(); toast("Apuntada "+a.dataset.h+" h de falta en "+a.dataset.sadd+"."); }
   });
   document.body.appendChild(bg);
 }
@@ -616,15 +677,49 @@ document.addEventListener("change", e=>{
   if (e.target.matches("[data-ftot]")){ const v = parseNum(e.target.value); if (!v){ toast("Las horas totales deben ser mayores que 0."); refreshRow(c); return; } saveFalta(c, {tot:v}); refreshRow(c); }
 });
 function refreshRow(c){
-  // rebuild the page but keep this row open and in place
-  const y = window.scrollY; render(); const row = document.querySelector('[data-f="'+c+'"]'); if (row) row.open = true; window.scrollTo(0, y);
+  // rebuild the page but keep this row open and in place; the bars glide from their old width to the new one
+  const bars = sel => [...document.querySelectorAll(sel)].map(i=>i.style.width);
+  const oldRow = bars('[data-f="'+c+'"] .fbar i'), oldSum = bars('.fsum .fbar i');
+  const y = window.scrollY; render();
+  const row = document.querySelector('[data-f="'+c+'"]'); if (row){ row.classList.add("noanim"); row.open = true; }
+  window.scrollTo(0, y);
+  const glide = (sel, olds)=>document.querySelectorAll(sel).forEach((i,k)=>{ const to = i.style.width; if (olds[k] === undefined || olds[k] === to) return; i.style.width = olds[k]; requestAnimationFrame(()=>requestAnimationFrame(()=>{ i.style.width = to; })); });
+  glide('[data-f="'+c+'"] .fbar i', oldRow); glide('.fsum .fbar i', oldSum);
+  const num = document.querySelector('[data-f="'+c+'"] .step input'); if (num){ num.classList.remove("bump"); void num.offsetWidth; num.classList.add("bump"); }
 }
 render();
 </script>
 <script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", function () { navigator.serviceWorker.register("./sw.js").catch(function () {}); });
-}
+/* offline cache + "Actualizar" banner when a new version has been downloaded */
+(function () {
+  if (!("serviceWorker" in navigator)) return;
+  var reloading = false, shown = false;
+  function banner(worker) {
+    if (shown || !worker) return; shown = true;
+    var b = document.createElement("div");
+    b.className = "updbar"; b.setAttribute("role", "status");
+    b.innerHTML = '<div><b>Hay una versión nueva de Clarea</b><span>Toca «Actualizar» para usarla ahora.</span></div><button type="button" class="updgo">Actualizar</button><button type="button" class="updno" aria-label="Ahora no">✕</button>';
+    document.body.appendChild(b);
+    b.querySelector(".updgo").addEventListener("click", function () {
+      b.querySelector(".updgo").textContent = "Actualizando…";
+      worker.postMessage({type: "SKIP_WAITING"});
+      setTimeout(function () { if (!reloading) location.reload(); }, 3000);
+    });
+    b.querySelector(".updno").addEventListener("click", function () { b.classList.add("closing"); setTimeout(function () { b.remove(); shown = false; }, 220); });
+  }
+  navigator.serviceWorker.addEventListener("controllerchange", function () { if (reloading) return; reloading = true; location.reload(); });
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("./sw.js").then(function (reg) {
+      function watch(w) { if (!w) return; w.addEventListener("statechange", function () { if (w.state === "installed" && navigator.serviceWorker.controller) banner(w); }); }
+      if (reg.waiting && navigator.serviceWorker.controller) banner(reg.waiting);
+      watch(reg.installing);
+      reg.addEventListener("updatefound", function () { watch(reg.installing); });
+      // look for a new version now and every time the app comes back to the screen
+      reg.update().catch(function () {});
+      document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") reg.update().catch(function () {}); });
+    }).catch(function () {});
+  });
+})();
 </script>
 </body>
 </html>
