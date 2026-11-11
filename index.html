@@ -63,14 +63,17 @@ h1,h2{margin:0;line-height:1.15;text-wrap:balance}
 .back{align-self:flex-start;background:none;border:0;color:var(--accent-ink);font-weight:700;font-size:15px;cursor:pointer;padding:4px 0;display:flex;align-items:center;gap:6px}
 
 /* today strip */
-.today{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
-.today h2{font-size:15px;font-weight:700}
-.tdlist{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
-.tdlist::-webkit-scrollbar{display:none}
-.tdi{flex:none;border-radius:10px;padding:7px 10px;background:var(--sbg);color:var(--sfg);display:flex;flex-direction:column;gap:1px;min-width:78px;border:0;text-align:left;cursor:pointer}
+.today{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 0 10px;display:flex;flex-direction:column;gap:8px;min-width:0;overflow:hidden}
+.today h2{font-size:15px;font-weight:700;padding:0 14px;display:flex;justify-content:space-between;align-items:baseline}
+.today h2 small{font-size:12px;font-weight:600;color:var(--muted)}
+.tdlist{display:flex;gap:6px;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;scroll-snap-type:x proximity;scroll-padding:0 14px;padding:0 14px 8px;scrollbar-width:thin;scrollbar-color:var(--line) transparent;cursor:grab}
+.tdlist.drag{cursor:grabbing;scroll-snap-type:none}
+.tdlist::-webkit-scrollbar{height:5px}
+.tdlist::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+.tdi{flex:none;border-radius:10px;padding:7px 10px;background:var(--sbg);color:var(--sfg);display:flex;flex-direction:column;gap:1px;min-width:78px;border:0;text-align:left;cursor:pointer;scroll-snap-align:start}
 .tdi b{font-size:14px}.tdi small{font-size:11.5px;font-weight:600;opacity:.8}
 .tdi.now{box-shadow:0 0 0 3px var(--clarea-orange)}
-.tdempty{color:var(--muted);font-size:14px;margin:0}
+.tdempty{color:var(--muted);font-size:14px;margin:0;padding:0 14px}
 
 /* subject cards (like the lab cards) */
 .sgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
@@ -456,7 +459,7 @@ function viewHome(){
   const N = nowInfo(), F = faltas();
   const todays = CLASSES.filter(c=>c[0]===N.wd).sort((a,b)=>a[1]-b[1]);
   let h = '<div class="hello"><h1>Hola, '+esc(window.PJ6USER || "")+'</h1><p>'+(N.wd>=0 && N.wd<5 ? DAYS[N.wd] : "Fin de semana")+' · DAW-2A · aula '+ROOM+'</p></div>';
-  h += '<div class="today"><h2>Hoy</h2>'+(todays.length
+  h += '<div class="today"><h2>Hoy'+(todays.length ? '<small>'+todays.length+' clase'+(todays.length>1?'s':'')+(todays.length>3?' · desliza →':'')+'</small>' : '')+'</h2>'+(todays.length
     ? '<div class="tdlist">'+todays.map(c=>'<button class="tdi'+(N.isNow(c[0],c[1],c[2])?' now':'')+'" style="'+sv(c[3])+'" data-cls="'+CLASSES.indexOf(c)+'"><small>'+SLOTS[c[1]][0]+'</small><b>'+c[3]+'</b><small>'+esc(c[4])+'</small></button>').join("")+'</div>'
     : '<p class="tdempty">Hoy no tienes clase.</p>')+'</div>';
   h += '<p class="sect">Asignaturas</p><div class="sgrid">'+HOME.map(c=>{
@@ -556,6 +559,28 @@ document.addEventListener("click", e=>{
   const ad = e.target.closest("[data-fadd]");
   if (ad){ const row = ad.closest("[data-f]"), c = row.dataset.f, cur = faltas()[c];
     const v = Math.max(0, Math.round((cur.f + +ad.dataset.fadd)*2)/2); saveFalta(c, {f:v}); refreshRow(c); }
+});
+/* "Hoy" strip: mouse wheel and mouse drag also scroll it sideways (touch already does) */
+document.addEventListener("wheel", e=>{
+  const l = e.target.closest(".tdlist"); if (!l || l.scrollWidth <= l.clientWidth) return;
+  if (Math.abs(e.deltaY) > Math.abs(e.deltaX)){ l.scrollLeft += e.deltaY; e.preventDefault(); }
+}, {passive:false});
+let drag = null;
+document.addEventListener("pointerdown", e=>{
+  if (e.pointerType !== "mouse") return;
+  const l = e.target.closest(".tdlist"); if (!l) return;
+  drag = {l, x: e.clientX, left: l.scrollLeft, moved: false};
+});
+document.addEventListener("pointermove", e=>{
+  if (!drag) return;
+  const dx = e.clientX - drag.x;
+  if (Math.abs(dx) > 4){ drag.moved = true; drag.l.classList.add("drag"); }
+  if (drag.moved) drag.l.scrollLeft = drag.left - dx;
+});
+document.addEventListener("pointerup", ()=>{
+  if (!drag) return;
+  const d = drag; drag = null; d.l.classList.remove("drag");
+  if (d.moved){ const stop = ev=>{ ev.stopPropagation(); ev.preventDefault(); }; document.addEventListener("click", stop, {capture:true, once:true}); setTimeout(()=>document.removeEventListener("click", stop, true), 50); }
 });
 function parseNum(v){ const x = parseFloat(String(v).replace(",", ".")); return isFinite(x) && x >= 0 ? Math.round(x*100)/100 : null; }
 document.addEventListener("change", e=>{
