@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<script>window.CLAREA_VERSION = "20261111232726";</script>
+<script>window.CLAREA_VERSION = "20261111233144";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -239,6 +239,7 @@ html,body{margin:0}
 /* ---------- motion shared by every page (off when the phone asks for reduced motion) ---------- */
 @keyframes cl-fade{from{opacity:0}to{opacity:1}}
 @keyframes cl-up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes cl-open{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
 @keyframes cl-pop{from{opacity:0;transform:translateY(-6px) scale(.97)}to{opacity:1;transform:none}}
 @keyframes cl-toast{from{opacity:0;transform:translate(-50%,14px)}to{opacity:1;transform:translate(-50%,0)}}
 @media (prefers-reduced-motion: no-preference){
@@ -246,7 +247,7 @@ html,body{margin:0}
   button,.lcard,.scard,a.rback,a.clogo{transition:transform .14s ease,box-shadow .2s ease,background-color .2s ease,border-color .2s ease,color .2s ease,opacity .2s ease}
   button:not([disabled]):active,.lcard:active,.scard:active{transform:scale(.97)}
   /* folded sections slide their content in when opened */
-  details[open]>:not(summary){animation:cl-up .24s cubic-bezier(.2,.8,.2,1) both}
+  details[open]>.cl-open{animation:cl-open .3s cubic-bezier(.2,.8,.2,1) both}
   details>summary::after{transition:transform .2s ease}
   .authwrap{animation:cl-fade .25s ease both}
   .authcard{animation:cl-up .35s cubic-bezier(.2,.8,.2,1) both}
@@ -284,6 +285,17 @@ html,body{margin:0}
     clearTimeout(window.__thT); window.__thT = setTimeout(function(){ root.classList.remove("theme-anim"); }, 450);
   };
   if (window.matchMedia) try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function(){ applyTheme(lsGet(TH)); }); } catch(e){}
+  /* folded sections: restart the "slide in" animation every time one opens.
+     Safari keeps the hidden content rendered, so a pure-CSS animation would only run once, unseen. */
+  document.addEventListener("toggle", function(e){
+    var d = e.target;
+    if (!d || d.tagName !== "DETAILS" || !d.open) return;
+    if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    for (var i = 0; i < d.children.length; i++){
+      var ch = d.children[i]; if (ch.tagName === "SUMMARY") continue;
+      ch.classList.remove("cl-open"); void ch.offsetWidth; ch.classList.add("cl-open");
+    }
+  }, true);
   var ses = lsGet(SES);
   if (ses && (lsGet(ACC) || {})[ses]) window.PJ6USER = ses;
 
