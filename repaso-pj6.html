@@ -8,7 +8,7 @@
 <meta property="og:title" content="Clarea">
 <meta property="og:description" content="Asignaturas, horario, faltas y repasos de tus proyectos.">
 <meta property="og:url" content="https://clarea.dev/">
-<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112030601">
+<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112030956">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Logo de Clarea">
@@ -24,7 +24,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
-<script>window.CLAREA_VERSION = "20261112030601";</script>
+<script>window.CLAREA_VERSION = "20261112030956";</script>
 <title>PJ6 · Repaso · Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -215,6 +215,26 @@ html,body{margin:0}
 .deli{width:44px;height:44px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;background:rgba(192,57,43,.14);color:#d9534f}
 .deli svg{width:24px;height:24px}
 .btn.btndel{background:#c0392b}
+
+.acav{width:44px;height:44px;border-radius:50%;flex:none;background:var(--accent);color:#fff;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center}
+.acrows{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.acrows>div{display:flex;flex-direction:column;gap:2px;padding:10px 12px;background:var(--bg)}
+.acrows>div+div{border-top:1px solid var(--line)}
+.acrows span{font-size:12px;color:var(--muted);font-weight:600}
+.acrows b{font-size:14px}
+.aclink{display:grid;grid-template-columns:1fr auto;align-items:center;gap:0 8px;text-decoration:none;color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg);font-weight:700;font-size:15px}
+.aclink small{grid-column:1;font-size:12.5px;font-weight:500;color:var(--muted)}
+.aclink span{grid-row:1/3;grid-column:2;color:var(--muted);font-size:20px}
+.acdanger{border:1px dashed rgba(192,57,43,.45);border-radius:12px}
+.acdanger>summary{list-style:none;cursor:pointer;padding:10px 12px;font-size:13.5px;font-weight:700;color:var(--muted)}
+.acdanger>summary::-webkit-details-marker{display:none}
+.acdanger>summary::after{content:" ›"}
+.acdanger[open]>summary::after{content:" ˅"}
+.acdanger>div{padding:0 12px 12px;display:flex;flex-direction:column;gap:8px}
+.acdanger p{margin:0;font-size:13px;color:var(--muted)}
+.acdel{align-self:flex-start;border:1.5px solid #c0392b;background:none;color:#d9534f;border-radius:10px;padding:8px 12px;font-weight:700;font-size:14px;cursor:pointer}
+.ghostbtn{background:var(--sunk)!important;color:var(--fg)!important}
+.btn.btndel:disabled{opacity:.45;cursor:not-allowed}
 </style>
 <script>
 /* ---------- offline accounts: everything stays in this device ---------- */
@@ -718,6 +738,27 @@ html,body{margin:0}
     setTimeout(function(){ form.pass.focus(); }, 50);
   }
 
+  /* ----- "Mi cuenta": details, privacy, and (well hidden) deleting the account ----- */
+  function openAccount(){
+    var u = window.PJ6USER, on = !!cloudGet(u), sl = syncLabel(u), rem = remembered(u);
+    var w = el('<div class="authwrap" role="dialog" aria-modal="true" aria-label="Mi cuenta"><div class="authcard">'
+      + '<div class="authlogo"><span class="acav">' + escT(u.charAt(0).toUpperCase()) + '</span><div><h1>' + escT(u) + '</h1><p>Mi cuenta</p></div></div>'
+      + '<div class="acrows">'
+      + '<div><span>Sincronización</span><b><span class="sdot ' + (on ? sl.dot : 'off') + '"></span>' + escT(on ? sl.text : 'Solo en este dispositivo') + '</b></div>'
+      + '<div><span>En este dispositivo</span><b>' + (rem ? 'Recordada: entras sin contraseña' : 'Pide la contraseña al entrar') + '</b></div>'
+      + '</div>'
+      + '<a class="aclink" href="privacidad.html">Privacidad<small>Qué datos se guardan, dónde y tus derechos</small><span>›</span></a>'
+      + '<details class="acdanger"><summary>Zona peligrosa</summary><div><p>Eliminar la cuenta borra para siempre todos tus datos, de la nube y de este dispositivo.</p><button type="button" class="acdel" data-acdel>Eliminar mi cuenta…</button></div></details>'
+      + '<button type="button" class="btn ghostbtn" data-acclose>Cerrar</button>'
+      + '</div></div>');
+    document.body.appendChild(w);
+    function close(){ w.classList.add("closing"); setTimeout(function(){ w.remove(); }, 220); }
+    w.addEventListener("click", function(e){
+      if (e.target === w || e.target.closest("[data-acclose]")){ close(); return; }
+      if (e.target.closest("[data-acdel]")){ close(); setTimeout(openDelete, 230); }
+    });
+  }
+
   /* ----- delete the account: everything in the cloud, then this device ----- */
   function wipeLocal(u){
     var pre = "u/" + u + "/";
@@ -742,13 +783,16 @@ html,body{margin:0}
       + '<div class="authlogo"><span class="deli"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg></span><div><h1>Eliminar mi cuenta</h1><p>Cuenta «' + escT(u) + '»</p></div></div>'
       + '<p class="authtxt">Se borrará <b>para siempre</b>: tu cuenta, tus faltas, tu calendario, tus proyectos y tus exámenes, de la nube y de este dispositivo. <b>No se puede deshacer.</b></p>'
       + '<form class="authform" novalidate><input type="text" name="user" autocomplete="username" value="' + escT(u) + '" hidden>'
-      + '<label>Escribe tu contraseña para confirmarlo<input name="pass" type="password" autocomplete="current-password" maxlength="64"></label>'
+      + '<label>Escribe tu usuario («' + escT(u) + '») para confirmar<input name="confirm" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="20"></label>'
+      + '<label>Y tu contraseña<input name="pass" type="password" autocomplete="current-password" maxlength="64"></label>'
       + '<p class="autherr" aria-live="polite"></p><button class="btn btndel" type="submit">Eliminar mi cuenta para siempre</button>'
       + '<button type="button" class="authalt">Cancelar</button></form></div></div>');
     document.body.appendChild(w); addEyes(w);
     var form = w.querySelector("form"), err = w.querySelector(".autherr"), btn = form.querySelector(".btn");
     function close(){ w.classList.add("closing"); setTimeout(function(){ w.remove(); }, 220); }
     w.querySelector(".authalt").addEventListener("click", close);
+    function ready(){ btn.disabled = form.confirm.value.trim().toLowerCase() !== u || !form.pass.value; }
+    form.addEventListener("input", ready); ready();
     form.addEventListener("submit", function(e){
       e.preventDefault(); if (btn.disabled) return;
       var pass = form.pass.value; if (!pass){ form.pass.focus(); return; }
@@ -765,10 +809,10 @@ html,body{margin:0}
         wipeLocal(u); toast("Cuenta eliminada."); setTimeout(function(){ location.href = "./"; }, 900);
       }).catch(function(x){
         err.textContent = x && x.net ? "Sin internet no se puede eliminar la cuenta de la nube. Prueba con conexión." : /INVALID|EMAIL_NOT_FOUND/.test((x && x.code) || "") ? "Contraseña incorrecta." : authMsg(x, "in");
-        btn.disabled = false; btn.textContent = "Eliminar mi cuenta para siempre"; form.pass.value = ""; form.pass.focus();
+        btn.textContent = "Eliminar mi cuenta para siempre"; form.pass.value = ""; ready(); form.pass.focus();
       });
     });
-    setTimeout(function(){ form.pass.focus(); }, 50);
+    setTimeout(function(){ form.confirm.focus(); }, 50);
   }
 
   /* ----- account bar: sync / export / import / logout ----- */
@@ -792,8 +836,7 @@ html,body{margin:0}
               : '<button type="button" role="menuitem" data-a="act">Activar sincronización<small><span class="sdot off"></span>Usa tu cuenta en todos tus dispositivos</small></button><hr>')
         + (lsGet(TH) ? '<button type="button" role="menuitem" data-a="sys">Usar el tema del sistema<small>Claro u oscuro según el dispositivo</small></button><hr>' : '')
         + '<button type="button" role="menuitem" data-a="upd">Buscar actualizaciones<small>Comprueba si hay una versión nueva de Clarea</small></button><hr>'
-        + '<button type="button" role="menuitem" data-a="priv">Privacidad<small>Qué datos se guardan y dónde</small></button>'
-        + '<button type="button" role="menuitem" data-a="del" class="udel">Eliminar mi cuenta<small>Borra todos tus datos de la nube y de aquí</small></button><hr>'
+        + '<button type="button" role="menuitem" data-a="acct">Mi cuenta<small>Datos de la cuenta y privacidad</small></button><hr>'
         + '<button type="button" role="menuitem" data-a="out">Cerrar sesión<small>' + (on ? 'Tu progreso sigue en la nube y en este dispositivo' : 'Tu progreso se queda guardado') + '</small></button>'
         + (window.CLAREA_VERSION ? '<p class="uver">Versión del ' + window.CLAREA_VERSION.replace(/^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d).*/, "$3/$2/$1 · $4:$5") + '<br>Creada por Isaac Castillo Vidal</p>' : '') + '</div>');
       bar.appendChild(menu); btn.setAttribute("aria-expanded", "true");
@@ -805,8 +848,7 @@ html,body{margin:0}
         else if (act === "exp") exportProgress();
         else if (act === "imp") importProgress();
         else if (act === "upd"){ if (window.clareaCheckUpdate) window.clareaCheckUpdate(toast); else location.reload(); }
-        else if (act === "priv") location.href = "privacidad.html";
-        else if (act === "del") openDelete();
+        else if (act === "acct") openAccount();
         else if (act === "sys"){ try { localStorage.removeItem(TH); } catch(e){} applyTheme(null); toast("Tema automático: sigue el del dispositivo."); }
         else {
           // upload pending changes first (if there is internet), then forget this device's cloud session
