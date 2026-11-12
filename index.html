@@ -8,7 +8,7 @@
 <meta property="og:title" content="Clarea">
 <meta property="og:description" content="Asignaturas, horario, faltas y repasos de tus proyectos.">
 <meta property="og:url" content="https://clarea.dev/">
-<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112021937">
+<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112022126">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Logo de Clarea">
@@ -24,7 +24,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
-<script>window.CLAREA_VERSION = "20261112021937";</script>
+<script>window.CLAREA_VERSION = "20261112022126";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -310,11 +310,20 @@ details.fr2>summary::-webkit-details-marker{display:none}
 .evx{flex:none;width:34px;height:34px;border:0;border-radius:8px;background:none;color:var(--muted);cursor:pointer;font-size:15px}
 .npf select{font:inherit;font-size:16px;color:var(--fg);background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;min-width:0}
 .npf select:disabled{opacity:.55}
+.npf textarea{font:inherit;font-size:16px;color:var(--fg);background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;resize:vertical;min-height:96px}
+.npf textarea:focus{border-color:var(--accent);outline:none}
+.evn{font-size:13px;color:var(--fg);white-space:pre-wrap;margin-top:4px;padding-top:4px;border-top:1px dashed var(--line)}
 .npf select:focus{border-color:var(--accent);outline:none}
 .admbar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(180,86,27,.12);border:1px solid rgba(180,86,27,.35);border-radius:var(--r);padding:8px 10px 8px 12px;font-size:13.5px}
 .admbar button{flex:none;border:0;background:var(--clarea-orange,#b4561b);color:#fff;border-radius:9px;padding:8px 12px;font-weight:700;font-size:13px;cursor:pointer}
 @media (min-width:720px){.calday{min-height:84px}.evc{font-size:11px}}
-@media (min-width:1024px){.pg.v-cal{max-width:900px}.pg.v-cal .calday{min-height:96px}}
+.calside{display:flex;flex-direction:column;gap:16px}
+@media (min-width:1024px){
+  .pg.v-cal{display:grid;grid-template-columns:minmax(0,1fr) 340px;grid-template-areas:"back back" "head head" "cal side";gap:14px 22px;align-items:start}
+  .pg.v-cal>.back{grid-area:back}.pg.v-cal>.thead{grid-area:head}.pg.v-cal>.calbox{grid-area:cal}
+  .pg.v-cal>.calside{grid-area:side;position:sticky;top:78px}
+  .pg.v-cal .calday{min-height:92px}
+}
 @media (hover:hover) and (pointer:fine){.calday:hover{box-shadow:inset 0 0 0 1.5px var(--accent)}.evx:hover{background:var(--sunk);color:var(--fg)}.scard.calcard:hover{border-color:var(--accent)}}
 .credit{margin:10px 0 0;text-align:center;font-size:12.5px;color:var(--muted)}
 .credit b{font-weight:700;color:var(--fg)}
@@ -1417,7 +1426,7 @@ function evChip(e, big){
   return '<span class="evc ev-' + e.type + '" style="' + sv(e.subj) + '">' + (big ? '<b>' + esc(e.subj) + '</b> ' + esc(EVT_SHORT[e.type] || "") : esc(e.subj)) + '</span>';
 }
 function evRow(e){
-  return '<div class="evr" style="' + sv(e.subj) + '"><span class="evd"><b>' + fromYmd(e.date).getDate() + '</b><small>' + WD[fromYmd(e.date).getDay()] + '</small></span><span class="evt"><b>' + esc(e.name) + '</b><small>' + esc(EVT_SHORT[e.type] || "") + ' · ' + esc(e.subj) + ' · ' + esc(e.from) + '–' + esc(e.to) + '</small></span><button class="evx" data-evdel="' + esc(e.id) + '" aria-label="Borrar ' + esc(e.name) + '">✕</button></div>';
+  return '<div class="evr" style="' + sv(e.subj) + '"><span class="evd"><b>' + fromYmd(e.date).getDate() + '</b><small>' + WD[fromYmd(e.date).getDay()] + '</small></span><span class="evt"><b>' + esc(e.name) + '</b><small>' + esc(EVT_SHORT[e.type] || "") + ' · ' + esc(e.subj) + ' · ' + esc(e.from) + '–' + esc(e.to) + '</small>' + (e.notes ? '<span class="evn">' + esc(e.notes) + '</span>' : '') + '</span><button class="evx" data-evdel="' + esc(e.id) + '" aria-label="Borrar ' + esc(e.name) + '">✕</button></div>';
 }
 function viewCalendar(){
   const now = new Date();
@@ -1436,9 +1445,9 @@ function viewCalendar(){
   }
   h += '</div></div>';
   const selList = (byDay[CAL.sel] || []).sort(sortEv);
-  h += '<div class="calsec"><h2>' + (CAL.sel === today ? 'Hoy' : dayLabel(CAL.sel)) + '</h2>' + (selList.length ? selList.map(evRow).join("") : '<p class="fnote">No hay nada este día.</p>') + '</div>';
+  h += '<div class="calside"><div class="calsec"><h2>' + (CAL.sel === today ? 'Hoy' : dayLabel(CAL.sel)) + '</h2>' + (selList.length ? selList.map(evRow).join("") : '<p class="fnote">No hay nada este día.</p>') + '</div>';
   const up = upcoming(8);
-  h += '<div class="calsec"><h2>Próximos</h2>' + (up.length ? up.map(evRow).join("") : '<p class="fnote">No tienes entregas ni exámenes apuntados. Toca «+ Nuevo evento».</p>') + '</div>';
+  h += '<div class="calsec"><h2>Próximos</h2>' + (up.length ? up.map(evRow).join("") : '<p class="fnote">No tienes entregas ni exámenes apuntados. Toca «+ Nuevo evento».</p>') + '</div></div>';
   return h;
 }
 const NE = {subj: null};
@@ -1450,6 +1459,7 @@ function viewNewEvent(){
     + '<label>Tipo<select name="etype">' + EVT_TYPES.map(t => '<option value="' + t[0] + '">' + t[1] + '</option>').join("") + '</select></label>'
     + '<label>Asignatura<select name="esubj"><option value="">Elige la asignatura…</option>' + subs.map(c => '<option value="' + c + '"' + (NE.subj === c ? ' selected' : '') + '>' + c + ' · ' + esc(SUBJ[c].n) + '</option>').join("") + '</select></label>'
     + '<label>Día y hora<select name="eslot"' + (NE.subj ? '' : ' disabled') + '>' + slotOptions(NE.subj) + '</select><small>Salen las clases que tienes de esa asignatura en las próximas semanas, según tu horario.</small></label>'
+    + '<label>Notas <small>opcional</small><textarea name="enotes" rows="4" maxlength="1000" placeholder="Ej.: temas que entran, qué hay que entregar, material…"></textarea></label>'
     + '<p class="autherr" id="everr" aria-live="polite"></p><button class="btn" type="submit">Guardar evento</button></form>';
   return h;
 }
@@ -1475,7 +1485,7 @@ document.addEventListener("submit", e => {
   if (!subj){ err.textContent = "Elige la asignatura."; f.esubj.focus(); return; }
   if (!slot){ err.textContent = "Elige el día y la hora."; return; }
   const [date, from, to] = slot.split("|");
-  const list = allEvents(); list.push({id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name, type, subj, date, from, to, group: GNAME_ID(), created: Date.now()});
+  const list = allEvents(); list.push({id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name, type, subj, date, from, to, notes: f.enotes.value.trim(), group: GNAME_ID(), created: Date.now()});
   saveEvents(list);
   CAL.y = fromYmd(date).getFullYear(); CAL.m = fromYmd(date).getMonth(); CAL.sel = date; NE.subj = null;
   go("#/calendario"); toast("Guardado: " + name + " · " + dayLabel(date) + ".");
@@ -1621,7 +1631,7 @@ function render(){
   else h = viewHome();
   // a new screen slides in (from the right going forward, from the left going back); edits on the same screen don't move
   const isNew = r !== lastRoute, back = lastRoute !== null && depth(r) < depth(lastRoute);
-  const vcls = r.startsWith("calendario") ? "v-cal" : nw ? "v-new" : r.startsWith("asig/") ? "v-asig" : r === "horario" ? "v-horario" : r === "faltas" ? "v-faltas" : "v-home";
+  const vcls = r === "calendario/nuevo" ? "v-new v-evnew" : r === "calendario" ? "v-cal" : nw ? "v-new" : r.startsWith("asig/") ? "v-asig" : r === "horario" ? "v-horario" : r === "faltas" ? "v-faltas" : "v-home";
   $("#app").innerHTML = '<div class="pg '+vcls+(isNew ? ' enter'+(back ? ' rev' : '') : '')+'">'+h+'</div>';
   lastRoute = r;
   if (isNew) [".scard", ".tdi", ".lcard", ".tt .cl", ".tt .fr", ".fr2"].forEach(sel=>document.querySelectorAll("#app "+sel).forEach((el,i)=>el.style.setProperty("--i", Math.min(i, 16))));
