@@ -1,8 +1,8 @@
-"""Serves the built Clarea (C:\\Users\\32icv\\clarea) like GitHub Pages: clean addresses fall back to 404.html."""
+"""Serves the built Clarea (C:\\Users\\32icv\\clarea-web) like GitHub Pages: clean addresses fall back to 404.html."""
 import os, sys
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 
-ROOT = sys.argv[2] if len(sys.argv) > 2 else os.environ.get("CLAREA_ROOT") or r"C:\Users\32icv\clarea"   # (on GitHub: the repo itself)
+ROOT = sys.argv[2] if len(sys.argv) > 2 else os.environ.get("CLAREA_ROOT") or r"C:\Users\32icv\clarea-web"   # (on GitHub: the repo itself)
 
 class H(SimpleHTTPRequestHandler):
     def __init__(self, *a, **k): super().__init__(*a, directory=ROOT, **k)

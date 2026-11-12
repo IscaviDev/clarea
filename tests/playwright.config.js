@@ -1,5 +1,5 @@
 // Clarea's automated checks: run them before each release with `npx playwright test` (in this folder).
-// They build nothing: they test the site already built in C:\Users\32icv\clarea (python build_clarea.py first).
+// They build nothing: they test the site already built in C:\Users\32icv\clarea-web (python build_clarea.py first).
 const { defineConfig, devices } = require("@playwright/test");
 module.exports = defineConfig({
   testDir: ".",

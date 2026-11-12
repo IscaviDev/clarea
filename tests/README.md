@@ -5,12 +5,12 @@ Abren Clarea en un navegador (tamaño iPhone) y comprueban lo principal: crear c
 ## Antes de sacar una versión
 
 ```
-cd C:\Users\32icv\estudio-examen-pj6\pwa
+cd C:\Users\32icv\Clarea\pwa
 python build_clarea.py
 cd ..\tests
 npx playwright test
 ```
 
-- Prueban la web ya construida en `C:\Users\32icv\clarea` (por eso primero `build_clarea.py`).
+- Prueban la web ya construida en `C:\Users\32icv\clarea-web` (por eso primero `build_clarea.py`).
 - No crean cuentas de verdad: usan `fbmock.py`, un sustituto local de Firebase, y `serve.py` para servir la web como GitHub Pages.
 - Si algo falla, el detalle queda en `test-results/` (con una foto de la página en ese momento).
