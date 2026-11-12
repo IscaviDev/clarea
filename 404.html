@@ -8,7 +8,7 @@
 <meta property="og:title" content="Clarea">
 <meta property="og:description" content="Asignaturas, horario, faltas y repasos de tus proyectos.">
 <meta property="og:url" content="https://clarea.dev/">
-<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112102148">
+<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112102532">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Logo de Clarea">
@@ -24,7 +24,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
-<script>window.CLAREA_VERSION = "20261112102148"; window.CLAREA_RELEASE = "1.0";</script>
+<script>window.CLAREA_VERSION = "20261112102532"; window.CLAREA_RELEASE = "1.0";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -794,9 +794,19 @@ window.CLAI = (function () {
     return list.find(m => /^gemini-[\d.]+-flash$/.test(m)) || list.find(m => /flash/.test(m)) || list[0];
   }
   async function apiErr(r, prov) {
-    let m = ""; try { const j = await r.json(); m = (j.error && (j.error.message || j.error.status)) || j.message || ""; } catch (e) {}
+    let m = "", why = ""; try { const j = await r.json(); m = (j.error && (j.error.message || j.error.status)) || j.message || ""; why = ((j.error && j.error.details) || []).map(d => d.reason || "").join(" "); } catch (e) {}
     let e;
-    if (r.status === 401 || r.status === 403) e = new Error("La clave no es válida o no tiene permiso (" + r.status + ").");
+    // Gemini says exactly what is wrong with the key: tell it in plain words, with what to do
+    const G = prov === "gemini" ? (
+      /API_KEY_INVALID/.test(why) || /API key not valid/i.test(m) ? "Google no reconoce esta clave: puede que la hayas borrado o cambiado, o que no se copiara entera. Crea una nueva en Google AI Studio (aistudio.google.com/apikey), cópiala con el botón de copiar y pégala aquí otra vez."
+      : /API_KEY_EXPIRED/.test(why) || /expired/i.test(m) ? "Esta clave ha caducado. Crea una nueva en Google AI Studio (aistudio.google.com/apikey) y pégala aquí."
+      : /HTTP_REFERRER_BLOCKED|REFERER/i.test(why + m) ? "Tu clave solo funciona en ciertas webs. En Google Cloud, en las restricciones de la clave, añade clarea.dev o quita la restricción."
+      : /SERVICE_BLOCKED/.test(why) ? "Tu clave tiene restringidas las APIs y no incluye la de Gemini («Generative Language API»). Cambia la restricción en Google Cloud o crea una clave nueva en Google AI Studio."
+      : /SERVICE_DISABLED|has not been used|is disabled/i.test(why + m) ? "La API de Gemini no está activada en el proyecto de esta clave. Lo más fácil: crea la clave desde Google AI Studio (aistudio.google.com/apikey), que la activa sola."
+      : /location is not supported/i.test(m) ? "Gemini no está disponible desde tu ubicación con esta cuenta."
+      : "") : "";
+    if (G) e = new Error(G);
+    else if (r.status === 401 || r.status === 403) e = new Error("La clave no es válida o no tiene permiso (" + r.status + ").");
     else if (r.status === 429) e = new Error("Has llegado al límite de uso de " + PROV[prov].t + ". Espera un poco o revisa tu saldo." + (m ? " (" + m + ")" : ""));
     else if (r.status === 402) e = new Error("No tienes saldo en tu cuenta de " + PROV[prov].t + ".");
     else e = new Error(PROV[prov].t + " ha respondido con un error " + r.status + (m ? ": " + m : "."));
