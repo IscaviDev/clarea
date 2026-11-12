@@ -8,7 +8,7 @@
 <meta property="og:title" content="Clarea">
 <meta property="og:description" content="Asignaturas, horario, faltas y repasos de tus proyectos.">
 <meta property="og:url" content="https://clarea.dev/">
-<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112022843">
+<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112023001">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Logo de Clarea">
@@ -24,7 +24,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
-<script>window.CLAREA_VERSION = "20261112022843";</script>
+<script>window.CLAREA_VERSION = "20261112023001";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1401,8 +1401,8 @@ function adminGroup(){ try { const g = sessionStorage.getItem("clarea-admin-grou
 function setAdminGroup(g){ try { if (g) sessionStorage.setItem("clarea-admin-group", g); else sessionStorage.removeItem("clarea-admin-group"); } catch(e){} }
 
 /* ===================== calendar ===================== */
-const EVT_TYPES = [["entrega","Entrega"],["practico","Examen práctico"],["teorico","Examen teórico"],["codigo","Examen de código"]];
-const EVT_SHORT = {entrega:"Entrega", practico:"Ex. práctico", teorico:"Ex. teórico", codigo:"Ex. código"};
+const EVT_TYPES = [["entrega","Entrega"],["practico","Examen práctico"],["teorico","Examen teórico"],["codigo","Examen de código teórico"],["codigoprac","Examen de código práctico"]];
+const EVT_SHORT = {entrega:"Entrega", practico:"Ex. práctico", teorico:"Ex. teórico", codigo:"Ex. código teórico", codigoprac:"Ex. código práctico"};
 const MONTHS = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 const WD = ["dom","lun","mar","mié","jue","vie","sáb"];
 const ICO_CAL2 = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/><circle cx="8.5" cy="14.5" r="1" fill="currentColor"/><circle cx="12" cy="14.5" r="1" fill="currentColor"/></svg>';
