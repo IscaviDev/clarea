@@ -8,7 +8,7 @@
 <meta property="og:title" content="Clarea">
 <meta property="og:description" content="Asignaturas, horario, faltas y repasos de tus proyectos.">
 <meta property="og:url" content="https://clarea.dev/">
-<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112023513">
+<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112023640">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Logo de Clarea">
@@ -24,7 +24,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
-<script>window.CLAREA_VERSION = "20261112023513";</script>
+<script>window.CLAREA_VERSION = "20261112023640";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -307,6 +307,7 @@ details.fr2>summary::-webkit-details-marker{display:none}
 .evd b{font-size:20px}.evd small{font-size:11.5px;color:var(--muted);text-transform:uppercase}
 .evt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .evt b{font-size:14.5px}.evt small{font-size:12.5px;color:var(--muted)}
+.evbtns{flex:none;display:flex;gap:2px}
 .evx{flex:none;width:34px;height:34px;border:0;border-radius:8px;background:none;color:var(--muted);cursor:pointer;font-size:15px}
 .npf select{font:inherit;font-size:16px;color:var(--fg);background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;min-width:0}
 .npf select:disabled{opacity:.55}
@@ -1438,7 +1439,7 @@ function evChip(e, big){
 }
 const evTime = e => e.type === "entrega" ? "hasta las " + e.from : e.from + "–" + e.to + (e.over ? " · en la clase de " + e.over : "");
 function evRow(e){
-  return '<div class="evr" style="' + sv(e.subj) + '"><span class="evd"><b>' + fromYmd(e.date).getDate() + '</b><small>' + WD[fromYmd(e.date).getDay()] + '</small></span><span class="evt"><b>' + esc(e.name) + '</b><small>' + esc(EVT_SHORT[e.type] || "") + ' · ' + esc(e.subj) + ' · ' + esc(evTime(e)) + '</small>' + (e.notes ? '<span class="evn">' + esc(e.notes) + '</span>' : '') + '</span><button class="evx" data-evdel="' + esc(e.id) + '" aria-label="Borrar ' + esc(e.name) + '">✕</button></div>';
+  return '<div class="evr" style="' + sv(e.subj) + '"><span class="evd"><b>' + fromYmd(e.date).getDate() + '</b><small>' + WD[fromYmd(e.date).getDay()] + '</small></span><span class="evt"><b>' + esc(e.name) + '</b><small>' + esc(EVT_SHORT[e.type] || "") + ' · ' + esc(e.subj) + ' · ' + esc(evTime(e)) + '</small>' + (e.notes ? '<span class="evn">' + esc(e.notes) + '</span>' : '') + '</span><span class="evbtns"><button class="evx" data-go="#/calendario/editar/' + esc(e.id) + '" aria-label="Editar ' + esc(e.name) + '" title="Editar">✎</button><button class="evx" data-evdel="' + esc(e.id) + '" aria-label="Borrar ' + esc(e.name) + '" title="Borrar">✕</button></span></div>';
 }
 function viewCalendar(){
   const now = new Date();
@@ -1463,18 +1464,30 @@ function viewCalendar(){
   return h;
 }
 const NE = {subj: null};
-function viewNewEvent(){
+function viewNewEvent(editId){
+  const ev = editId ? allEvents().find(e => e.id === editId) : null;
+  if (editId && !ev) return '<button class="back" data-go="#/calendario">← Calendario</button><div class="empty">Este evento ya no existe.</div>';
+  if (ev) NE.subj = ev.subj;
+  const type = ev ? ev.type : "entrega", due = type === "entrega", other = !!(ev && ev.over);
+  const cur = ev && !due ? ev.date + "|" + ev.from + "|" + ev.to + "|" + (ev.over || "") : "";
+  let slots = slotOptions(NE.subj, other);
+  if (cur){
+    // keep the current date and time even if it is no longer among the next classes
+    if (slots.indexOf('value="' + cur + '"') < 0) slots = '<option value="' + cur + '">' + dayLabel(ev.date) + ' · ' + ev.from + '–' + ev.to + (ev.over ? ' · en la clase de ' + ev.over : '') + ' (actual)</option>' + slots;
+    slots = slots.replace('value="' + cur + '"', 'value="' + cur + '" selected');
+  }
   const subs = [...new Set(CLASSES.map(c => c[3]))].filter(c => c !== "TUT" && c !== "MNT").sort((a, b) => HOME.indexOf(a) - HOME.indexOf(b));
-  let h = '<button class="back" data-go="#/calendario">← Calendario</button><div class="thead"><h1>Nuevo evento</h1><span>' + esc(GNAME) + '</span></div>';
-  h += '<form class="npf" id="evf" novalidate>'
-    + '<label>Nombre<input name="ename" maxlength="80" autocomplete="off" placeholder="Ej.: Entrega proyecto SM6"></label>'
-    + '<label>Tipo<select name="etype">' + EVT_TYPES.map(t => '<option value="' + t[0] + '">' + t[1] + '</option>').join("") + '</select></label>'
+  const today = ymd(new Date());
+  let h = '<button class="back" data-go="#/calendario">← Calendario</button><div class="thead"><h1>' + (ev ? 'Editar evento' : 'Nuevo evento') + '</h1><span>' + esc(GNAME) + '</span></div>';
+  h += '<form class="npf" id="evf" novalidate><input type="hidden" name="eid" value="' + (ev ? esc(ev.id) : '') + '">'
+    + '<label>Nombre<input name="ename" maxlength="80" autocomplete="off" placeholder="Ej.: Entrega proyecto SM6" value="' + (ev ? esc(ev.name) : '') + '"></label>'
+    + '<label>Tipo<select name="etype">' + EVT_TYPES.map(t => '<option value="' + t[0] + '"' + (t[0] === type ? ' selected' : '') + '>' + t[1] + '</option>').join("") + '</select></label>'
     + '<label>Asignatura<select name="esubj"><option value="">Elige la asignatura…</option>' + subs.map(c => '<option value="' + c + '"' + (NE.subj === c ? ' selected' : '') + '>' + c + ' · ' + esc(SUBJ[c].n) + '</option>').join("") + '</select></label>'
-    + '<label class="ev-exam npchk evother" hidden><input type="checkbox" name="eother"><span>El profe lo ha puesto en la clase de otra asignatura<small>Salen todas tus clases; ese día, en «Hoy», esa clase saldrá tachada con el examen</small></span></label>'
-    + '<label class="ev-exam" hidden>Día y hora<select name="eslot"' + (NE.subj ? '' : ' disabled') + '>' + slotOptions(NE.subj) + '</select><small>Salen las clases de las próximas semanas, según tu horario.</small></label>'
-    + '<div class="ev-due"><div class="evdue"><label>Día de entrega<input type="date" name="edate" min="' + ymd(new Date()) + '" value="' + ymd(new Date()) + '"></label><label>Hora límite<input type="time" name="etime" value="23:59"></label></div><small class="nphint">La entrega es hasta una hora concreta: ese día, a esa hora.</small></div>'
-    + '<label>Notas <small>opcional</small><textarea name="enotes" rows="4" maxlength="1000" placeholder="Ej.: temas que entran, qué hay que entregar, material…"></textarea></label>'
-    + '<p class="autherr" id="everr" aria-live="polite"></p><button class="btn" type="submit">Guardar evento</button></form>';
+    + '<label class="ev-exam npchk evother"' + (due ? ' hidden' : '') + '><input type="checkbox" name="eother"' + (other ? ' checked' : '') + '><span>El profe lo ha puesto en la clase de otra asignatura<small>Salen todas tus clases; ese día, en «Hoy», esa clase saldrá tachada con el examen</small></span></label>'
+    + '<label class="ev-exam"' + (due ? ' hidden' : '') + '>Día y hora<select name="eslot"' + (NE.subj ? '' : ' disabled') + '>' + slots + '</select><small>Salen las clases de las próximas semanas, según tu horario.</small></label>'
+    + '<div class="ev-due"' + (due ? '' : ' hidden') + '><div class="evdue"><label>Día de entrega<input type="date" name="edate" value="' + (ev && due ? ev.date : today) + '"></label><label>Hora límite<input type="time" name="etime" value="' + (ev && due ? esc(ev.from) : '23:59') + '"></label></div><small class="nphint">La entrega es hasta una hora concreta: ese día, a esa hora.</small></div>'
+    + '<label>Notas <small>opcional</small><textarea name="enotes" rows="4" maxlength="1000" placeholder="Ej.: temas que entran, qué hay que entregar, material…">' + (ev ? esc(ev.notes || "") : '') + '</textarea></label>'
+    + '<p class="autherr" id="everr" aria-live="polite"></p><button class="btn" type="submit">' + (ev ? 'Guardar cambios' : 'Guardar evento') + '</button></form>';
   return h;
 }
 function slotOptions(code, other){
@@ -1513,10 +1526,13 @@ document.addEventListener("submit", e => {
     if (!slot){ err.textContent = "Elige el día y la hora."; return; }
     [date, from, to, over] = slot.split("|");
   }
-  const list = allEvents(); list.push({id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name, type, subj, date, from, to, over: over || "", notes: f.enotes.value.trim(), group: GNAME_ID(), created: Date.now()});
+  const list = allEvents(), eid = f.eid.value, old = eid ? list.find(v => v.id === eid) : null;
+  const data = {name, type, subj, date, from, to, over: over || "", notes: f.enotes.value.trim()};
+  if (old) Object.assign(old, data, {edited: Date.now()});
+  else list.push(Object.assign({id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5)}, data, {group: GNAME_ID(), created: Date.now()}));
   saveEvents(list);
   CAL.y = fromYmd(date).getFullYear(); CAL.m = fromYmd(date).getMonth(); CAL.sel = date; NE.subj = null;
-  go("#/calendario"); toast("Guardado: " + name + " · " + dayLabel(date) + (type === "entrega" ? " · hasta las " + from : "") + ".");
+  go("#/calendario"); toast((old ? "Cambios guardados: " : "Guardado: ") + name + " · " + dayLabel(date) + (type === "entrega" ? " · hasta las " + from : "") + ".");
 });
 document.addEventListener("click", e => {
   const m = e.target.closest("[data-calm]");
@@ -1625,7 +1641,7 @@ function viewFaltas(){
 
 /* ===================== router ===================== */
 let lastRoute = null;
-const depth = r => /^asig\/[^/]+\/nuevo$/.test(r) || r === "calendario/nuevo" ? 2 : r.startsWith("asig/") || r === "calendario" ? 1 : (r === "horario" || r === "faltas") ? 2 : 0;
+const depth = r => /^asig\/[^/]+\/nuevo$/.test(r) || r === "calendario/nuevo" || r.startsWith("calendario/editar/") ? 2 : r.startsWith("asig/") || r === "calendario" ? 1 : (r === "horario" || r === "faltas") ? 2 : 0;
 function viewPickGroup(){
   const adm = isAdmin();
   return '<div class="hello"><h1>Hola, '+esc(window.PJ6USER || "")+'</h1><p>'+(adm ? 'Modo admin: ¿qué curso quieres ver?' : 'Antes de empezar, elige tu clase.')+'</p></div>'
@@ -1663,11 +1679,11 @@ function render(){
   else if (r === "horario") h = viewTimetable();
   else if (r === "faltas") h = viewFaltas();
   else if (r === "calendario") h = viewCalendar();
-  else if (r === "calendario/nuevo"){ if (r === lastRoute && document.getElementById("evf")) return; h = viewNewEvent(); }
+  else if (r === "calendario/nuevo" || r.startsWith("calendario/editar/")){ if (r === lastRoute && document.getElementById("evf")) return; if (r !== lastRoute && r === "calendario/nuevo") NE.subj = null; h = viewNewEvent(r.startsWith("calendario/editar/") ? r.slice(18) : null); }
   else h = viewHome();
   // a new screen slides in (from the right going forward, from the left going back); edits on the same screen don't move
   const isNew = r !== lastRoute, back = lastRoute !== null && depth(r) < depth(lastRoute);
-  const vcls = r === "calendario/nuevo" ? "v-new v-evnew" : r === "calendario" ? "v-cal" : nw ? "v-new" : r.startsWith("asig/") ? "v-asig" : r === "horario" ? "v-horario" : r === "faltas" ? "v-faltas" : "v-home";
+  const vcls = r === "calendario/nuevo" || r.startsWith("calendario/editar/") ? "v-new v-evnew" : r === "calendario" ? "v-cal" : nw ? "v-new" : r.startsWith("asig/") ? "v-asig" : r === "horario" ? "v-horario" : r === "faltas" ? "v-faltas" : "v-home";
   $("#app").innerHTML = '<div class="pg '+vcls+(isNew ? ' enter'+(back ? ' rev' : '') : '')+'">'+h+'</div>';
   lastRoute = r;
   if (isNew) [".scard", ".tdi", ".lcard", ".tt .cl", ".tt .fr", ".fr2"].forEach(sel=>document.querySelectorAll("#app "+sel).forEach((el,i)=>el.style.setProperty("--i", Math.min(i, 16))));
