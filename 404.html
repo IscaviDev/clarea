@@ -8,7 +8,7 @@
 <meta property="og:title" content="Clarea">
 <meta property="og:description" content="Asignaturas, horario, faltas y repasos de tus proyectos.">
 <meta property="og:url" content="https://clarea.dev/">
-<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112101731">
+<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112101922">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Logo de Clarea">
@@ -24,7 +24,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
-<script>window.CLAREA_VERSION = "20261112101731"; window.CLAREA_RELEASE = "1.0";</script>
+<script>window.CLAREA_VERSION = "20261112101922"; window.CLAREA_RELEASE = "1.0";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1200,8 +1200,8 @@ body:has(.updbar) .aipill{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 @media (hover:hover) and (pointer:fine){.bgbtn:hover{border-color:var(--accent)}.bgbtn.main:hover{filter:brightness(1.08)}a.ntrow:hover{background:var(--sunk)}}
 
 /* ---------- theme + profile in one bubble ---------- */
-.ucombo{margin-left:auto;flex:none;display:flex;align-items:center;gap:2px;padding:3px}
-.ucombo .thbtn{margin-left:0;width:34px;height:34px;border:0;background:none}
+.ucombo{margin-left:auto;flex:none;display:flex;align-items:center;gap:2px;padding:3px 3px 3px 0}
+.ucombo .thbtn{margin-left:0;width:30px;height:34px;border:0;background:none}
 .ucombo .ubar{margin-left:0;padding-left:3px;border-left:1px solid var(--line)}
 .ucombo .ubtn{border:0;background:none;padding:3px 10px 3px 4px}
 /* hover: no boxes, only the item itself reacts (the icon and the name go to the accent) */
@@ -1209,9 +1209,9 @@ body:has(.updbar) .aipill{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 @media (hover:hover) and (pointer:fine){.ucombo .thbtn:hover{color:var(--accent)}.ucombo .ubtn:hover span{color:var(--accent)}}
 
 /* ---------- «Instalar» (only on phones and tablets, only in the browser) ---------- */
-.instbtn{margin-left:auto;flex:none;display:flex;align-items:center;gap:5px;height:42px;border:0;background:none;border-radius:999px;padding:0 12px 0 9px;font:inherit;font-size:13.5px;font-weight:700;color:var(--fg);cursor:pointer}
+.instbtn{margin-left:auto;flex:none;display:flex;align-items:center;gap:5px;height:42px;border:0;background:none;border-radius:999px;padding:0 7px 0 13px;font:inherit;font-size:13.5px;font-weight:700;color:var(--fg);cursor:pointer}
 .instbtn svg{width:18px;height:18px;color:var(--accent)}
-.instbtn + .ucombo{margin-left:8px}
+.instbtn + .ucombo{margin-left:auto}  /* equal free space on both sides: «Instalar» sits centred between the logo and the profile */
 /* narrow phones: just the icon, and long names get cut with «…» instead of pushing out of the screen */
 @media (max-width:389px){.instbtn span{display:none}.instbtn{width:42px;padding:0;justify-content:center}}
 .instbtn + .ucombo{flex:0 1 auto;min-width:0}.instbtn + .ucombo .ubar,.instbtn + .ucombo .ubtn{min-width:0}
