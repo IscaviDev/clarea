@@ -8,7 +8,7 @@
 <meta property="og:title" content="Clarea">
 <meta property="og:description" content="Asignaturas, horario, faltas y repasos de tus proyectos.">
 <meta property="og:url" content="https://clarea.dev/">
-<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112024856">
+<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112025018">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Logo de Clarea">
@@ -24,7 +24,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
-<script>window.CLAREA_VERSION = "20261112024856";</script>
+<script>window.CLAREA_VERSION = "20261112025018";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -402,6 +402,8 @@ details.fr2>summary::-webkit-details-marker{display:none}
 .tycard .tyic{display:block;width:26px;height:26px}
 .tycard .tyic svg{width:26px;height:26px}
 .tycard b{font-size:17px!important;line-height:1.2}
+.pks.busy{opacity:.45;cursor:not-allowed;border-left-style:dashed}
+.pks.busy span{text-decoration:line-through}
 </style>
 <script>
 /* Clarea · projects: reading code (folder, .zip, GitHub), GitHub history and simple code analysis.
@@ -1688,12 +1690,18 @@ function pickSubject(f){
     if (!f.ename.value.trim()) f.ename.placeholder = (EVT_TYPES.find(t => t[0] === f.etype.value) || ["", "Evento"])[1] + " " + c;
   });
 }
+function takenBy(date, from, to, exceptId){
+  return events().find(e => e.type !== "entrega" && e.id !== exceptId && e.date === date && e.from < to && from < e.to) || null;
+}
 function pickSlot(f){
   const list = availSlots(NE.subj, f.eother.checked);
+  list.forEach(x => { x.busy = takenBy(x.date, x.from, x.to, f.eid.value); });
   if (!list.length){ toast("Esta asignatura no tiene clases en tu horario. Marca «el profe lo ha puesto en la clase de otra asignatura»."); return; }
   const byDay = {}; list.forEach(x => (byDay[x.date] = byDay[x.date] || []).push(x));
   const days = Object.keys(byDay).sort(), cur = f.eslot.value, curDay = cur ? cur.split("|")[0] : null;
-  const st = {sel: byDay[curDay] ? curDay : days[0]};
+  const freeDay = k => byDay[k] && byDay[k].some(x => !x.busy);
+  if (!days.some(freeDay)){ toast("Todas esas clases ya tienen un examen apuntado."); return; }
+  const st = {sel: freeDay(curDay) ? curDay : days.find(freeDay)};
   const first = fromYmd(days[0]); st.y = fromYmd(st.sel).getFullYear(); st.m = fromYmd(st.sel).getMonth();
   const last = fromYmd(days[days.length - 1]);
   const draw = w => {
@@ -1703,10 +1711,12 @@ function pickSlot(f){
     for (let i = 0; i < 42; i++){
       const d = new Date(start); d.setDate(start.getDate() + i);
       if (i >= 35 && d.getMonth() !== st.m) break;
-      const k = ymd(d), av = byDay[k];
-      h += '<button type="button" class="calday' + (d.getMonth() !== st.m ? ' out' : '') + (av ? ' av' : '') + (k === st.sel ? ' sel' : '') + '"' + (av ? ' data-pd="' + k + '"' : ' disabled') + '><span class="caln">' + d.getDate() + '</span>' + (av ? '<span class="pkdots">' + av.map(x => '<i style="' + sv(x.subj) + '"></i>').join("") + '</span>' : '') + '</button>';
+      const k = ymd(d), av = freeDay(k) ? byDay[k] : null;
+      h += '<button type="button" class="calday' + (d.getMonth() !== st.m ? ' out' : '') + (av ? ' av' : '') + (k === st.sel ? ' sel' : '') + '"' + (av ? ' data-pd="' + k + '"' : ' disabled') + '><span class="caln">' + d.getDate() + '</span>' + (av ? '<span class="pkdots">' + av.filter(x => !x.busy).map(x => '<i style="' + sv(x.subj) + '"></i>').join("") + '</span>' : '') + '</button>';
     }
-    h += '</div><div class="pkslots"><b>' + dayLabel(st.sel) + '</b>' + (byDay[st.sel] || []).map(x => '<button type="button" class="pks' + (x.v === cur ? ' on' : '') + '" style="' + sv(x.subj) + '" data-ps="' + x.v + '"><span>' + x.from + '–' + x.to + '</span><small>' + (f.eother.checked ? 'en la clase de ' + x.subj : x.subj) + '</small></button>').join("") + '</div>';
+    h += '</div><div class="pkslots"><b>' + dayLabel(st.sel) + '</b>' + (byDay[st.sel] || []).map(x => x.busy
+      ? '<button type="button" class="pks busy" style="' + sv(x.subj) + '" disabled><span>' + x.from + '–' + x.to + '</span><small>Ocupada · ' + esc(x.busy.name) + '</small></button>'
+      : '<button type="button" class="pks' + (x.v === cur ? ' on' : '') + '" style="' + sv(x.subj) + '" data-ps="' + x.v + '"><span>' + x.from + '–' + x.to + '</span><small>' + (f.eother.checked ? 'en la clase de ' + x.subj : x.subj) + '</small></button>').join("") + '</div>';
     w.querySelector(".pkbody").innerHTML = h;
   };
   openPicker("Elige el día y la hora", "", (w, done) => {
@@ -1761,6 +1771,8 @@ document.addEventListener("submit", e => {
   } else {
     if (!slot){ err.textContent = "Elige el día y la hora."; return; }
     [date, from, to, over] = slot.split("|");
+    const clash = takenBy(date, from, to, f.eid.value);
+    if (clash){ err.textContent = "Esa hora ya la tiene «" + clash.name + "». Elige otra."; return; }
   }
   const list = allEvents(), eid = f.eid.value, old = eid ? list.find(v => v.id === eid) : null;
   const data = {name, type, subj, date, from, to, over: over || "", notes: f.enotes.value.trim()};
