@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<script>/* every relative address points to the app folder, also on clean addresses like /clarea/asig/PJ6 */
+(function(){ var b = document.createElement("base"); b.href = /^\/clarea(\/|$)/.test(location.pathname) ? "/clarea/" : "/"; document.head.appendChild(b); })();</script>
+<meta name="theme-color" content="#1f5fbf">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Clarea">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<script>window.CLAREA_VERSION = "20261112013538";</script>
+<title>PJ6 · Repaso · Clarea</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+.rwait{padding-block:28px;display:flex;flex-direction:column;gap:10px;color:var(--muted);font-size:15px}
+.rwait b{color:var(--fg);font-size:17px}
+</style>
+<style>
+.cbar{background:var(--surface);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.cbar .wrap{display:flex;align-items:center;gap:12px;min-height:58px}
+.clogo{display:flex;align-items:center;text-decoration:none}
+.clogo svg{height:28px;width:auto;display:block}
+.clogo .lg-dark{display:none}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .clogo .lg-light{display:none}:root:not([data-theme="light"]) .clogo .lg-dark{display:block}}
+:root[data-theme="dark"] .clogo .lg-light{display:none}:root[data-theme="dark"] .clogo .lg-dark{display:block}
+.rhead{display:flex;flex-direction:column;gap:8px;padding-block:14px 6px}
+.rback{align-self:flex-start;color:var(--accent-ink);font-weight:700;font-size:15px;text-decoration:none;padding:2px 0}
+.rtitle{display:flex;align-items:center;gap:10px}
+.rtitle svg{flex:none;width:34px;height:34px}
+.rtitle div{display:flex;flex-direction:column;min-width:0}
+.rtitle b{font-family:var(--f-display);font-size:20px;font-weight:800;line-height:1.15}
+.rtitle span{font-size:13px;color:var(--muted)}
+@media (min-width:1024px){.wrap{max-width:1000px}}
+/* motion: each tab, view and card fades up when it appears (CSS animations replay when an element stops being hidden) */
+@keyframes rv-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes rv-side{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: no-preference){
+  main>section[role=tabpanel]:not([hidden]){animation:rv-side .28s cubic-bezier(.2,.8,.2,1) both}
+  #code-view:not([hidden]),#gh-view:not([hidden]),.ghsub:not([hidden]),.card:not([hidden]){animation:rv-in .26s cubic-bezier(.2,.8,.2,1) both}
+  #examenes>*,#soluciones>*{animation:rv-in .26s cubic-bezier(.2,.8,.2,1) both}
+  #examenes>*:nth-child(2){animation-delay:30ms}#examenes>*:nth-child(3){animation-delay:60ms}#examenes>*:nth-child(4){animation-delay:90ms}#examenes>*:nth-child(n+5){animation-delay:120ms}
+  .opt{transition:background-color .18s ease,border-color .18s ease,transform .12s ease}
+  .tab[aria-selected="true"],.segb[aria-pressed="true"],.ghb[aria-pressed="true"],.pill[aria-pressed="true"],.xfilter button[aria-pressed="true"]{transition:background-color .2s ease,color .2s ease,box-shadow .2s ease}
+  i.xbar>i,.gbar i{transition:width .45s cubic-bezier(.2,.8,.2,1)}
+}
+</style>
+<script>
+/* the BuildPro review belongs to the account "isaac": anyone else goes back to the home page */
+(function () {
+  function check() { if (window.PJ6USER && window.PJ6USER !== "isaac") location.replace("./"); }
+  window.clareaRefresh = check;
+  document.addEventListener("DOMContentLoaded", check);
+})();
+/* always open the review at the top, so the "← PJ6" link is visible */
+if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+window.addEventListener("load", function () { setTimeout(function () { window.scrollTo(0, 0); }, 0); });
+</script>
+<style>
+/* ---------- login + account bar (offline app only) ---------- */
+html,body{margin:0}
+.authwrap{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:max(24px,env(safe-area-inset-top,0px)) 16px 24px}
+.authcard{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px 18px;display:flex;flex-direction:column;gap:14px;margin-top:4vh}
+.authlogo{display:flex;align-items:center;gap:12px}
+.authlogo svg{width:44px;height:44px;flex:none}
+.authlogo h1{font-size:20px;font-weight:800}
+.authlogo p{margin:2px 0 0;font-size:13px;color:var(--muted)}
+.authtabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--sunk);border-radius:10px;padding:4px}
+.authtabs button{border:0;background:none;border-radius:7px;padding:9px;font-weight:600;font-size:14px;cursor:pointer;color:var(--fg)}
+.authtabs button[aria-pressed="true"]{background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.authform{display:flex;flex-direction:column;gap:10px}
+.authform label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600}
+.authform input{font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1.5px solid var(--line);border-radius:9px;padding:10px 12px}
+.authform input:focus{border-color:var(--accent);outline:none}
+.autherr{margin:0;font-size:13.5px;color:var(--err);min-height:1em}
+.authknown{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
+.authknown button{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:3px 10px;font-size:13px;cursor:pointer;color:var(--fg)}
+.authnote{margin:0;font-size:12px;color:var(--muted);line-height:1.4}
+.authtxt{margin:0;font-size:14px;line-height:1.45}
+.authimp{border:1.5px dashed var(--line);background:none;color:var(--fg);border-radius:9px;padding:10px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.authimp svg{width:18px;height:18px}
+.authinfo{margin:0;font-size:13px;background:var(--sunk);border-radius:9px;padding:9px 11px;line-height:1.4}
+.authalt{border:0;background:none;color:var(--muted);font-size:14px;padding:6px;cursor:pointer}
+.authform .btn[disabled]{opacity:.65}
+.sdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px;background:#2e9d5b}
+.sdot.warn{background:#c98a12}.sdot.off{background:var(--muted)}.sdot.busy{background:#1f5fbf}
+.syncbar{border-left-color:#b4561b}.syncbar .updgo{background:#b4561b}
+.thbtn{margin-left:auto;flex:none;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--fg);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.thbtn svg{width:19px;height:19px}
+.ubar{margin-left:8px;position:relative}
+.ubtn{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:5px 11px 5px 6px;font-size:13.5px;font-weight:600;cursor:pointer;color:var(--fg);max-width:44vw}
+.ubtn i{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-style:normal;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none}
+.ubtn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.umenu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:6px;display:flex;flex-direction:column;min-width:220px}
+.umenu button{border:0;background:none;text-align:left;padding:10px 12px;border-radius:8px;font-size:14.5px;cursor:pointer;color:var(--fg)}
+.umenu button:hover{background:var(--sunk)}
+.umenu small{display:block;font-size:12px;color:var(--muted)}
+.umenu hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+.uver{margin:4px 12px 4px;font-size:11.5px;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:120;background:var(--fg);color:var(--bg);border-radius:10px;padding:10px 16px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:90vw}
+
+/* ---------- "new version" banner ---------- */
+.updbar{position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:110;max-width:520px;margin:0 auto;display:flex;align-items:center;gap:10px;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-left:5px solid #1f5fbf;border-radius:14px;padding:12px 10px 12px 14px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.updbar>div{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
+.updbar b{font-size:14.5px}
+.updbar span{font-size:12.5px;color:var(--muted)}
+.updgo{flex:none;border:0;background:#1f5fbf;color:#fff;border-radius:10px;padding:10px 14px;font-weight:700;font-size:14px;cursor:pointer}
+.updno{flex:none;border:0;background:none;color:var(--muted);font-size:16px;width:32px;height:32px;border-radius:8px;cursor:pointer}
+@keyframes upd-in{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: no-preference){.updbar{animation:upd-in .32s cubic-bezier(.2,.8,.2,1) both}.updbar.closing{animation:upd-in .2s ease reverse both}}
+
+/* ---------- motion shared by every page (off when the phone asks for reduced motion) ---------- */
+@keyframes cl-fade{from{opacity:0}to{opacity:1}}
+@keyframes cl-up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes cl-open{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+@keyframes cl-pop{from{opacity:0;transform:translateY(-6px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes cl-toast{from{opacity:0;transform:translate(-50%,14px)}to{opacity:1;transform:translate(-50%,0)}}
+@media (prefers-reduced-motion: no-preference){
+  /* press feedback on anything tappable */
+  button,.lcard,.scard,a.rback,a.clogo{transition:transform .14s ease,box-shadow .2s ease,background-color .2s ease,border-color .2s ease,color .2s ease,opacity .2s ease}
+  button:not([disabled]):active,.lcard:active,.scard:active{transform:scale(.97)}
+  /* folded sections slide their content in when opened */
+  details[open]>.cl-open{animation:cl-open .3s cubic-bezier(.2,.8,.2,1) both}
+  details>summary::after{transition:transform .2s ease}
+  .authwrap{animation:cl-fade .25s ease both}
+  .authcard{animation:cl-up .35s cubic-bezier(.2,.8,.2,1) both}
+  .authwrap.closing{animation:cl-fade .22s ease reverse both}
+  .umenu{animation:cl-pop .18s cubic-bezier(.2,.8,.2,1) both;transform-origin:top right}
+  .toast{animation:cl-toast .25s cubic-bezier(.2,.8,.2,1) both}
+  .toast.closing{animation:cl-toast .2s ease reverse both}
+  .theme-anim,.theme-anim *,.theme-anim *::before,.theme-anim *::after{transition:background-color .35s ease,color .35s ease,border-color .35s ease,fill .35s ease,stroke .35s ease!important}
+}
+
+/* ---------- show / hide password ---------- */
+.pwbox{position:relative;display:flex}
+.pwbox input{flex:1;min-width:0;padding-right:46px}
+.pweye{position:absolute;right:3px;top:0;bottom:0;margin:auto 0;width:40px;height:40px;border:0;background:none;color:var(--muted);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.pweye svg{width:20px;height:20px}
+.pweye[aria-pressed="true"]{color:var(--accent)}
+
+/* ---------- hover (computers and tablets with a mouse) ---------- */
+@media (hover:hover) and (pointer:fine){
+  .scard:hover,.tdi:hover,.tt .cl:hover{box-shadow:0 8px 22px rgba(0,0,0,.2);filter:brightness(1.04)}
+  .lcard:hover,.authimp:hover,.thbtn:hover,.ubtn:hover,.authknown button:hover{border-color:var(--accent)}
+  .lcard:hover{box-shadow:0 6px 18px rgba(0,0,0,.12)}
+  details.fr2:hover{border-color:var(--accent)}
+  .btn:hover,.updgo:hover{filter:brightness(1.1);box-shadow:0 4px 14px rgba(31,95,191,.35)}
+  .authtabs button:not([aria-pressed="true"]):hover{background:var(--surface)}
+  .authalt:hover,.updno:hover,.pweye:hover{color:var(--fg);background:var(--sunk)}
+  .back:hover,.rback:hover,.xback:hover{text-decoration:underline;text-underline-offset:3px}
+  .tab:not([aria-selected="true"]):hover,.segb:not([aria-pressed="true"]):hover,.ghb:not([aria-pressed="true"]):hover,.xdiff:hover,.xex:hover,.xresume:hover,.opt:hover,.row.file:hover,.fnode:hover,.use:hover,.guse2:hover{border-color:var(--accent)}
+  details>summary:hover{color:var(--accent-ink,inherit)}
+}
+@media (hover:hover) and (pointer:fine) and (prefers-reduced-motion: no-preference){
+  .scard,.tdi,.tt .cl,.lcard,details.fr2,.thbtn svg,.back,.rback,.xback{transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease,border-color .2s ease,filter .2s ease,background-color .2s ease,color .2s ease}
+  .scard:hover,.tdi:hover,.tt .cl:hover{transform:translateY(-3px)}
+  .lcard:hover,.xdiff:hover,.xex:hover{transform:translateY(-2px)}
+  .btn:hover,.updgo:hover{transform:translateY(-1px)}
+  .thbtn:hover svg{transform:rotate(25deg)}
+  .back:hover,.rback:hover,.xback:hover{transform:translateX(-3px)}
+  .scard:hover:active,.tdi:hover:active,.lcard:hover:active,.btn:hover:active{transform:scale(.97)}
+}
+</style>
+<script>
+/* ---------- offline accounts: everything stays in this device ---------- */
+(function(){
+  var ACC = "pj6-accounts", SES = "pj6-session";
+  function lsGet(k){ try { return JSON.parse(localStorage.getItem(k)); } catch(e){ return null; } }
+  function lsSet(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch(e){ return false; } }
+  /* ----- light / dark theme: follows the phone unless the user picks one (kept on this device) ----- */
+  var TH = "clarea-theme";
+  function applyTheme(t){
+    var root = document.documentElement;
+    if (t === "light" || t === "dark") root.setAttribute("data-theme", t); else root.removeAttribute("data-theme");
+    var dark = root.getAttribute("data-theme") ? root.getAttribute("data-theme") === "dark" : !!(window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+    var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute("content", dark ? "#12161c" : "#1f5fbf");
+    var b = document.querySelector(".thbtn");
+    if (b){ b.innerHTML = dark ? SUN : MOON; b.setAttribute("aria-label", dark ? "Cambiar a tema claro" : "Cambiar a tema oscuro"); b.title = b.getAttribute("aria-label"); }
+    return dark;
+  }
+  var SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+  var MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>';
+  applyTheme(lsGet(TH));
+  window.clareaToggleTheme = function(){
+    var dark = document.documentElement.getAttribute("data-theme") ? document.documentElement.getAttribute("data-theme") === "dark" : !!(window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+    var t = dark ? "light" : "dark"; lsSet(TH, t);
+    var root = document.documentElement; root.classList.add("theme-anim"); applyTheme(t);
+    clearTimeout(window.__thT); window.__thT = setTimeout(function(){ root.classList.remove("theme-anim"); }, 450);
+  };
+  if (window.matchMedia) try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function(){ applyTheme(lsGet(TH)); }); } catch(e){}
+  /* folded sections: restart the "slide in" animation every time one opens.
+     Safari keeps the hidden content rendered, so a pure-CSS animation would only run once, unseen. */
+  document.addEventListener("toggle", function(e){
+    var d = e.target;
+    if (!d || d.tagName !== "DETAILS" || !d.open) return;
+    if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    for (var i = 0; i < d.children.length; i++){
+      var ch = d.children[i]; if (ch.tagName === "SUMMARY") continue;
+      ch.classList.remove("cl-open"); void ch.offsetWidth; ch.classList.add("cl-open");
+    }
+  }, true);
+  var ses = lsGet(SES);
+  if (ses && (lsGet(ACC) || {})[ses]) window.PJ6USER = ses;
+
+  function hex(buf){ return Array.prototype.map.call(new Uint8Array(buf), function(b){ return ("0" + b.toString(16)).slice(-2); }).join(""); }
+  function hashPw(salt, pw){
+    var txt = salt + ":" + pw;
+    if (window.crypto && crypto.subtle && window.TextEncoder){
+      return crypto.subtle.digest("SHA-256", new TextEncoder().encode(txt)).then(hex);
+    }
+    // fallback for non-secure contexts (only while testing locally)
+    var h1 = 0x811c9dc5, h2 = 0x01000193;
+    for (var i = 0; i < txt.length; i++){ h1 ^= txt.charCodeAt(i); h1 = Math.imul(h1, 16777619); h2 = Math.imul(h2 ^ txt.charCodeAt(i), 2246822507); }
+    return Promise.resolve("f" + (h1 >>> 0).toString(16) + (h2 >>> 0).toString(16));
+  }
+  function newSalt(){ var a = new Uint8Array(16); (window.crypto || {}).getRandomValues ? crypto.getRandomValues(a) : a.forEach(function(_, i){ a[i] = Math.random() * 256; }); return hex(a); }
+  function el(html){ var d = document.createElement("div"); d.innerHTML = html.trim(); return d.firstChild; }
+  function escT(s){ return String(s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+  function toast(msg){ var t = el('<div class="toast" role="status"></div>'); t.textContent = msg; document.body.appendChild(t); setTimeout(function(){ t.classList.add("closing"); setTimeout(function(){ t.remove(); }, 220); }, 3000); }
+  var LOGO = '<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="8" y="4" width="22" height="6" rx="3" fill="var(--clarea-blue,#1f5fbf)"/><rect x="2" y="14" width="14" height="6" rx="3" fill="var(--clarea-blue,#1f5fbf)"/><rect x="20" y="14" width="6" height="6" rx="1.5" fill="var(--clarea-orange,#b4561b)"/><rect x="8" y="24" width="22" height="6" rx="3" fill="var(--clarea-blue,#1f5fbf)"/></svg>';
+  var ICO_FILE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 18v-6M9 15l3 3 3-3"/></svg>';
+
+  var EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.6 5.1A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-2.6 3.5M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2M3 3l18 18"/></svg>';
+  // adds the eye button that shows or hides what is typed in each password field
+  function addEyes(root){
+    root.querySelectorAll('input[type="password"]').forEach(function(inp){
+      var box = document.createElement("span"); box.className = "pwbox";
+      inp.parentNode.insertBefore(box, inp); box.appendChild(inp);
+      var b = el('<button type="button" class="pweye" aria-pressed="false" aria-label="Mostrar contraseña" title="Mostrar contraseña">' + EYE + '</button>');
+      box.appendChild(b);
+      b.addEventListener("mousedown", function(e){ e.preventDefault(); }); // keep the keyboard open on the field
+      b.addEventListener("click", function(e){
+        e.preventDefault();
+        var show = inp.type === "password";
+        inp.type = show ? "text" : "password";
+        b.innerHTML = show ? EYE_OFF : EYE; b.setAttribute("aria-pressed", show);
+        b.setAttribute("aria-label", show ? "Ocultar contraseña" : "Mostrar contraseña"); b.title = b.getAttribute("aria-label");
+      });
+    });
+  }
+
+  /* ----- local copy of each account: lets you enter without internet ----- */
+  function saveLocal(user, pass){
+    var salt = newSalt();
+    return hashPw(salt, pass).then(function(h){
+      var accs = lsGet(ACC) || {};
+      accs[user] = {salt: salt, hash: h, created: (accs[user] && accs[user].created) || Date.now()};
+      return lsSet(ACC, accs);
+    });
+  }
+  function checkLocal(user, pass){
+    var a = (lsGet(ACC) || {})[user];
+    if (!a) return Promise.resolve(false);
+    return hashPw(a.salt, pass).then(function(h){ return h === a.hash; });
+  }
+
+  /* ----- cloud account: Firebase Authentication + Firestore, used through their web APIs.
+     The key below is public by design (it only identifies the project); the Firestore rules
+     make sure each account can only read and write its own data. ----- */
+  var FB_KEY = "AIzaSyD1wNdx_8Kn_IU5YaRtl0XX8WWLpaL70P8", FB_PROJECT = "clarea-6ec91";
+  var DEV = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? (function(){ try { return localStorage.getItem("clarea-dev-api"); } catch(e){ return null; } })() : null;
+  var IDT = (DEV || "https://identitytoolkit.googleapis.com") + "/v1/accounts:";
+  var STK = (DEV || "https://securetoken.googleapis.com") + "/v1/token?key=" + FB_KEY;
+  var FSDB = "projects/" + FB_PROJECT + "/databases/(default)/documents";
+  var FS = (DEV || "https://firestore.googleapis.com") + "/v1/" + FSDB;
+  var CLOUD = "clarea-cloud/", SYNC = "clarea-sync/";
+  function email(user){ return user + "@" + FB_PROJECT + ".firebaseapp.com"; }
+  function api(url, opt){
+    return fetch(url, opt).then(function(r){
+      return r.json().catch(function(){ return {}; }).then(function(j){
+        if (r.ok) return j;
+        var m = (j && j.error && (j.error.message || j.error.status)) || ("HTTP_" + r.status);
+        throw {code: String(m).split(/[ :]/)[0], status: r.status};
+      });
+    }, function(){ throw {net: true}; });
+  }
+  function postJSON(url, body, tok){
+    var h = {"Content-Type": "application/json"}; if (tok) h.Authorization = "Bearer " + tok;
+    return api(url, {method: "POST", headers: h, body: JSON.stringify(body)});
+  }
+  function cloudGet(u){ return lsGet(CLOUD + u); }
+  function cloudSet(u, v){ if (v) lsSet(CLOUD + u, v); else try { localStorage.removeItem(CLOUD + u); } catch(e){} }
+  function keepTokens(u, j){
+    cloudSet(u, {uid: j.localId || j.user_id, it: j.idToken || j.id_token, rt: j.refreshToken || j.refresh_token,
+                 exp: Date.now() + (+(j.expiresIn || j.expires_in) || 3600) * 1000});
+  }
+  function cloudAuth(kind, user, pass){
+    return postJSON(IDT + kind + "?key=" + FB_KEY, {email: email(user), password: pass, returnSecureToken: true})
+      .then(function(j){ keepTokens(user, j); return j; });
+  }
+  // an account that so far only exists on this device is uploaded the first time it logs in with internet
+  function cloudLogin(user, pass, localOk){
+    return cloudAuth("signInWithPassword", user, pass).catch(function(e){
+      if (e.net || !localOk || !/INVALID_LOGIN_CREDENTIALS|EMAIL_NOT_FOUND|INVALID_PASSWORD/.test(e.code)) throw e;
+      return cloudAuth("signUp", user, pass).then(function(j){ j.uploaded = true; return j; });
+    });
+  }
+  function idToken(u){
+    var c = cloudGet(u);
+    if (!c) return Promise.reject({code: "NO_CLOUD"});
+    if (c.exp - 60000 > Date.now()) return Promise.resolve(c.it);
+    return api(STK, {method: "POST", headers: {"Content-Type": "application/x-www-form-urlencoded"}, body: "grant_type=refresh_token&refresh_token=" + encodeURIComponent(c.rt)})
+      .then(function(j){ keepTokens(u, j); return cloudGet(u).it; },
+            function(e){ if (!e.net && e.status >= 400 && e.status < 500) cloudSet(u, null); throw e; });
+  }
+  function authMsg(e, mode){
+    var c = (e && e.code) || "";
+    if (/EMAIL_EXISTS/.test(c)) return mode === "up" ? "Ya existe una cuenta con ese usuario. Entra con ella en «Entrar»." : "Contraseña incorrecta.";
+    if (/INVALID_LOGIN_CREDENTIALS|EMAIL_NOT_FOUND|INVALID_PASSWORD/.test(c)) return "Usuario o contraseña incorrectos.";
+    if (/WEAK_PASSWORD/.test(c)) return "La contraseña debe tener al menos 6 caracteres.";
+    if (/TOO_MANY_ATTEMPTS/.test(c)) return "Demasiados intentos seguidos. Espera unos minutos y vuelve a probar.";
+    if (/USER_DISABLED/.test(c)) return "Esta cuenta está desactivada.";
+    if (/INVALID_EMAIL/.test(c)) return "Ese nombre de usuario no es válido.";
+    if (c === "STORAGE") return "Este navegador no deja guardar datos (¿modo privado?). Así no se puede guardar el progreso.";
+    return "No se ha podido conectar con la nube (" + (c || "error") + "). Prueba otra vez en un momento.";
+  }
+  var pendingPw = null; // password kept only in memory after an offline login, to connect to the cloud when internet comes back
+  // resolved once the first sync after opening the app (or logging in) has finished, or after 8 s at most
+  var syncReadyDone;
+  window.clareaSyncReady = new Promise(function(r){ syncReadyDone = r; });
+  function firstSyncDone(){ if (syncReadyDone){ syncReadyDone(); syncReadyDone = null; } }
+
+  /* ----- sync: every saved item of the account (exams, absences…) is one document in Firestore.
+     Each change is stamped with the time it was made; the newest version of each item wins. ----- */
+  var applying = false, syncing = null, again = false, syncTimer = 0;
+  var sstate = {s: "idle", at: 0};
+  function metaGet(u){ var m = lsGet(SYNC + u) || {}; m.times = m.times || {}; m.dirty = m.dirty || {}; return m; }
+  function metaSet(u, m){ lsSet(SYNC + u, m); }
+  // notice every change the app saves for the logged-in account
+  (function(){
+    var SP = window.Storage && Storage.prototype; if (!SP) return;
+    var oSet = SP.setItem, oRem = SP.removeItem;
+    function note(store, k){
+      if (applying) return;
+      try { if (store !== window.localStorage) return; } catch(e){ return; }
+      var u = window.PJ6USER, pre = "u/" + u + "/";
+      if (!u || String(k).indexOf(pre) !== 0) return;
+      var key = String(k).slice(pre.length), m = metaGet(u);
+      m.times[key] = Math.max(Date.now(), (m.times[key] || 0) + 1); m.dirty[key] = 1; metaSet(u, m);
+      clearTimeout(syncTimer); syncTimer = setTimeout(function(){ syncNow(); }, 1500);
+    }
+    SP.setItem = function(k, v){ oSet.call(this, k, v); note(this, k); };
+    SP.removeItem = function(k){ oRem.call(this, k); note(this, k); };
+  })();
+  function localItems(u){
+    var pre = "u/" + u + "/", out = {};
+    try { for (var i = 0; i < localStorage.length; i++){ var k = localStorage.key(i); if (k.indexOf(pre) === 0) out[k.slice(pre.length)] = localStorage.getItem(k); } } catch(e){}
+    return out;
+  }
+  function stampOf(raw){ try { var x = JSON.parse(raw); return x && typeof x.t === "number" ? x.t : 0; } catch(e){ return 0; } }
+  function docName(uid, k){ return FSDB + "/users/" + uid + "/data/" + encodeURIComponent(k); }
+  function pull(u, uid, tok, since){
+    var q = {from: [{collectionId: "data"}]};
+    if (since) q.where = {fieldFilter: {field: {fieldPath: "s"}, op: "GREATER_THAN", value: {timestampValue: since}}};
+    return postJSON(FS + "/users/" + uid + ":runQuery", {structuredQuery: q}, tok).then(function(rows){
+      var out = {}, maxS = since || "";
+      (rows || []).forEach(function(r){
+        var d = r.document; if (!d || !d.fields) return;
+        var k = decodeURIComponent(d.name.split("/").pop()), f = d.fields;
+        out[k] = {v: f.v && "stringValue" in f.v ? f.v.stringValue : null, t: +((f.t && f.t.integerValue) || 0)};
+        var s = f.s && f.s.timestampValue; if (s && (!maxS || Date.parse(s) > Date.parse(maxS))) maxS = s;
+      });
+      return {items: out, since: maxS};
+    });
+  }
+  function push(uid, tok, writes){
+    if (!writes.length) return Promise.resolve();
+    return postJSON(FS + ":commit", {writes: writes.map(function(w){
+      return {update: {name: docName(uid, w.k), fields: {v: w.v === null ? {nullValue: null} : {stringValue: w.v}, t: {integerValue: String(w.t)}}},
+              updateTransforms: [{fieldPath: "s", setToServerValue: "REQUEST_TIME"}]};
+    })}, tok);
+  }
+  function refreshUI(keys){
+    if (!keys.length) return;
+    if (keys.some(function(k){ return k.indexOf("pj6x") === 0; }) && typeof renderExamTab === "function") renderExamTab();
+    if (keys.some(function(k){ return k.indexOf("clarea-") === 0; }) && typeof window.clareaRefresh === "function") window.clareaRefresh();
+  }
+  function setState(s){ sstate = {s: s, at: Date.now()}; }
+  function syncNow(){
+    var u = window.PJ6USER;
+    if (!u) return Promise.resolve();
+    if (!cloudGet(u)){
+      if (pendingPw && pendingPw.user === u){ // logged in without internet: connect now
+        var pw = pendingPw.pass;
+        return cloudLogin(u, pw, true).then(function(){ pendingPw = null; return syncNow(); }, function(e){ if (!e.net) pendingPw = null; setState(e.net ? "offline" : "off"); });
+      }
+      setState("off"); return Promise.resolve();
+    }
+    if (syncing){ again = true; return syncing; }
+    setState("busy");
+    syncing = idToken(u).then(function(tok){
+      var uid = cloudGet(u).uid, m0 = metaGet(u);
+      return pull(u, uid, tok, m0.since).then(function(r){
+        // 1) take what is newer in the cloud, 2) collect what is newer here
+        var m = metaGet(u), pre = "u/" + u + "/", changed = [], writes = [], local = localItems(u);
+        Object.keys(local).forEach(function(k){ if (!(k in m.times)){ m.times[k] = stampOf(local[k]) || 1; m.dirty[k] = 1; } });
+        Object.keys(r.items).forEach(function(k){
+          var it = r.items[k];
+          if (it.t <= (m.times[k] || 0)) return;
+          applying = true;
+          try { if (it.v === null) localStorage.removeItem(pre + k); else localStorage.setItem(pre + k, it.v); } catch(e){}
+          applying = false;
+          if (typeof MEMSTORE === "object"){ if (it.v === null) delete MEMSTORE[pre + k]; else try { MEMSTORE[pre + k] = JSON.parse(it.v); } catch(e){} }
+          m.times[k] = it.t; delete m.dirty[k]; changed.push(k);
+        });
+        Object.keys(m.dirty).forEach(function(k){ var v = null; try { v = localStorage.getItem(pre + k); } catch(e){} writes.push({k: k, v: v, t: m.times[k]}); });
+        // read again a few seconds back next time, so nothing saved at the same moment is missed
+        if (r.since) m.since = new Date(Date.parse(r.since) - 5000).toISOString();
+        metaSet(u, m);
+        refreshUI(changed);
+        return push(uid, tok, writes).then(function(){
+          var m2 = metaGet(u);
+          writes.forEach(function(w){ if (m2.times[w.k] === w.t) delete m2.dirty[w.k]; });
+          m2.last = Date.now(); metaSet(u, m2);
+        });
+      });
+    }).then(function(){ setState("ok"); }, function(e){ setState(e && e.net ? "offline" : (cloudGet(u) ? "error" : "off")); })
+      .then(function(){ syncing = null; if (again){ again = false; return syncNow(); } });
+    return syncing;
+  }
+  function pendingCount(u){ return Object.keys(metaGet(u).dirty).length; }
+  function ago(t){
+    var s = Math.round((Date.now() - t) / 1000);
+    return s < 60 ? "ahora mismo" : s < 3600 ? "hace " + Math.round(s / 60) + " min" : s < 86400 ? "hace " + Math.round(s / 3600) + " h" : "hace " + Math.round(s / 86400) + " días";
+  }
+  function syncLabel(u){
+    if (!cloudGet(u)) return {dot: "off", text: "Sin sincronizar: solo en este dispositivo"};
+    var n = pendingCount(u), last = metaGet(u).last;
+    if (sstate.s === "busy") return {dot: "busy", text: "Sincronizando…"};
+    if (sstate.s === "offline" || !navigator.onLine) return {dot: "warn", text: "Sin internet" + (n ? " · " + n + " cambio" + (n > 1 ? "s" : "") + " por subir" : "")};
+    if (sstate.s === "error") return {dot: "warn", text: "No se pudo sincronizar" + (last ? " · última vez " + ago(last) : "")};
+    return {dot: "", text: last ? "Sincronizado " + ago(last) : "Sincronizado"};
+  }
+  var lastAuto = 0;
+  function autoSync(){ if (Date.now() - lastAuto < 15000) return; lastAuto = Date.now(); syncNow(); }
+  document.addEventListener("visibilitychange", function(){ if (document.visibilityState === "visible") autoSync(); });
+  window.addEventListener("online", function(){ lastAuto = 0; autoSync(); });
+  setInterval(function(){ if (document.visibilityState === "visible" && window.PJ6USER) autoSync(); }, 120000);
+
+  /* ----- progress files (export / import) ----- */
+  function progressKeys(user){
+    var pre = "u/" + user + "/", out = {};
+    try { for (var i = 0; i < localStorage.length; i++){ var k = localStorage.key(i); if (k.indexOf(pre) === 0) out[k.slice(pre.length)] = JSON.parse(localStorage.getItem(k)); } } catch(e){}
+    if (typeof MEMSTORE === "object") Object.keys(MEMSTORE).forEach(function(k){ if (k.indexOf(pre) === 0) out[k.slice(pre.length)] = MEMSTORE[k]; });
+    return out;
+  }
+  function readProgressFile(cb){
+    var inp = document.createElement("input"); inp.type = "file"; inp.accept = ".json,application/json";
+    inp.addEventListener("change", function(){
+      var f = inp.files && inp.files[0]; if (!f) return;
+      f.text().then(function(txt){
+        var j; try { j = JSON.parse(txt); } catch(e){ cb(null, "Ese archivo no es un progreso válido."); return; }
+        if (!j || (j.app !== "pj6-repaso" && j.app !== "clarea") || !j.data){ cb(null, "Ese archivo no es un progreso de Clarea."); return; }
+        cb(j);
+      });
+    });
+    inp.click();
+  }
+  // adds the file's progress to the logged-in account: for each item, the newest or most complete version stays
+  function applyImport(j){
+    var pre = "u/" + window.PJ6USER + "/", added = 0;
+    Object.keys(j.data).forEach(function(k){
+      if (k.indexOf("pj6x") !== 0 && k.indexOf("clarea-") !== 0) return;
+      var inc = j.data[k], cur = null; try { cur = JSON.parse(localStorage.getItem(pre + k)); } catch(e){}
+      if (k === "clarea-faltas"){
+        if (cur && (inc.t || 0) <= (cur.t || 0)) return;
+        added++;
+      } else if (k !== "pj6x-last"){
+        var take = !cur || (inc.graded && !cur.graded) || (!!inc.graded === !!cur.graded && (inc.t || 0) > (cur.t || 0));
+        if (!take) return;
+        added++;
+      }
+      try { localStorage.setItem(pre + k, JSON.stringify(inc)); } catch(e){}
+      if (typeof MEMSTORE === "object") MEMSTORE[pre + k] = inc;
+    });
+    if (typeof renderExamTab === "function") renderExamTab();
+    if (typeof window.clareaRefresh === "function") window.clareaRefresh();
+    return added;
+  }
+  function importMsg(j, added){ return added ? "Importados " + added + " elementos" + (j.user && j.user !== window.PJ6USER ? " de «" + j.user + "»" : "") + "." : "No había nada nuevo que importar."; }
+  function exportProgress(){
+    var user = window.PJ6USER, data = progressKeys(user);
+    var n = Object.keys(data).filter(function(k){ return k !== "pj6x-last"; }).length;
+    var payload = JSON.stringify({app: "clarea", version: 1, user: user, exportedAt: new Date().toISOString(), data: data}, null, 1);
+    var name = "clarea-" + user + "-" + new Date().toISOString().slice(0, 10) + ".json";
+    var blob = new Blob([payload], {type: "application/json"});
+    var file = null; try { file = new File([blob], name, {type: "application/json"}); } catch(e){}
+    if (file && navigator.canShare && navigator.canShare({files: [file]})){
+      navigator.share({files: [file], title: "Progreso Clarea"}).then(function(){ toast("Progreso exportado (" + n + " elementos)."); }).catch(function(){});
+      return;
+    }
+    var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    toast("Archivo «" + name + "» descargado (" + n + " elementos).");
+  }
+  function importProgress(){
+    readProgressFile(function(j, msg){ if (!j){ toast(msg); return; } toast(importMsg(j, applyImport(j))); });
+  }
+
+  /* ----- login screen ----- */
+  var pendingImport = null;
+  function showLogin(){
+    var accs = lsGet(ACC) || {}, names = Object.keys(accs);
+    var mode = "in";
+    var w = el('<div class="authwrap" role="dialog" aria-modal="true" aria-label="Iniciar sesión"><div class="authcard">'
+      + '<div class="authlogo">' + LOGO + '<div><h1>Clarea</h1><p>Tus asignaturas de DAW2 · funciona sin internet</p></div></div>'
+      + '<div class="authtabs"><button type="button" data-m="in">Entrar</button><button type="button" data-m="up">Crear cuenta</button></div>'
+      + '<form class="authform" novalidate><label>Usuario<input id="auth-user" name="user" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="20"></label>'
+      + '<label>Contraseña<input id="auth-pass" name="pass" type="password" autocomplete="current-password" maxlength="64"></label>'
+      + '<label class="auth-rep">Repite la contraseña<input id="auth-pass2" name="pass2" type="password" autocomplete="new-password" maxlength="64"></label>'
+      + '<p class="autherr" aria-live="polite"></p><button class="btn" type="submit"></button></form>'
+      + (names.length ? '<div class="authknown">En este dispositivo: ' + names.map(function(n){ return '<button type="button" data-pick="' + escT(n) + '">' + escT(n) + '</button>'; }).join("") + '</div>' : '')
+      + '<p class="authinfo" hidden></p>'
+      + '<button type="button" class="authimp" data-imp>' + ICO_FILE + 'Importar progreso de un archivo</button>'
+      + '<p class="authnote">Tu cuenta se guarda en la nube: entra con el mismo usuario en el móvil o en el PC y el progreso se sincroniza solo. Sin internet también funciona.</p>'
+      + '</div></div>');
+    document.body.appendChild(w); addEyes(w);
+    var form = w.querySelector("form"), err = w.querySelector(".autherr"), btn = form.querySelector('button[type="submit"]'), info = w.querySelector(".authinfo");
+    function setMode(m){
+      mode = m; err.textContent = "";
+      w.querySelectorAll(".authtabs button").forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.m === m); });
+      w.querySelector(".auth-rep").hidden = m !== "up";
+      w.querySelector("#auth-pass").setAttribute("autocomplete", m === "up" ? "new-password" : "current-password");
+      btn.textContent = m === "up" ? "Crear cuenta y entrar" : "Entrar";
+    }
+    setMode(mode);
+    function busy(on){ btn.disabled = on; btn.textContent = on ? "Conectando…" : (mode === "up" ? "Crear cuenta y entrar" : "Entrar"); }
+    w.addEventListener("click", function(e){
+      var t = e.target.closest("[data-m]"); if (t){ setMode(t.dataset.m); return; }
+      var p = e.target.closest("[data-pick]"); if (p){ setMode("in"); form.user.value = p.dataset.pick; form.pass.focus(); return; }
+      if (e.target.closest("[data-imp]")) readProgressFile(function(j, msg){
+        if (!j){ err.textContent = msg; return; }
+        pendingImport = j; err.textContent = "";
+        var n = Object.keys(j.data).filter(function(k){ return k !== "pj6x-last"; }).length;
+        info.hidden = false;
+        info.textContent = "Archivo" + (j.user ? " de «" + j.user + "»" : "") + " listo (" + n + " elementos). Entra o crea tu cuenta y se añadirá a ella.";
+        if (j.user && !form.user.value) form.user.value = j.user;
+        form.pass.focus();
+      });
+    });
+    form.addEventListener("submit", function(e){
+      e.preventDefault();
+      if (btn.disabled) return;
+      var user = form.user.value.trim().toLowerCase(), pass = form.pass.value;
+      var hasLocal = !!(lsGet(ACC) || {})[user];
+      if (!/^[a-z0-9][a-z0-9._-]{2,19}$/.test(user) || /\.\.|\.$/.test(user)){ err.textContent = "El usuario debe tener de 3 a 20 letras, números, puntos o guiones (sin espacios) y empezar por letra o número."; form.user.focus(); return; }
+      if (pass.length < (mode === "up" ? 6 : 4)){ err.textContent = "La contraseña debe tener al menos " + (mode === "up" ? 6 : 4) + " caracteres."; form.pass.focus(); return; }
+      if (mode === "up"){
+        if (hasLocal){ err.textContent = "Ya existe una cuenta con ese usuario en este dispositivo. Entra con ella en «Entrar»."; return; }
+        if (pass !== form.pass2.value){ err.textContent = "Las dos contraseñas no coinciden."; form.pass2.focus(); return; }
+      }
+      err.textContent = ""; busy(true);
+      checkLocal(user, pass).then(function(localOk){
+        var p = mode === "up" ? cloudAuth("signUp", user, pass) : cloudLogin(user, pass, localOk);
+        return p.then(function(j){
+          return saveLocal(user, pass).then(function(ok){
+            if (!ok) throw {code: "STORAGE"};
+            enter(user, w, mode === "up" ? "new" : j.uploaded ? "uploaded" : "in");
+          });
+        }, function(e){
+          if (!e.net) throw e;
+          // no internet: only accounts already saved on this device; they connect to the cloud when internet comes back
+          if (mode === "up") return saveLocal(user, pass).then(function(ok){ if (!ok) throw {code: "STORAGE"}; pendingPw = {user: user, pass: pass}; enter(user, w, "offline-new"); });
+          if (!hasLocal){ err.textContent = "Sin internet solo puedes entrar con cuentas que ya hayas usado en este dispositivo. Conéctate la primera vez."; return; }
+          if (!localOk){ err.textContent = "Contraseña incorrecta."; form.pass.value = ""; form.pass.focus(); return; }
+          pendingPw = {user: user, pass: pass}; enter(user, w, "offline");
+        });
+      }).catch(function(e){
+        err.textContent = authMsg(e, mode);
+        if (/INVALID|EMAIL_EXISTS/.test(e.code || "") && mode === "in"){ form.pass.value = ""; form.pass.focus(); }
+      }).then(function(){ if (document.body.contains(w)) busy(false); });
+    });
+    setTimeout(function(){ (names.length === 1 ? form.pass : form.user).focus(); if (names.length === 1) form.user.value = names[0]; }, 50);
+  }
+  function enter(user, w, how){
+    lsSet(SES, user); window.PJ6USER = user;
+    w.classList.add("closing"); setTimeout(function(){ w.remove(); }, 220); addBar();
+    if (typeof renderExamTab === "function") renderExamTab();
+    if (typeof window.clareaRefresh === "function") window.clareaRefresh();
+    var msg = {"new": "Cuenta creada. ¡A estudiar, " + user + "!",
+               uploaded: "Tu cuenta ya está en la nube: entra con ella en tus otros dispositivos.",
+               "in": "Hola de nuevo, " + user + ".",
+               offline: "Hola, " + user + ". Sin internet: se sincronizará al volver la conexión.",
+               "offline-new": "Cuenta creada sin internet. Se subirá a la nube al volver la conexión."}[how];
+    var imp = pendingImport; pendingImport = null;
+    // first bring the account's progress from the cloud, then add the imported file on top
+    toast(msg);
+    setTimeout(firstSyncDone, 8000);
+    syncNow().then(function(){ firstSyncDone(); if (imp){ var n = applyImport(imp); setTimeout(function(){ toast(importMsg(imp, n)); }, 3300); } });
+  }
+
+  /* ----- one-time invitation for accounts created before the cloud existed ----- */
+  function maybeInvite(){
+    var u = window.PJ6USER;
+    if (!u || cloudGet(u) || !navigator.onLine || document.querySelector(".updbar")) return;
+    var seen = lsGet("clarea-syncask/" + u); if (seen && Date.now() - seen < 3 * 86400000) return;
+    var b = el('<div class="updbar syncbar" role="status"><div><b>Sincroniza tu cuenta</b><span>Úsala en el móvil y en el PC con el mismo progreso.</span></div><button type="button" class="updgo">Activar</button><button type="button" class="updno" aria-label="Ahora no">✕</button></div>');
+    document.body.appendChild(b);
+    function close(){ b.classList.add("closing"); setTimeout(function(){ b.remove(); }, 220); }
+    b.querySelector(".updgo").addEventListener("click", function(){ close(); openActivate(); });
+    b.querySelector(".updno").addEventListener("click", function(){ lsSet("clarea-syncask/" + u, Date.now()); close(); });
+  }
+  function openActivate(){
+    var u = window.PJ6USER;
+    var w = el('<div class="authwrap" role="dialog" aria-modal="true" aria-label="Activar sincronización"><div class="authcard">'
+      + '<div class="authlogo">' + LOGO + '<div><h1>Sincronizar</h1><p>Cuenta «' + escT(u) + '»</p></div></div>'
+      + '<p class="authtxt">Escribe tu contraseña <b>una vez</b>. Tu cuenta se guardará en la nube: entra con ella en cualquier dispositivo y el progreso se sincroniza solo.</p>'
+      + '<form class="authform" novalidate><input type="text" name="user" autocomplete="username" value="' + escT(u) + '" hidden>'
+      + '<label>Contraseña<input name="pass" type="password" autocomplete="current-password" maxlength="64"></label>'
+      + '<p class="autherr" aria-live="polite"></p><button class="btn" type="submit">Activar sincronización</button>'
+      + '<button type="button" class="authalt">Ahora no</button></form></div></div>');
+    document.body.appendChild(w); addEyes(w);
+    var form = w.querySelector("form"), err = w.querySelector(".autherr"), btn = form.querySelector(".btn");
+    function close(){ w.classList.add("closing"); setTimeout(function(){ w.remove(); }, 220); }
+    w.querySelector(".authalt").addEventListener("click", close);
+    form.addEventListener("submit", function(e){
+      e.preventDefault(); if (btn.disabled) return;
+      var pass = form.pass.value; if (!pass){ form.pass.focus(); return; }
+      btn.disabled = true; btn.textContent = "Conectando…"; err.textContent = "";
+      checkLocal(u, pass).then(function(localOk){
+        return cloudLogin(u, pass, localOk).then(function(j){
+          return saveLocal(u, pass).then(function(){
+            close(); toast(j.uploaded ? "Listo: tu cuenta ya está en la nube." : "Listo: sincronización activada.");
+            syncNow();
+          });
+        });
+      }).catch(function(e){
+        err.textContent = e.net ? "Sin internet. Prueba cuando tengas conexión." : authMsg(e, "in");
+        form.pass.value = ""; form.pass.focus();
+      }).then(function(){ btn.disabled = false; btn.textContent = "Activar sincronización"; });
+    });
+    setTimeout(function(){ form.pass.focus(); }, 50);
+  }
+
+  /* ----- account bar: sync / export / import / logout ----- */
+  function addBar(){
+    var head = document.querySelector("[data-ubar]") || document.querySelector(".top .wrap"); if (!head || document.querySelector(".ubar")) return;
+    var u = window.PJ6USER;
+    var tb = el('<button type="button" class="thbtn"></button>');
+    tb.addEventListener("click", function(){ window.clareaToggleTheme(); });
+    head.appendChild(tb);
+    var bar = el('<div class="ubar"><button type="button" class="ubtn" aria-haspopup="true" aria-expanded="false"><i>' + escT(u.charAt(0).toUpperCase()) + '</i><span>' + escT(u) + '</span></button></div>');
+    head.appendChild(bar);
+    applyTheme(lsGet(TH));
+    var btn = bar.querySelector(".ubtn"), menu = null;
+    function close(){ if (menu){ menu.remove(); menu = null; btn.setAttribute("aria-expanded", "false"); } }
+    btn.addEventListener("click", function(e){
+      e.stopPropagation();
+      if (menu){ close(); return; }
+      var on = !!cloudGet(u), sl = syncLabel(u);
+      menu = el('<div class="umenu" role="menu">'
+        + (on ? '<button type="button" role="menuitem" data-a="sync">Sincronizar ahora<small><span class="sdot ' + sl.dot + '"></span>' + escT(sl.text) + '</small></button><hr>'
+              : '<button type="button" role="menuitem" data-a="act">Activar sincronización<small><span class="sdot off"></span>Usa tu cuenta en todos tus dispositivos</small></button><hr>')
+        + (lsGet(TH) ? '<button type="button" role="menuitem" data-a="sys">Usar el tema del sistema<small>Claro u oscuro según el dispositivo</small></button><hr>' : '')
+        + '<button type="button" role="menuitem" data-a="upd">Buscar actualizaciones<small>Comprueba si hay una versión nueva de Clarea</small></button><hr>'
+        + '<button type="button" role="menuitem" data-a="out">Cerrar sesión<small>' + (on ? 'Tu progreso sigue en la nube y en este dispositivo' : 'Tu progreso se queda guardado') + '</small></button>'
+        + (window.CLAREA_VERSION ? '<p class="uver">Versión del ' + window.CLAREA_VERSION.replace(/^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d).*/, "$3/$2/$1 · $4:$5") + '</p>' : '') + '</div>');
+      bar.appendChild(menu); btn.setAttribute("aria-expanded", "true");
+      menu.addEventListener("click", function(ev){
+        var a = ev.target.closest("[data-a]"); if (!a) return; close();
+        var act = a.dataset.a;
+        if (act === "sync"){ toast("Sincronizando…"); syncNow().then(function(){ toast(syncLabel(u).text + "."); }); }
+        else if (act === "act") openActivate();
+        else if (act === "exp") exportProgress();
+        else if (act === "imp") importProgress();
+        else if (act === "upd"){ if (window.clareaCheckUpdate) window.clareaCheckUpdate(toast); else location.reload(); }
+        else if (act === "sys"){ try { localStorage.removeItem(TH); } catch(e){} applyTheme(null); toast("Tema automático: sigue el del dispositivo."); }
+        else {
+          // upload pending changes first (if there is internet), then forget this device's cloud session
+          var done = false, out = function(){ if (done) return; done = true; cloudSet(u, null); try { localStorage.removeItem(SES); } catch(e){} location.reload(); };
+          syncNow().then(out, out); setTimeout(out, 4000);
+        }
+      });
+    });
+    document.addEventListener("click", function(e){ if (menu && !bar.contains(e.target)) close(); });
+  }
+  document.addEventListener("DOMContentLoaded", function(){
+    if (window.PJ6USER){ addBar(); lastAuto = Date.now(); setTimeout(firstSyncDone, 8000); syncNow().then(function(){ firstSyncDone(); setTimeout(maybeInvite, 1200); }); }
+    else showLogin();
+  });
+})();
+</script>
+
+</head>
+<body>
+<header class="cbar"><div class="wrap" data-ubar><a class="clogo" href="./" aria-label="Clarea, inicio"><svg class="lg-light" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.49 32"><g transform="translate(0 0)"><rect x="8" y="4" width="22" height="6" rx="3" fill="#1f5fbf"/><rect x="2" y="14" width="14" height="6" rx="3" fill="#1f5fbf"/><rect x="20" y="14" width="6" height="6" rx="1.5" fill="#b4561b"/><rect x="8" y="24" width="22" height="6" rx="3" fill="#1f5fbf"/></g><path transform="translate(41.036 28.0) scale(0.014094)" fill="#18202b" d="M772.5198974609375 24.0Q567.81591796875 24.0 408.71185302734375 -70.39593505859375Q249.6077880859375 -164.7918701171875 159.00372314453125 -337.4278564453125Q68.399658203125 -510.0638427734375 68.399658203125 -744.0Q68.399658203125 -979.9361572265625 158.7197265625 -1152.7881469726562Q249.039794921875 -1325.64013671875 408.4278564453125 -1419.820068359375Q567.81591796875 -1514.0 772.5198974609375 -1514.0Q900.7520751953125 -1514.0 1010.8121948242188 -1475.9759521484375Q1120.872314453125 -1437.951904296875 1206.2603759765625 -1366.9158325195312Q1291.6484375 -1295.8797607421875 1346.7284545898438 -1196.399658203125Q1401.8084716796875 -1096.9195556640625 1420.2164306640625 -973.439453125H1134.69482421875Q1120.5828857421875 -1042.34326171875 1088.7109985351562 -1096.2711181640625Q1056.839111328125 -1150.198974609375 1010.34326171875 -1187.4348754882812Q963.847412109375 -1224.6707763671875 904.57958984375 -1243.8627319335938Q845.311767578125 -1263.0546875 775.9759521484375 -1263.0546875Q643.1683349609375 -1263.0546875 548.3926391601562 -1198.8668823242188Q453.616943359375 -1134.6790771484375 402.84912109375 -1018.1873779296875Q352.081298828125 -901.6956787109375 352.081298828125 -744.0Q352.081298828125 -587.3043212890625 402.63311767578125 -471.3126220703125Q453.1849365234375 -355.3209228515625 548.1766357421875 -291.13311767578125Q643.1683349609375 -226.9453125 775.9759521484375 -226.9453125Q845.311767578125 -226.9453125 904.07958984375 -245.9212646484375Q962.847412109375 -264.897216796875 1009.34326171875 -302.06512451171875Q1055.839111328125 -339.2330322265625 1087.9949951171875 -392.660888671875Q1120.15087890625 -446.0887451171875 1135.2628173828125 -514.560546875H1420.2164306640625Q1401.9444580078125 -391.6484375 1346.7964477539062 -292.38433837890625Q1291.6484375 -193.1202392578125 1206.0443725585938 -122.3681640625Q1120.4403076171875 -51.6160888671875 1010.59619140625 -13.80804443359375Q900.7520751953125 24.0 772.5198974609375 24.0Z M1822.121298828125 -1490.0V0.0H1552.7597265625V-1490.0Z M2321.663740234375 17.2960205078125Q2216.2317333984374 17.2960205078125 2134.0957470703124 -17.8399658203125Q2051.9597607421874 -52.9759521484375 2004.5397778320312 -123.39593505859375Q1957.119794921875 -193.81591796875 1957.119794921875 -298.81591796875Q1957.119794921875 -388.951904296875 1990.6757641601562 -447.89593505859375Q2024.2317333984374 -506.8399658203125 2082.0037060546874 -542.364013671875Q2139.7756787109374 -577.8880615234375 2214.627668457031 -596.4000854492188Q2289.479658203125 -614.912109375 2371.07169921875 -623.18408203125Q2468.61564453125 -633.72802734375 2525.9676342773437 -642.2400512695312Q2583.3196240234374 -650.7520751953125 2608.035627441406 -667.6160888671875Q2632.751630859375 -684.4801025390625 2632.751630859375 -719.72802734375V-727.135986328125Q2632.751630859375 -770.0157470703125 2610.6517163085937 -802.6355590820312Q2588.5518017578124 -835.25537109375 2547.2839794921874 -853.84326171875Q2506.0161572265624 -872.43115234375 2448.00041015625 -872.43115234375Q2389.688642578125 -872.43115234375 2345.284833984375 -853.7632446289062Q2300.881025390625 -835.0953369140625 2274.941145019531 -801.9514770507812Q2249.0012646484374 -768.8076171875 2245.0012646484374 -725.311767578125H1988.6239453125Q1995.35197265625 -832.2479248046875 2052.5120068359374 -911.2039794921875Q2109.672041015625 -990.1600341796875 2211.8001538085937 -1033.9440307617188Q2313.9282666015624 -1077.72802734375 2454.91251953125 -1077.72802734375Q2559.872724609375 -1077.72802734375 2642.5808544921874 -1052.9440307617188Q2725.288984375 -1028.1600341796875 2782.5410595703124 -981.2960205078125Q2839.793134765625 -934.4320068359375 2869.521162109375 -868.0559692382812Q2899.249189453125 -801.679931640625 2899.249189453125 -718.495849609375V0.0H2635.343671875V-149.135986328125H2631.343671875Q2605.4315625 -100.3358154296875 2564.9755078125 -62.6998291015625Q2524.519453125 -25.0638427734375 2465.0435009765624 -3.8839111328125Q2405.567548828125 17.2960205078125 2321.663740234375 17.2960205078125ZM2391.45646484375 -176.608642578125Q2469.1040478515624 -176.608642578125 2523.5198803710937 -205.0364990234375Q2577.935712890625 -233.46435546875 2606.207685546875 -281.3681640625Q2634.479658203125 -329.27197265625 2634.479658203125 -388.767822265625V-500.031494140625Q2622.3196240234374 -492.759521484375 2600.1396923828124 -486.0555419921875Q2577.9597607421874 -479.3515625 2547.8838940429687 -473.1475830078125Q2517.80802734375 -466.943603515625 2482.596174316406 -461.02362060546875Q2447.3843212890624 -455.1036376953125 2409.7284375 -449.53564453125Q2357.36857421875 -441.9676513671875 2313.6687451171874 -424.84368896484375Q2269.968916015625 -407.7197265625 2243.7450390625 -378.48382568359375Q2217.521162109375 -349.2479248046875 2217.521162109375 -303.504150390625Q2217.521162109375 -264.00830078125 2239.0530834960937 -235.42041015625Q2260.5850048828124 -206.83251953125 2299.64884765625 -191.7205810546875Q2338.7126904296874 -176.608642578125 2391.45646484375 -176.608642578125Z M3075.8397265625 0.0V-1056.0H3335.473271484375V-878.767822265625H3338.6092578125Q3367.6092578125 -971.5679931640625 3429.745244140625 -1018.3279418945312Q3491.88123046875 -1065.087890625 3595.201298828125 -1065.087890625Q3620.79333984375 -1065.087890625 3642.0213671875 -1063.951904296875Q3663.24939453125 -1062.81591796875 3679.297490234375 -1061.679931640625V-826.87890625Q3664.5454150390624 -828.5828857421875 3629.5653125 -831.1388549804688Q3594.5852099609374 -833.69482421875 3557.153203125 -833.69482421875Q3497.42517578125 -833.69482421875 3449.153203125 -806.2628173828125Q3400.88123046875 -778.830810546875 3373.0412646484374 -724.2068481445312Q3345.201298828125 -669.5828857421875 3345.201298828125 -587.791015625V0.0Z M4239.600307617187 24.0Q4080.71224609375 24.0 3963.6521264648436 -46.78399658203125Q3846.5920068359374 -117.5679931640625 3782.759914550781 -242.28399658203125Q3718.927822265625 -367.0 3718.927822265625 -526.864013671875Q3718.927822265625 -688.2960205078125 3784.247890625 -813.0800170898438Q3849.567958984375 -937.864013671875 3964.6960717773436 -1008.9320068359375Q4079.8241845703124 -1080.0 4229.328334960937 -1080.0Q4344.512416992187 -1080.0 4438.412502441406 -1040.2160034179688Q4532.312587890625 -1000.4320068359375 4600.064663085937 -927.0800170898438Q4667.81673828125 -853.72802734375 4704.340786132812 -753.3080444335938Q4740.864833984375 -652.8880615234375 4740.864833984375 -531.6160888671875V-458.6956787109375H3821.024013671875V-638.3922119140625H4608.280239257812L4487.32748046875 -592.5762939453125Q4487.32748046875 -678.1119384765625 4456.387600097656 -740.3316650390625Q4425.447719726562 -802.5513916015625 4368.839931640625 -836.3312377929688Q4312.232143554687 -870.111083984375 4234.08041015625 -870.111083984375Q4156.928676757812 -870.111083984375 4100.388881835937 -836.3312377929688Q4043.8490869140624 -802.5513916015625 4012.9092065429686 -740.3316650390625Q3981.969326171875 -678.1119384765625 3981.969326171875 -592.5762939453125V-475.215576171875Q3981.969326171875 -388.2479248046875 4012.9892236328124 -322.3922119140625Q4044.00912109375 -256.5364990234375 4103.264919433594 -220.05267333984375Q4162.520717773437 -183.56884765625 4246.512416992187 -183.56884765625Q4307.688198242187 -183.56884765625 4354.968044433594 -201.66876220703125Q4402.247890625 -219.7686767578125 4433.915798339844 -252.48052978515625Q4465.583706054687 -285.1923828125 4479.423671875 -328.5281982421875H4728.9129296875Q4709.344936523437 -224.504150390625 4640.72884765625 -145.19610595703125Q4572.112758789062 -65.8880615234375 4468.540615234375 -20.94403076171875Q4364.968471679687 24.0 4239.600307617187 24.0Z M5201.783740234375 17.2960205078125Q5096.351733398437 17.2960205078125 5014.215747070312 -17.8399658203125Q4932.079760742187 -52.9759521484375 4884.659777832031 -123.39593505859375Q4837.239794921875 -193.81591796875 4837.239794921875 -298.81591796875Q4837.239794921875 -388.951904296875 4870.795764160156 -447.89593505859375Q4904.351733398437 -506.8399658203125 4962.123706054687 -542.364013671875Q5019.895678710937 -577.8880615234375 5094.747668457031 -596.4000854492188Q5169.599658203125 -614.912109375 5251.19169921875 -623.18408203125Q5348.73564453125 -633.72802734375 5406.087634277344 -642.2400512695312Q5463.439624023437 -650.7520751953125 5488.155627441406 -667.6160888671875Q5512.871630859375 -684.4801025390625 5512.871630859375 -719.72802734375V-727.135986328125Q5512.871630859375 -770.0157470703125 5490.771716308594 -802.6355590820312Q5468.671801757812 -835.25537109375 5427.403979492187 -853.84326171875Q5386.136157226562 -872.43115234375 5328.12041015625 -872.43115234375Q5269.808642578125 -872.43115234375 5225.404833984375 -853.7632446289062Q5181.001025390625 -835.0953369140625 5155.061145019531 -801.9514770507812Q5129.121264648437 -768.8076171875 5125.121264648437 -725.311767578125H4868.7439453125Q4875.47197265625 -832.2479248046875 4932.632006835937 -911.2039794921875Q4989.792041015625 -990.1600341796875 5091.920153808594 -1033.9440307617188Q5194.048266601562 -1077.72802734375 5335.03251953125 -1077.72802734375Q5439.992724609375 -1077.72802734375 5522.700854492187 -1052.9440307617188Q5605.408984375 -1028.1600341796875 5662.661059570312 -981.2960205078125Q5719.913134765625 -934.4320068359375 5749.641162109375 -868.0559692382812Q5779.369189453125 -801.679931640625 5779.369189453125 -718.495849609375V0.0H5515.463671875V-149.135986328125H5511.463671875Q5485.5515625 -100.3358154296875 5445.0955078125 -62.6998291015625Q5404.639453125 -25.0638427734375 5345.163500976562 -3.8839111328125Q5285.687548828125 17.2960205078125 5201.783740234375 17.2960205078125ZM5271.57646484375 -176.608642578125Q5349.224047851562 -176.608642578125 5403.639880371094 -205.0364990234375Q5458.055712890625 -233.46435546875 5486.327685546875 -281.3681640625Q5514.599658203125 -329.27197265625 5514.599658203125 -388.767822265625V-500.031494140625Q5502.439624023437 -492.759521484375 5480.259692382812 -486.0555419921875Q5458.079760742187 -479.3515625 5428.003894042969 -473.1475830078125Q5397.92802734375 -466.943603515625 5362.716174316406 -461.02362060546875Q5327.504321289062 -455.1036376953125 5289.8484375 -449.53564453125Q5237.48857421875 -441.9676513671875 5193.788745117187 -424.84368896484375Q5150.088916015625 -407.7197265625 5123.8650390625 -378.48382568359375Q5097.641162109375 -349.2479248046875 5097.641162109375 -303.504150390625Q5097.641162109375 -264.00830078125 5119.173083496094 -235.42041015625Q5140.705004882812 -206.83251953125 5179.76884765625 -191.7205810546875Q5218.832690429687 -176.608642578125 5271.57646484375 -176.608642578125Z"/></svg>
+<svg class="lg-dark" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.49 32"><g transform="translate(0 0)"><rect x="8" y="4" width="22" height="6" rx="3" fill="#76a7f2"/><rect x="2" y="14" width="14" height="6" rx="3" fill="#76a7f2"/><rect x="20" y="14" width="6" height="6" rx="1.5" fill="#e3925a"/><rect x="8" y="24" width="22" height="6" rx="3" fill="#76a7f2"/></g><path transform="translate(41.036 28.0) scale(0.014094)" fill="#e3e7ec" d="M772.5198974609375 24.0Q567.81591796875 24.0 408.71185302734375 -70.39593505859375Q249.6077880859375 -164.7918701171875 159.00372314453125 -337.4278564453125Q68.399658203125 -510.0638427734375 68.399658203125 -744.0Q68.399658203125 -979.9361572265625 158.7197265625 -1152.7881469726562Q249.039794921875 -1325.64013671875 408.4278564453125 -1419.820068359375Q567.81591796875 -1514.0 772.5198974609375 -1514.0Q900.7520751953125 -1514.0 1010.8121948242188 -1475.9759521484375Q1120.872314453125 -1437.951904296875 1206.2603759765625 -1366.9158325195312Q1291.6484375 -1295.8797607421875 1346.7284545898438 -1196.399658203125Q1401.8084716796875 -1096.9195556640625 1420.2164306640625 -973.439453125H1134.69482421875Q1120.5828857421875 -1042.34326171875 1088.7109985351562 -1096.2711181640625Q1056.839111328125 -1150.198974609375 1010.34326171875 -1187.4348754882812Q963.847412109375 -1224.6707763671875 904.57958984375 -1243.8627319335938Q845.311767578125 -1263.0546875 775.9759521484375 -1263.0546875Q643.1683349609375 -1263.0546875 548.3926391601562 -1198.8668823242188Q453.616943359375 -1134.6790771484375 402.84912109375 -1018.1873779296875Q352.081298828125 -901.6956787109375 352.081298828125 -744.0Q352.081298828125 -587.3043212890625 402.63311767578125 -471.3126220703125Q453.1849365234375 -355.3209228515625 548.1766357421875 -291.13311767578125Q643.1683349609375 -226.9453125 775.9759521484375 -226.9453125Q845.311767578125 -226.9453125 904.07958984375 -245.9212646484375Q962.847412109375 -264.897216796875 1009.34326171875 -302.06512451171875Q1055.839111328125 -339.2330322265625 1087.9949951171875 -392.660888671875Q1120.15087890625 -446.0887451171875 1135.2628173828125 -514.560546875H1420.2164306640625Q1401.9444580078125 -391.6484375 1346.7964477539062 -292.38433837890625Q1291.6484375 -193.1202392578125 1206.0443725585938 -122.3681640625Q1120.4403076171875 -51.6160888671875 1010.59619140625 -13.80804443359375Q900.7520751953125 24.0 772.5198974609375 24.0Z M1822.121298828125 -1490.0V0.0H1552.7597265625V-1490.0Z M2321.663740234375 17.2960205078125Q2216.2317333984374 17.2960205078125 2134.0957470703124 -17.8399658203125Q2051.9597607421874 -52.9759521484375 2004.5397778320312 -123.39593505859375Q1957.119794921875 -193.81591796875 1957.119794921875 -298.81591796875Q1957.119794921875 -388.951904296875 1990.6757641601562 -447.89593505859375Q2024.2317333984374 -506.8399658203125 2082.0037060546874 -542.364013671875Q2139.7756787109374 -577.8880615234375 2214.627668457031 -596.4000854492188Q2289.479658203125 -614.912109375 2371.07169921875 -623.18408203125Q2468.61564453125 -633.72802734375 2525.9676342773437 -642.2400512695312Q2583.3196240234374 -650.7520751953125 2608.035627441406 -667.6160888671875Q2632.751630859375 -684.4801025390625 2632.751630859375 -719.72802734375V-727.135986328125Q2632.751630859375 -770.0157470703125 2610.6517163085937 -802.6355590820312Q2588.5518017578124 -835.25537109375 2547.2839794921874 -853.84326171875Q2506.0161572265624 -872.43115234375 2448.00041015625 -872.43115234375Q2389.688642578125 -872.43115234375 2345.284833984375 -853.7632446289062Q2300.881025390625 -835.0953369140625 2274.941145019531 -801.9514770507812Q2249.0012646484374 -768.8076171875 2245.0012646484374 -725.311767578125H1988.6239453125Q1995.35197265625 -832.2479248046875 2052.5120068359374 -911.2039794921875Q2109.672041015625 -990.1600341796875 2211.8001538085937 -1033.9440307617188Q2313.9282666015624 -1077.72802734375 2454.91251953125 -1077.72802734375Q2559.872724609375 -1077.72802734375 2642.5808544921874 -1052.9440307617188Q2725.288984375 -1028.1600341796875 2782.5410595703124 -981.2960205078125Q2839.793134765625 -934.4320068359375 2869.521162109375 -868.0559692382812Q2899.249189453125 -801.679931640625 2899.249189453125 -718.495849609375V0.0H2635.343671875V-149.135986328125H2631.343671875Q2605.4315625 -100.3358154296875 2564.9755078125 -62.6998291015625Q2524.519453125 -25.0638427734375 2465.0435009765624 -3.8839111328125Q2405.567548828125 17.2960205078125 2321.663740234375 17.2960205078125ZM2391.45646484375 -176.608642578125Q2469.1040478515624 -176.608642578125 2523.5198803710937 -205.0364990234375Q2577.935712890625 -233.46435546875 2606.207685546875 -281.3681640625Q2634.479658203125 -329.27197265625 2634.479658203125 -388.767822265625V-500.031494140625Q2622.3196240234374 -492.759521484375 2600.1396923828124 -486.0555419921875Q2577.9597607421874 -479.3515625 2547.8838940429687 -473.1475830078125Q2517.80802734375 -466.943603515625 2482.596174316406 -461.02362060546875Q2447.3843212890624 -455.1036376953125 2409.7284375 -449.53564453125Q2357.36857421875 -441.9676513671875 2313.6687451171874 -424.84368896484375Q2269.968916015625 -407.7197265625 2243.7450390625 -378.48382568359375Q2217.521162109375 -349.2479248046875 2217.521162109375 -303.504150390625Q2217.521162109375 -264.00830078125 2239.0530834960937 -235.42041015625Q2260.5850048828124 -206.83251953125 2299.64884765625 -191.7205810546875Q2338.7126904296874 -176.608642578125 2391.45646484375 -176.608642578125Z M3075.8397265625 0.0V-1056.0H3335.473271484375V-878.767822265625H3338.6092578125Q3367.6092578125 -971.5679931640625 3429.745244140625 -1018.3279418945312Q3491.88123046875 -1065.087890625 3595.201298828125 -1065.087890625Q3620.79333984375 -1065.087890625 3642.0213671875 -1063.951904296875Q3663.24939453125 -1062.81591796875 3679.297490234375 -1061.679931640625V-826.87890625Q3664.5454150390624 -828.5828857421875 3629.5653125 -831.1388549804688Q3594.5852099609374 -833.69482421875 3557.153203125 -833.69482421875Q3497.42517578125 -833.69482421875 3449.153203125 -806.2628173828125Q3400.88123046875 -778.830810546875 3373.0412646484374 -724.2068481445312Q3345.201298828125 -669.5828857421875 3345.201298828125 -587.791015625V0.0Z M4239.600307617187 24.0Q4080.71224609375 24.0 3963.6521264648436 -46.78399658203125Q3846.5920068359374 -117.5679931640625 3782.759914550781 -242.28399658203125Q3718.927822265625 -367.0 3718.927822265625 -526.864013671875Q3718.927822265625 -688.2960205078125 3784.247890625 -813.0800170898438Q3849.567958984375 -937.864013671875 3964.6960717773436 -1008.9320068359375Q4079.8241845703124 -1080.0 4229.328334960937 -1080.0Q4344.512416992187 -1080.0 4438.412502441406 -1040.2160034179688Q4532.312587890625 -1000.4320068359375 4600.064663085937 -927.0800170898438Q4667.81673828125 -853.72802734375 4704.340786132812 -753.3080444335938Q4740.864833984375 -652.8880615234375 4740.864833984375 -531.6160888671875V-458.6956787109375H3821.024013671875V-638.3922119140625H4608.280239257812L4487.32748046875 -592.5762939453125Q4487.32748046875 -678.1119384765625 4456.387600097656 -740.3316650390625Q4425.447719726562 -802.5513916015625 4368.839931640625 -836.3312377929688Q4312.232143554687 -870.111083984375 4234.08041015625 -870.111083984375Q4156.928676757812 -870.111083984375 4100.388881835937 -836.3312377929688Q4043.8490869140624 -802.5513916015625 4012.9092065429686 -740.3316650390625Q3981.969326171875 -678.1119384765625 3981.969326171875 -592.5762939453125V-475.215576171875Q3981.969326171875 -388.2479248046875 4012.9892236328124 -322.3922119140625Q4044.00912109375 -256.5364990234375 4103.264919433594 -220.05267333984375Q4162.520717773437 -183.56884765625 4246.512416992187 -183.56884765625Q4307.688198242187 -183.56884765625 4354.968044433594 -201.66876220703125Q4402.247890625 -219.7686767578125 4433.915798339844 -252.48052978515625Q4465.583706054687 -285.1923828125 4479.423671875 -328.5281982421875H4728.9129296875Q4709.344936523437 -224.504150390625 4640.72884765625 -145.19610595703125Q4572.112758789062 -65.8880615234375 4468.540615234375 -20.94403076171875Q4364.968471679687 24.0 4239.600307617187 24.0Z M5201.783740234375 17.2960205078125Q5096.351733398437 17.2960205078125 5014.215747070312 -17.8399658203125Q4932.079760742187 -52.9759521484375 4884.659777832031 -123.39593505859375Q4837.239794921875 -193.81591796875 4837.239794921875 -298.81591796875Q4837.239794921875 -388.951904296875 4870.795764160156 -447.89593505859375Q4904.351733398437 -506.8399658203125 4962.123706054687 -542.364013671875Q5019.895678710937 -577.8880615234375 5094.747668457031 -596.4000854492188Q5169.599658203125 -614.912109375 5251.19169921875 -623.18408203125Q5348.73564453125 -633.72802734375 5406.087634277344 -642.2400512695312Q5463.439624023437 -650.7520751953125 5488.155627441406 -667.6160888671875Q5512.871630859375 -684.4801025390625 5512.871630859375 -719.72802734375V-727.135986328125Q5512.871630859375 -770.0157470703125 5490.771716308594 -802.6355590820312Q5468.671801757812 -835.25537109375 5427.403979492187 -853.84326171875Q5386.136157226562 -872.43115234375 5328.12041015625 -872.43115234375Q5269.808642578125 -872.43115234375 5225.404833984375 -853.7632446289062Q5181.001025390625 -835.0953369140625 5155.061145019531 -801.9514770507812Q5129.121264648437 -768.8076171875 5125.121264648437 -725.311767578125H4868.7439453125Q4875.47197265625 -832.2479248046875 4932.632006835937 -911.2039794921875Q4989.792041015625 -990.1600341796875 5091.920153808594 -1033.9440307617188Q5194.048266601562 -1077.72802734375 5335.03251953125 -1077.72802734375Q5439.992724609375 -1077.72802734375 5522.700854492187 -1052.9440307617188Q5605.408984375 -1028.1600341796875 5662.661059570312 -981.2960205078125Q5719.913134765625 -934.4320068359375 5749.641162109375 -868.0559692382812Q5779.369189453125 -801.679931640625 5779.369189453125 -718.495849609375V0.0H5515.463671875V-149.135986328125H5511.463671875Q5485.5515625 -100.3358154296875 5445.0955078125 -62.6998291015625Q5404.639453125 -25.0638427734375 5345.163500976562 -3.8839111328125Q5285.687548828125 17.2960205078125 5201.783740234375 17.2960205078125ZM5271.57646484375 -176.608642578125Q5349.224047851562 -176.608642578125 5403.639880371094 -205.0364990234375Q5458.055712890625 -233.46435546875 5486.327685546875 -281.3681640625Q5514.599658203125 -329.27197265625 5514.599658203125 -388.767822265625V-500.031494140625Q5502.439624023437 -492.759521484375 5480.259692382812 -486.0555419921875Q5458.079760742187 -479.3515625 5428.003894042969 -473.1475830078125Q5397.92802734375 -466.943603515625 5362.716174316406 -461.02362060546875Q5327.504321289062 -455.1036376953125 5289.8484375 -449.53564453125Q5237.48857421875 -441.9676513671875 5193.788745117187 -424.84368896484375Q5150.088916015625 -407.7197265625 5123.8650390625 -378.48382568359375Q5097.641162109375 -349.2479248046875 5097.641162109375 -303.504150390625Q5097.641162109375 -264.00830078125 5119.173083496094 -235.42041015625Q5140.705004882812 -206.83251953125 5179.76884765625 -191.7205810546875Q5218.832690429687 -176.608642578125 5271.57646484375 -176.608642578125Z"/></svg>
+</a></div></header>
+<div class="wrap rhead"><a class="rback" href="./asig/PJ6">← PJ6</a><div class="rtitle"><svg viewBox="0 0 120 120" aria-hidden="true"><polygon points="60,8 112,50 8,50" fill="var(--fg)"/><rect x="14" y="50" width="92" height="62" fill="var(--accent)"/><g stroke="var(--surface)" stroke-width="4"><line x1="14" y1="71" x2="106" y2="71"/><line x1="14" y1="92" x2="106" y2="92"/><line x1="60" y1="50" x2="60" y2="71"/><line x1="37" y1="71" x2="37" y2="92"/><line x1="83" y1="71" x2="83" y2="92"/><line x1="60" y1="92" x2="60" y2="112"/></g></svg><div><b>BuildPro Order Manager</b><span>Repaso del examen · orderManagementApp</span></div></div></div>
+<div id="rv"><div class="wrap rwait"><b>Cargando el repaso…</b><span>Se descarga de tu cuenta en la nube la primera vez; después funciona sin internet.</span></div></div>
+<script>
+/* The BuildPro review is private: it is not in the public web, it lives in the cloud account "isaac"
+   (synced like the rest of the progress) and this page only shows it from there. */
+(function () {
+  var KEY = "clarea-repaso-pj6", done = false;
+  // the review changes the address to "#tab"; keep this page's path (a <base> would otherwise send "#tab" to the home page)
+  ["pushState", "replaceState"].forEach(function (m) {
+    var orig = history[m].bind(history);
+    history[m] = function (st, t, url) { if (typeof url === "string" && url.charAt(0) === "#") url = location.pathname + location.search + url; return orig(st, t, url); };
+  });
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest && e.target.closest('a[href^="#"]'); if (!a) return;
+    e.preventDefault(); location.hash = a.getAttribute("href");
+  }, true);
+  function stored() { try { return JSON.parse(localStorage.getItem("u/" + window.PJ6USER + "/" + KEY)); } catch (e) { return null; } }
+  function msg(t, s) { var b = document.querySelector("#rv .rwait"); if (b) b.innerHTML = "<b>" + t + "</b><span>" + s + "</span>"; }
+  function mount(p) {
+    done = true;
+    var st = document.createElement("style"); st.textContent = p.css; document.head.appendChild(st);
+    var box = document.getElementById("rv"); box.innerHTML = p.html;
+    // scripts put with innerHTML do not run: replace each one with a fresh copy, in order
+    Array.prototype.forEach.call(box.querySelectorAll("script"), function (old) { var s = document.createElement("script"); s.textContent = old.textContent; old.parentNode.replaceChild(s, old); });
+  }
+  // only on this computer (local test server): the private file next to the build is uploaded to the account the first time
+  function localCopy() {
+    if (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return Promise.resolve(null);
+    return fetch("privado/repaso-pj6.json", {cache: "no-store"}).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+  }
+  function tryLoad(final) {
+    if (done || !window.PJ6USER) return;
+    if (window.PJ6USER !== "isaac") { location.replace("./"); return; }
+    var p = stored();
+    localCopy().then(function (l) {
+      if (done) return;
+      if (l && (!p || (l.t || 0) > (p.t || 0))) { try { localStorage.setItem("u/isaac/" + KEY, JSON.stringify(l)); } catch (e) {} p = l; }
+      if (p && p.html) mount(p);
+      else if (final) msg("El repaso aún no está en tu cuenta", "Abre Clarea con internet para que se descargue.");
+    });
+  }
+  window.clareaRefresh = function () { tryLoad(false); };
+  document.addEventListener("DOMContentLoaded", function () {
+    tryLoad(false);
+    if (window.clareaSyncReady) window.clareaSyncReady.then(function () { tryLoad(true); });
+  });
+})();
+</script>
+<script>
+/* offline cache + "Actualizar" banner when a new version has been downloaded */
+(function () {
+  if (!("serviceWorker" in navigator)) return;
+  var reloading = false, shown = false;
+  function banner(worker) {
+    if (shown || !worker) return; shown = true;
+    var b = document.createElement("div");
+    b.className = "updbar"; b.setAttribute("role", "status");
+    b.innerHTML = '<div><b>Hay una versión nueva de Clarea</b><span>Toca «Actualizar» para usarla ahora.</span></div><button type="button" class="updgo">Actualizar</button><button type="button" class="updno" aria-label="Ahora no">✕</button>';
+    document.body.appendChild(b);
+    b.querySelector(".updgo").addEventListener("click", function () {
+      b.querySelector(".updgo").textContent = "Actualizando…";
+      worker.postMessage({type: "SKIP_WAITING"});
+      setTimeout(function () { if (!reloading) location.reload(); }, 3000);
+    });
+    b.querySelector(".updno").addEventListener("click", function () { b.classList.add("closing"); setTimeout(function () { b.remove(); shown = false; }, 220); });
+  }
+  navigator.serviceWorker.addEventListener("controllerchange", function () { if (reloading) return; reloading = true; location.reload(); });
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("./sw.js").then(function (reg) {
+      function watch(w) { if (!w) return; w.addEventListener("statechange", function () { if (w.state === "installed" && navigator.serviceWorker.controller) banner(w); }); }
+      if (reg.waiting && navigator.serviceWorker.controller) banner(reg.waiting);
+      watch(reg.installing);
+      reg.addEventListener("updatefound", function () { watch(reg.installing); });
+      // look for a new version now and every time the app comes back to the screen
+      reg.update().catch(function () {});
+      // manual check from the account menu
+      window.clareaCheckUpdate = function (say) {
+        if (reg.waiting) { banner(reg.waiting); return; }
+        say("Buscando actualizaciones…");
+        reg.update().then(function () {
+          setTimeout(function () {
+            if (reg.waiting) banner(reg.waiting);
+            else if (reg.installing) say("Descargando la versión nueva…");
+            else say("Ya tienes la última versión.");
+          }, 1500);
+        }).catch(function () { say("Sin conexión: no se puede comprobar ahora."); });
+      };
+      document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") reg.update().catch(function () {}); });
+    }).catch(function () {});
+  });
+})();
+</script>
+</body>
+</html>
