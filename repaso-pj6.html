@@ -8,7 +8,7 @@
 <meta property="og:title" content="Clarea">
 <meta property="og:description" content="Asignaturas, horario, faltas y repasos de tus proyectos.">
 <meta property="og:url" content="https://clarea.dev/">
-<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112102532">
+<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112103555">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Logo de Clarea">
@@ -24,7 +24,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
-<script>window.CLAREA_VERSION = "20261112102532"; window.CLAREA_RELEASE = "1.0";</script>
+<script>window.CLAREA_VERSION = "20261112103555"; window.CLAREA_RELEASE = "1.1"; window.CLAREA_BETA = false; window.CLAREA_CHANGES = [{"v": "1.1", "date": "", "title": "Notificaciones, recordatorios e instalar", "items": [["Tareas en segundo plano", "Un apartado nuevo en el menú para ver lo que Clarea está haciendo: la sincronización y la generación con IA, parte por parte, con botón para pararla."], ["Notificaciones", "Los avisos de Clarea en un solo sitio, con los que no has leído marcados. Se guardan en tu cuenta, así que los ves en todos tus dispositivos."], ["Recordatorios", "Al abrir Clarea te avisa de las entregas y exámenes de hoy y de mañana."], ["Añadir a mi calendario", "Cada evento se puede guardar en el calendario del iPhone, de Google o de Outlook, con avisos el día antes que llegan aunque Clarea esté cerrada."], ["Instalar", "Un botón en el móvil para tener Clarea en la pantalla de inicio, con una guía para cada navegador."], ["Guía para la clave de IA", "Paso a paso para conseguir tu clave de Gemini, Claude o ChatGPT, y mensajes de error claros que dicen qué hacer."], ["Novedades", "Esta pantalla: lo nuevo de cada versión."], ["Más limpio", "El tema y tu perfil juntos en la barra de arriba, sin la barra flotante de la IA, y si borras un proyecto que se estaba generando, se cancela solo."]]}, {"v": "1.0", "date": "2026-11-12", "title": "Primera versión", "items": [["Cuentas", "Sincronización entre dispositivos y opción de recordar la sesión."], ["Clases", "DAW-2A y ASIX-2A (Jesuitas Clot) y 1.º DAW (La Salle), con su horario."], ["Hoy", "Las clases del día con hora de inicio y fin, entregas y exámenes."], ["Asignaturas", "Con sus profes, el horario y las faltas de asistencia."], ["Calendario", "Entregas y exámenes (práctico, teórico y de código), con notas, edición y aviso de horas ocupadas."], ["Proyectos", "Sube tu código (carpeta, .zip o GitHub) y Clarea te prepara un repaso: código explicado, historial de Git, glosario y exámenes, con tu propia IA."], ["App", "Se instala en el móvil, funciona sin conexión y tiene modo claro y oscuro."]]}];</script>
 <title>PJ6 · Repaso · Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -313,7 +313,7 @@ window.CLAI = (function () {
   const CLAUDE_MODELS = ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"];
   function cfg() { try { return JSON.parse(localStorage.getItem("clarea-ai")) || {}; } catch (e) { return {}; } }
   function cfgSet(c) { try { localStorage.setItem("clarea-ai", JSON.stringify(c)); } catch (e) {} }
-  const ready = () => { const c = cfg(); return !!(c.prov && c.keys && c.keys[c.prov] && c.models && c.models[c.prov]); };
+  const ready = () => { const c = cfg(); return !!(c.prov && c.keys && c.keys[c.prov] && c.models && c.models[c.prov] && c.ok && c.ok[c.prov] === c.keys[c.prov]); };
 
   /* ---------- a project, read fresh from storage ---------- */
   const DT = {facil: "Fácil", media: "Media", dificil: "Difícil"};
@@ -852,7 +852,7 @@ body:has(.updbar) .aipill{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .bgparts li.ok,.bgparts li.wait{color:var(--muted)}
 .bgacts{display:flex;gap:8px;flex-wrap:wrap}
 .bgbtn{flex:none;font:inherit;font-size:13.5px;font-weight:700;border-radius:9px;padding:8px 12px;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--surface);color:var(--fg)}
-.bgbtn.main{background:var(--clarea-orange,#b4561b);border-color:transparent;color:#fff}
+.bgbtn.main{background:#b4561b;border-color:transparent;color:#fff}  /* the deep orange in both themes: the light one of dark mode looks washed out under white text */
 .ntlist{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--bg)}
 .ntrow{display:flex;gap:10px;padding:11px 12px;text-decoration:none;color:var(--fg);position:relative}
 .ntrow+.ntrow{border-top:1px solid var(--line)}
@@ -876,7 +876,7 @@ body:has(.updbar) .aipill{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .instbtn svg{width:18px;height:18px;color:var(--accent)}
 .instbtn + .ucombo{margin-left:auto}  /* equal free space on both sides: «Instalar» sits centred between the logo and the profile */
 /* narrow phones: just the icon, and long names get cut with «…» instead of pushing out of the screen */
-@media (max-width:389px){.instbtn span{display:none}.instbtn{width:42px;padding:0;justify-content:center}}
+@media (max-width:389px){.instbtn span{display:none}.instbtn{width:42px;padding:0 0 0 6px;justify-content:center}}
 .instbtn + .ucombo{flex:0 1 auto;min-width:0}.instbtn + .ucombo .ubar,.instbtn + .ucombo .ubtn{min-width:0}
 .insthead{display:flex;align-items:center;gap:12px}
 .insthead img{width:52px;height:52px;border-radius:12px;flex:none;box-shadow:0 2px 8px rgba(0,0,0,.18)}
@@ -907,6 +907,7 @@ body:has(.updbar) .aipill{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .instchips button.on small{color:var(--accent)}
 .instarrow[hidden]{display:none}
 @media (hover:hover) and (pointer:fine){.instchips button:hover{border-color:var(--accent)}}
+.aipi.cal{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}.aipi.cal svg{width:15px;height:15px}
 </style>
 <script>
 /* ---------- offline accounts: everything stays in this device ---------- */
@@ -1499,6 +1500,7 @@ body:has(.updbar) .aipill{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
   /* ----- notifications of the app: saved with the account, so they reach every device ----- */
   var ICO_BG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/><path d="M12 7v5l3 2"/></svg>';
   var ICO_BELL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>';
+  var ICO_CALN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>';
   function NK(){ return "u/" + window.PJ6USER + "/clarea-notifs"; }
   function notifs(){ var x = window.PJ6USER && lsGet(NK()); return x && Array.isArray(x.list) ? x.list : []; }
   function notifsSet(list){ lsSet(NK(), {t: Date.now(), list: list.slice(0, 60)}); paintBadge(); }
@@ -1602,7 +1604,7 @@ body:has(.updbar) .aipill{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
       h += '<div class="bgcard"><div class="bghead"><span class="bgt"><b>Avisos en este dispositivo</b><small>Recibe una notificación del sistema cuando Clarea termine algo, aunque estés en otra app.</small></span></div><div class="bgacts"><button type="button" class="bgbtn main" data-ntperm>Activar avisos</button></div></div>';
     if (!l.length) return h + '<div class="bgcard bgempty">No tienes notificaciones. Aquí verás, por ejemplo, cuándo termina de generarse un proyecto.</div>';
     h += '<div class="ntlist">' + l.map(function(n){
-      var ic = n.kind === "ok" ? '<span class="aipi ok">✓</span>' : (n.kind === "bad" || n.kind === "warn") ? '<span class="aipi bad">!</span>' : '<span class="aipi">i</span>';
+      var ic = n.kind === "cal" ? '<span class="aipi cal">' + ICO_CALN + '</span>' : n.kind === "ok" ? '<span class="aipi ok">✓</span>' : (n.kind === "bad" || n.kind === "warn") ? '<span class="aipi bad">!</span>' : '<span class="aipi">i</span>';
       var inner = ic + '<span class="bgt"><b>' + escT(n.title) + '</b>' + (n.body ? '<small>' + escT(n.body) + '</small>' : '') + '<time>' + ago(n.at) + '</time></span>';
       return n.url ? '<a class="ntrow' + (n.read ? '' : ' new') + '" href="' + escT(n.url) + '">' + inner + '</a>' : '<div class="ntrow' + (n.read ? '' : ' new') + '">' + inner + '</div>';
     }).join("") + '</div><div class="bgacts"><button type="button" class="bgbtn" data-ntclear>Borrar todas</button></div>';
@@ -1744,9 +1746,10 @@ body:has(.updbar) .aipill{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
         + '<button type="button" role="menuitem" data-a="upd">Buscar actualizaciones<small>Comprueba si hay una versión nueva de Clarea</small></button><hr>'
         + '<button type="button" role="menuitem" data-a="tasks">Tareas en segundo plano<small>' + escT(aiLine()) + '</small></button><hr>'
         + '<button type="button" role="menuitem" data-a="notif">Notificaciones' + (unread() ? '<span class="mcount">' + unread() + '</span>' : '') + '<small>' + (unread() ? 'Tienes avisos sin leer' : 'Los avisos de Clarea') + '</small></button><hr>'
+        + '<button type="button" role="menuitem" data-a="news">Novedades<small>Qué trae cada versión de Clarea</small></button><hr>'
         + '<button type="button" role="menuitem" data-a="acct">Mi cuenta<small>Datos, privacidad y cerrar sesión</small></button>'
 
-        + (window.CLAREA_VERSION ? '<p class="uver">Clarea ' + (window.CLAREA_RELEASE || "1.0") + ' · ' + window.CLAREA_VERSION.replace(/^(\d{4})(\d\d)(\d\d).*/, "$3/$2/$1") + '<br>Creada por Isaac Castillo Vidal</p>' : '') + '</div>');
+        + (window.CLAREA_VERSION ? '<p class="uver">Clarea ' + (window.CLAREA_RELEASE || "1.0") + (window.CLAREA_BETA ? ' beta' : '') + ' · ' + window.CLAREA_VERSION.replace(/^(\d{4})(\d\d)(\d\d).*/, "$3/$2/$1") + '<br>Creada por Isaac Castillo Vidal</p>' : '') + '</div>');
       bar.appendChild(menu); btn.setAttribute("aria-expanded", "true");
       menu.addEventListener("click", function(ev){
         var a = ev.target.closest("[data-a]"); if (!a) return; close();
@@ -1758,6 +1761,7 @@ body:has(.updbar) .aipill{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
         else if (act === "upd"){ if (window.clareaCheckUpdate) window.clareaCheckUpdate(toast); else location.reload(); }
         else if (act === "acct") openAccount();
         else if (act === "tasks") openTasks();
+        else if (act === "news"){ if (typeof window.clareaGo === "function") window.clareaGo("novedades"); else location.href = new URL("novedades", document.baseURI).href; }
         else if (act === "notif") openNotifs();
         else if (act === "sys"){ try { localStorage.removeItem(TH); } catch(e){} applyTheme(null); toast("Tema automático: sigue el del dispositivo."); }
         else {

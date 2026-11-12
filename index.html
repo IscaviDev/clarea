@@ -8,7 +8,7 @@
 <meta property="og:title" content="Clarea">
 <meta property="og:description" content="Asignaturas, horario, faltas y repasos de tus proyectos.">
 <meta property="og:url" content="https://clarea.dev/">
-<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112102532">
+<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112103555">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Logo de Clarea">
@@ -24,7 +24,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
-<script>window.CLAREA_VERSION = "20261112102532"; window.CLAREA_RELEASE = "1.0";</script>
+<script>window.CLAREA_VERSION = "20261112103555"; window.CLAREA_RELEASE = "1.1"; window.CLAREA_BETA = false; window.CLAREA_CHANGES = [{"v": "1.1", "date": "", "title": "Notificaciones, recordatorios e instalar", "items": [["Tareas en segundo plano", "Un apartado nuevo en el menú para ver lo que Clarea está haciendo: la sincronización y la generación con IA, parte por parte, con botón para pararla."], ["Notificaciones", "Los avisos de Clarea en un solo sitio, con los que no has leído marcados. Se guardan en tu cuenta, así que los ves en todos tus dispositivos."], ["Recordatorios", "Al abrir Clarea te avisa de las entregas y exámenes de hoy y de mañana."], ["Añadir a mi calendario", "Cada evento se puede guardar en el calendario del iPhone, de Google o de Outlook, con avisos el día antes que llegan aunque Clarea esté cerrada."], ["Instalar", "Un botón en el móvil para tener Clarea en la pantalla de inicio, con una guía para cada navegador."], ["Guía para la clave de IA", "Paso a paso para conseguir tu clave de Gemini, Claude o ChatGPT, y mensajes de error claros que dicen qué hacer."], ["Novedades", "Esta pantalla: lo nuevo de cada versión."], ["Más limpio", "El tema y tu perfil juntos en la barra de arriba, sin la barra flotante de la IA, y si borras un proyecto que se estaba generando, se cancela solo."]]}, {"v": "1.0", "date": "2026-11-12", "title": "Primera versión", "items": [["Cuentas", "Sincronización entre dispositivos y opción de recordar la sesión."], ["Clases", "DAW-2A y ASIX-2A (Jesuitas Clot) y 1.º DAW (La Salle), con su horario."], ["Hoy", "Las clases del día con hora de inicio y fin, entregas y exámenes."], ["Asignaturas", "Con sus profes, el horario y las faltas de asistencia."], ["Calendario", "Entregas y exámenes (práctico, teórico y de código), con notas, edición y aviso de horas ocupadas."], ["Proyectos", "Sube tu código (carpeta, .zip o GitHub) y Clarea te prepara un repaso: código explicado, historial de Git, glosario y exámenes, con tu propia IA."], ["App", "Se instala en el móvil, funciona sin conexión y tiene modo claro y oscuro."]]}];</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -414,6 +414,35 @@ details.fr2>summary::-webkit-details-marker{display:none}
 .evleg{display:flex;flex-wrap:wrap;gap:6px 12px;padding:4px 2px 2px;font-size:12px;font-weight:600;color:var(--muted)}
 .evleg span{display:inline-flex;align-items:center;gap:5px}
 .evleg i{width:12px;height:12px;border-radius:4px;background:var(--sbg)}
+
+.evx svg{display:block;margin:auto}
+.calto{display:flex;flex-direction:column;gap:8px}
+.calto button{display:flex;flex-direction:column;gap:2px;text-align:left;font:inherit;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--fg);padding:12px 14px;cursor:pointer}
+.calto b{font-size:15px}.calto small{font-size:13px;color:var(--muted);line-height:1.35}
+@media (hover:hover) and (pointer:fine){.calto button:hover{border-color:var(--accent)}}
+
+/* «Novedades» */
+.pg.v-news{max-width:760px}
+.nvers{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px}
+.nvers::-webkit-scrollbar{display:none}
+.nver{flex:none;display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:96px;font:inherit;text-align:left;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--fg);padding:10px 14px;cursor:pointer}
+.nver b{font-size:19px;font-weight:800}
+.nver em,.nbox h2 em{font-style:normal;font-size:11px;font-weight:800;border-radius:999px;padding:2px 8px;background:var(--clarea-orange,#b4561b);color:#fff;letter-spacing:.02em}
+.nver small{font-size:11.5px;color:var(--muted);font-weight:600}
+.nver.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--surface))}
+.nbox{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.nhead{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.nico{flex:none;width:44px;height:44px;border-radius:12px;background:color-mix(in srgb,var(--accent) 15%,transparent);color:var(--accent);display:flex;align-items:center;justify-content:center}
+.nico svg{width:24px;height:24px}
+.nbox h2{font-size:19px;font-weight:800;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.nbox h2 em{vertical-align:middle}
+.nhead p{margin:2px 0 0;font-size:13px;color:var(--muted)}
+.nlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.nlist li{display:flex;flex-direction:column;gap:2px;padding:11px 0 11px 18px;position:relative;font-size:14.5px;line-height:1.45}
+.nlist li+li{border-top:1px solid var(--line)}
+.nlist li::before{content:"";position:absolute;left:2px;top:19px;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.nlist span{color:var(--muted)}
+@media (hover:hover) and (pointer:fine){.nver:hover{border-color:var(--accent)}}
 </style>
 <script>
 /* Clarea · projects: reading code (folder, .zip, GitHub), GitHub history and simple code analysis.
@@ -660,7 +689,7 @@ window.CLAI = (function () {
   const CLAUDE_MODELS = ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"];
   function cfg() { try { return JSON.parse(localStorage.getItem("clarea-ai")) || {}; } catch (e) { return {}; } }
   function cfgSet(c) { try { localStorage.setItem("clarea-ai", JSON.stringify(c)); } catch (e) {} }
-  const ready = () => { const c = cfg(); return !!(c.prov && c.keys && c.keys[c.prov] && c.models && c.models[c.prov]); };
+  const ready = () => { const c = cfg(); return !!(c.prov && c.keys && c.keys[c.prov] && c.models && c.models[c.prov] && c.ok && c.ok[c.prov] === c.keys[c.prov]); };
 
   /* ---------- a project, read fresh from storage ---------- */
   const DT = {facil: "Fácil", media: "Media", dificil: "Difícil"};
@@ -1199,7 +1228,7 @@ body:has(.updbar) .aipill{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .bgparts li.ok,.bgparts li.wait{color:var(--muted)}
 .bgacts{display:flex;gap:8px;flex-wrap:wrap}
 .bgbtn{flex:none;font:inherit;font-size:13.5px;font-weight:700;border-radius:9px;padding:8px 12px;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--surface);color:var(--fg)}
-.bgbtn.main{background:var(--clarea-orange,#b4561b);border-color:transparent;color:#fff}
+.bgbtn.main{background:#b4561b;border-color:transparent;color:#fff}  /* the deep orange in both themes: the light one of dark mode looks washed out under white text */
 .ntlist{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--bg)}
 .ntrow{display:flex;gap:10px;padding:11px 12px;text-decoration:none;color:var(--fg);position:relative}
 .ntrow+.ntrow{border-top:1px solid var(--line)}
@@ -1223,7 +1252,7 @@ body:has(.updbar) .aipill{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .instbtn svg{width:18px;height:18px;color:var(--accent)}
 .instbtn + .ucombo{margin-left:auto}  /* equal free space on both sides: «Instalar» sits centred between the logo and the profile */
 /* narrow phones: just the icon, and long names get cut with «…» instead of pushing out of the screen */
-@media (max-width:389px){.instbtn span{display:none}.instbtn{width:42px;padding:0;justify-content:center}}
+@media (max-width:389px){.instbtn span{display:none}.instbtn{width:42px;padding:0 0 0 6px;justify-content:center}}
 .instbtn + .ucombo{flex:0 1 auto;min-width:0}.instbtn + .ucombo .ubar,.instbtn + .ucombo .ubtn{min-width:0}
 .insthead{display:flex;align-items:center;gap:12px}
 .insthead img{width:52px;height:52px;border-radius:12px;flex:none;box-shadow:0 2px 8px rgba(0,0,0,.18)}
@@ -1254,6 +1283,7 @@ body:has(.updbar) .aipill{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .instchips button.on small{color:var(--accent)}
 .instarrow[hidden]{display:none}
 @media (hover:hover) and (pointer:fine){.instchips button:hover{border-color:var(--accent)}}
+.aipi.cal{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}.aipi.cal svg{width:15px;height:15px}
 </style>
 <script>
 /* ---------- offline accounts: everything stays in this device ---------- */
@@ -1846,6 +1876,7 @@ body:has(.updbar) .aipill{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
   /* ----- notifications of the app: saved with the account, so they reach every device ----- */
   var ICO_BG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/><path d="M12 7v5l3 2"/></svg>';
   var ICO_BELL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>';
+  var ICO_CALN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>';
   function NK(){ return "u/" + window.PJ6USER + "/clarea-notifs"; }
   function notifs(){ var x = window.PJ6USER && lsGet(NK()); return x && Array.isArray(x.list) ? x.list : []; }
   function notifsSet(list){ lsSet(NK(), {t: Date.now(), list: list.slice(0, 60)}); paintBadge(); }
@@ -1949,7 +1980,7 @@ body:has(.updbar) .aipill{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
       h += '<div class="bgcard"><div class="bghead"><span class="bgt"><b>Avisos en este dispositivo</b><small>Recibe una notificación del sistema cuando Clarea termine algo, aunque estés en otra app.</small></span></div><div class="bgacts"><button type="button" class="bgbtn main" data-ntperm>Activar avisos</button></div></div>';
     if (!l.length) return h + '<div class="bgcard bgempty">No tienes notificaciones. Aquí verás, por ejemplo, cuándo termina de generarse un proyecto.</div>';
     h += '<div class="ntlist">' + l.map(function(n){
-      var ic = n.kind === "ok" ? '<span class="aipi ok">✓</span>' : (n.kind === "bad" || n.kind === "warn") ? '<span class="aipi bad">!</span>' : '<span class="aipi">i</span>';
+      var ic = n.kind === "cal" ? '<span class="aipi cal">' + ICO_CALN + '</span>' : n.kind === "ok" ? '<span class="aipi ok">✓</span>' : (n.kind === "bad" || n.kind === "warn") ? '<span class="aipi bad">!</span>' : '<span class="aipi">i</span>';
       var inner = ic + '<span class="bgt"><b>' + escT(n.title) + '</b>' + (n.body ? '<small>' + escT(n.body) + '</small>' : '') + '<time>' + ago(n.at) + '</time></span>';
       return n.url ? '<a class="ntrow' + (n.read ? '' : ' new') + '" href="' + escT(n.url) + '">' + inner + '</a>' : '<div class="ntrow' + (n.read ? '' : ' new') + '">' + inner + '</div>';
     }).join("") + '</div><div class="bgacts"><button type="button" class="bgbtn" data-ntclear>Borrar todas</button></div>';
@@ -2091,9 +2122,10 @@ body:has(.updbar) .aipill{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
         + '<button type="button" role="menuitem" data-a="upd">Buscar actualizaciones<small>Comprueba si hay una versión nueva de Clarea</small></button><hr>'
         + '<button type="button" role="menuitem" data-a="tasks">Tareas en segundo plano<small>' + escT(aiLine()) + '</small></button><hr>'
         + '<button type="button" role="menuitem" data-a="notif">Notificaciones' + (unread() ? '<span class="mcount">' + unread() + '</span>' : '') + '<small>' + (unread() ? 'Tienes avisos sin leer' : 'Los avisos de Clarea') + '</small></button><hr>'
+        + '<button type="button" role="menuitem" data-a="news">Novedades<small>Qué trae cada versión de Clarea</small></button><hr>'
         + '<button type="button" role="menuitem" data-a="acct">Mi cuenta<small>Datos, privacidad y cerrar sesión</small></button>'
 
-        + (window.CLAREA_VERSION ? '<p class="uver">Clarea ' + (window.CLAREA_RELEASE || "1.0") + ' · ' + window.CLAREA_VERSION.replace(/^(\d{4})(\d\d)(\d\d).*/, "$3/$2/$1") + '<br>Creada por Isaac Castillo Vidal</p>' : '') + '</div>');
+        + (window.CLAREA_VERSION ? '<p class="uver">Clarea ' + (window.CLAREA_RELEASE || "1.0") + (window.CLAREA_BETA ? ' beta' : '') + ' · ' + window.CLAREA_VERSION.replace(/^(\d{4})(\d\d)(\d\d).*/, "$3/$2/$1") + '<br>Creada por Isaac Castillo Vidal</p>' : '') + '</div>');
       bar.appendChild(menu); btn.setAttribute("aria-expanded", "true");
       menu.addEventListener("click", function(ev){
         var a = ev.target.closest("[data-a]"); if (!a) return; close();
@@ -2105,6 +2137,7 @@ body:has(.updbar) .aipill{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
         else if (act === "upd"){ if (window.clareaCheckUpdate) window.clareaCheckUpdate(toast); else location.reload(); }
         else if (act === "acct") openAccount();
         else if (act === "tasks") openTasks();
+        else if (act === "news"){ if (typeof window.clareaGo === "function") window.clareaGo("novedades"); else location.href = new URL("novedades", document.baseURI).href; }
         else if (act === "notif") openNotifs();
         else if (act === "sys"){ try { localStorage.removeItem(TH); } catch(e){} applyTheme(null); toast("Tema automático: sigue el del dispositivo."); }
         else {
@@ -2372,7 +2405,7 @@ function evChip(e, big){
 const evTime = e => e.type === "entrega" ? "hasta las " + e.from : e.from + "–" + e.to + (e.over ? " · en la clase de " + e.over : "");
 function evRow(e){
   const ty = EVT_LOOK[e.type] ? e.type : "teorico";
-  return '<div class="evr" style="' + tyVars(ty) + '"><span class="evd"><b>' + fromYmd(e.date).getDate() + '</b><small>' + WD[fromYmd(e.date).getDay()] + '</small></span><span class="evt"><b>' + esc(e.name) + '</b><span class="evtags"><span class="evtag" style="' + tyVars(ty) + '">' + tyIco(ty) + esc(EVT_SHORT[e.type] || "") + '</span><span class="evsub" style="' + sv(e.subj) + '">' + esc(e.subj) + '</span></span><small>' + esc(evTime(e)) + '</small>' + (e.notes ? '<span class="evn">' + esc(e.notes) + '</span>' : '') + '</span><span class="evbtns"><button class="evx" data-go="#/calendario/editar/' + esc(e.id) + '" aria-label="Editar ' + esc(e.name) + '" title="Editar">✎</button><button class="evx" data-evdel="' + esc(e.id) + '" aria-label="Borrar ' + esc(e.name) + '" title="Borrar">✕</button></span></div>';
+  return '<div class="evr" style="' + tyVars(ty) + '"><span class="evd"><b>' + fromYmd(e.date).getDate() + '</b><small>' + WD[fromYmd(e.date).getDay()] + '</small></span><span class="evt"><b>' + esc(e.name) + '</b><span class="evtags"><span class="evtag" style="' + tyVars(ty) + '">' + tyIco(ty) + esc(EVT_SHORT[e.type] || "") + '</span><span class="evsub" style="' + sv(e.subj) + '">' + esc(e.subj) + '</span></span><small>' + esc(evTime(e)) + '</small>' + (e.notes ? '<span class="evn">' + esc(e.notes) + '</span>' : '') + '</span><span class="evbtns"><button class="evx" data-evcal="' + esc(e.id) + '" aria-label="Añadir ' + esc(e.name) + ' a mi calendario" title="Añadir a mi calendario">' + ICO_CALADD + '</button><button class="evx" data-go="#/calendario/editar/' + esc(e.id) + '" aria-label="Editar ' + esc(e.name) + '" title="Editar">✎</button><button class="evx" data-evdel="' + esc(e.id) + '" aria-label="Borrar ' + esc(e.name) + '" title="Borrar">✕</button></span></div>';
 }
 function viewCalendar(){
   const now = new Date();
@@ -2503,6 +2536,53 @@ function availSlots(code, other){
   return (other ? sessionsOf(null, 10).filter(x => x.subj !== code) : sessionsOf(code, 10)).map(x => Object.assign(x, {v: x.date + "|" + x.from + "|" + x.to + "|" + (other ? x.subj : "")}));
 }
 // a centred panel in Clarea's style for choosing something; resolves with what was picked (or null)
+/* ----- «Añadir a mi calendario»: the event goes to the phone's calendar, with its own alarms (they work with Clarea closed) ----- */
+const ICO_CALADD = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg>';
+const IOSDEV = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+function evTimes(e){
+  const at = (date, t) => { const d = fromYmd(date), [h, m] = t.split(":").map(Number); d.setHours(h, m, 0, 0); return d; };
+  // a delivery is shown as the last half hour before its deadline
+  if (e.type === "entrega"){ const end = at(e.date, e.from || "23:59"), st = new Date(end.getTime() - 30 * 60000); return [st, end]; }
+  return [at(e.date, e.from), at(e.date, e.to)];
+}
+const icsStamp = d => d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0") + "T" + String(d.getHours()).padStart(2, "0") + String(d.getMinutes()).padStart(2, "0") + "00";
+const icsEsc = t => String(t || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+function evTexts(e){
+  const what = (EVT_TYPES.find(t => t[0] === e.type) || ["", "Evento"])[1];
+  const details = [e.type === "entrega" ? "Entrega hasta las " + e.from + "." : "", e.over ? "En la clase de " + e.over + "." : "", e.notes || "", "Apuntado en Clarea · clarea.dev"].filter(Boolean).join("\n\n");
+  return {title: what + " " + e.subj + " · " + e.name, details, place: e.type === "entrega" ? "" : "Aula " + ROOM};
+}
+function evIcs(e){
+  const [st, en] = evTimes(e), T = evTexts(e), now = new Date();
+  const utc = now.toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
+  const alarm = (trig, txt) => ["BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + icsEsc(txt), "TRIGGER:" + trig, "END:VALARM"];
+  const L = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Clarea//ES", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "BEGIN:VEVENT",
+    "UID:" + e.id + "@clarea.dev", "DTSTAMP:" + utc, "DTSTART:" + icsStamp(st), "DTEND:" + icsStamp(en),
+    "SUMMARY:" + icsEsc(T.title), "DESCRIPTION:" + icsEsc(T.details)].concat(T.place ? ["LOCATION:" + icsEsc(T.place)] : [],
+    alarm("-P1D", "Mañana: " + T.title),
+    alarm(e.type === "entrega" ? "-PT2H" : "-PT1H", T.title), ["END:VEVENT", "END:VCALENDAR"]);
+  return L.join("\r\n") + "\r\n";
+}
+function evToPhone(e){
+  const name = ("clarea-" + e.subj + "-" + e.date).replace(/[^\w.-]+/g, "-") + ".ics", text = evIcs(e);
+  if (IOSDEV){ location.href = "data:text/calendar;charset=utf-8," + encodeURIComponent(text); return; }   // iPhone opens «Añadir al calendario» by itself
+  const url = URL.createObjectURL(new Blob([text], {type: "text/calendar;charset=utf-8"}));
+  const a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+function evToGoogle(e){
+  const [st, en] = evTimes(e), T = evTexts(e);
+  const q = new URLSearchParams({action: "TEMPLATE", text: T.title, dates: icsStamp(st) + "/" + icsStamp(en), details: T.details, location: T.place, ctz: "Europe/Madrid"});
+  window.open("https://calendar.google.com/calendar/render?" + q.toString(), "_blank", "noopener");
+}
+function openAddCal(e){
+  const body = '<p class="fnote" style="margin:0 0 12px">Se guarda en tu calendario con dos avisos: el día antes y ' + (e.type === "entrega" ? '2 horas' : '1 hora') + ' antes. Esos avisos te llegan aunque Clarea esté cerrada.</p><div class="calto">'
+    + '<button type="button" data-cto="phone"><b>' + (IOSDEV ? 'Calendario del iPhone' : 'Calendario del móvil u ordenador') + '</b><small>' + (IOSDEV ? 'Se abre el calendario: toca «Añadir»' : 'Descarga el evento (.ics) y ábrelo: sirve para Outlook, Samsung y Apple') + '</small></button>'
+    + '<button type="button" data-cto="google"><b>Google Calendar</b><small>Se abre Google Calendar con el evento listo: toca «Guardar»</small></button></div>';
+  openPicker("Añadir a mi calendario", body, (w, done) => w.addEventListener("click", ev => { const b = ev.target.closest("[data-cto]"); if (b) done(b.dataset.cto); })).then(v => {
+    if (v === "phone") evToPhone(e); else if (v === "google") evToGoogle(e);
+  });
+}
 function openPicker(title, body, onMount){
   return new Promise(resolve => {
     const w = document.createElement("div"); w.className = "pkw";
@@ -2623,10 +2703,14 @@ document.addEventListener("submit", e => {
   go("#/calendario"); toast((old ? "Cambios guardados: " : "Guardado: ") + name + " · " + dayLabel(date) + (type === "entrega" ? " · hasta las " + from : "") + ".");
 });
 document.addEventListener("click", e => {
+  const nv = e.target.closest("[data-nv]");
+  if (nv){ NEWS.v = nv.dataset.nv; render(); return; }
   const m = e.target.closest("[data-calm]");
   if (m){ CAL.m += +m.dataset.calm; if (CAL.m < 0){ CAL.m = 11; CAL.y--; } if (CAL.m > 11){ CAL.m = 0; CAL.y++; } render(); return; }
   const d = e.target.closest("[data-calday]");
   if (d){ CAL.sel = d.dataset.calday; const dt = fromYmd(CAL.sel); if (dt.getMonth() !== CAL.m){ CAL.m = dt.getMonth(); CAL.y = dt.getFullYear(); } render(); return; }
+  const ce = e.target.closest("[data-evcal]");
+  if (ce){ const ev = allEvents().find(v => v.id === ce.dataset.evcal); if (ev) openAddCal(ev); return; }
   const x = e.target.closest("[data-evdel]");
   if (x){ const ev = allEvents().find(v => v.id === x.dataset.evdel); if (!ev) return;
     window.clareaConfirm({title: "¿Eliminar este evento?", html: "Vas a eliminar <b>«" + esc(ev.name) + "»</b> (" + esc(EVT_SHORT[ev.type] || "") + " · " + esc(ev.subj) + " · " + dayLabel(ev.date) + "). No se puede deshacer.", ok: "Eliminar"})
@@ -2730,9 +2814,26 @@ function viewFaltas(){
   return h;
 }
 
+/* ===================== «Novedades»: what each version brought ===================== */
+const NEWS = {v: null};
+const ICO_SPARK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>';
+function newsDate(d){ if (!d) return window.CLAREA_BETA ? "En pruebas" : "Próximamente"; const x = fromYmd(d); return x.getDate() + " de " + MONTHS[x.getMonth()] + " de " + x.getFullYear(); }
+function viewNews(){
+  const L = window.CLAREA_CHANGES || [], mine = window.CLAREA_RELEASE;
+  // versions not out yet are only listed in the beta
+  const list = L.filter(x => x.date || window.CLAREA_BETA || x.v === mine);
+  if (!list.length) return '<button class="back" data-go="#/">← Inicio</button><div class="empty">No hay novedades.</div>';
+  const cur = list.find(x => x.v === NEWS.v) || list[0], newest = list[0].v;
+  let h = '<button class="back" data-go="#/">← Inicio</button><div class="thead"><h1>Novedades</h1><span>Lo nuevo de cada versión de Clarea</span></div>';
+  h += '<div class="nvers" role="tablist" aria-label="Versión">' + list.map(x => '<button type="button" role="tab" class="nver' + (x.v === cur.v ? ' on' : '') + '" aria-selected="' + (x.v === cur.v) + '" data-nv="' + esc(x.v) + '"><b>' + esc(x.v) + '</b>' + (x.v === newest ? '<em>Más reciente</em>' : '') + (x.v === mine && x.v !== newest ? '<small>La tuya</small>' : '') + '</button>').join("") + '</div>';
+  h += '<div class="nbox"><div class="nhead"><span class="nico">' + ICO_SPARK + '</span><div><h2>Clarea ' + esc(cur.v) + (cur.v === newest ? ' <em>Más reciente</em>' : '') + '</h2><p>' + esc(cur.title) + ' · ' + newsDate(cur.date) + '</p></div></div>'
+    + '<ul class="nlist">' + cur.items.map(it => '<li><b>' + esc(it[0]) + '</b><span>' + esc(it[1]) + '</span></li>').join("") + '</ul></div>';
+  if (mine) h += '<p class="fnote">Tienes Clarea ' + esc(mine) + (window.CLAREA_BETA ? ' (beta)' : '') + '.</p>';
+  return h;
+}
 /* ===================== router ===================== */
 let lastRoute = null;
-const depth = r => /^asig\/[^/]+\/nuevo$/.test(r) || r === "calendario/nuevo" || r.startsWith("calendario/editar/") ? 2 : r.startsWith("asig/") || r === "calendario" ? 1 : (r === "horario" || r === "faltas") ? 2 : 0;
+const depth = r => /^asig\/[^/]+\/nuevo$/.test(r) || r === "calendario/nuevo" || r.startsWith("calendario/editar/") ? 2 : r.startsWith("asig/") || r === "calendario" || r === "novedades" ? 1 : (r === "horario" || r === "faltas") ? 2 : 0;
 function viewPickGroup(){
   const adm = isAdmin();
   return '<div class="hello"><h1>Hola, '+esc(window.PJ6USER || "")+'</h1><p>'+(adm ? 'Modo admin: ¿qué curso quieres ver?' : 'Antes de empezar, elige tu clase.')+'</p></div>'
@@ -2770,16 +2871,18 @@ function render(){
   else if (r === "horario") h = viewTimetable();
   else if (r === "faltas") h = viewFaltas();
   else if (r === "calendario") h = viewCalendar();
+  else if (r === "novedades") h = viewNews();
   else if (r === "calendario/nuevo" || r.startsWith("calendario/editar/")){ if (r === lastRoute && document.getElementById("evf")) return; if (r !== lastRoute && r === "calendario/nuevo") NE.subj = null; h = viewNewEvent(r.startsWith("calendario/editar/") ? r.slice(18) : null); }
   else h = viewHome();
   // a new screen slides in (from the right going forward, from the left going back); edits on the same screen don't move
   const isNew = r !== lastRoute, back = lastRoute !== null && depth(r) < depth(lastRoute);
-  const vcls = r === "calendario/nuevo" || r.startsWith("calendario/editar/") ? "v-new v-evnew" : r === "calendario" ? "v-cal" : nw ? "v-new" : r.startsWith("asig/") ? "v-asig" : r === "horario" ? "v-horario" : r === "faltas" ? "v-faltas" : "v-home";
+  const vcls = r === "calendario/nuevo" || r.startsWith("calendario/editar/") ? "v-new v-evnew" : r === "calendario" ? "v-cal" : nw ? "v-new" : r.startsWith("asig/") ? "v-asig" : r === "horario" ? "v-horario" : r === "faltas" ? "v-faltas" : r === "novedades" ? "v-news" : "v-home";
   $("#app").innerHTML = '<div class="pg '+vcls+(isNew ? ' enter'+(back ? ' rev' : '') : '')+'">'+h+'</div>';
   lastRoute = r;
   if (isNew) [".scard", ".tdi", ".lcard", ".tt .cl", ".tt .fr", ".fr2"].forEach(sel=>document.querySelectorAll("#app "+sel).forEach((el,i)=>el.style.setProperty("--i", Math.min(i, 16))));
 }
 window.clareaRefresh = render;
+window.clareaGo = go;
 /* clean addresses (…/clarea/asig/PJ6): the screen is read from the path, without "#" */
 const BASEP = new URL(document.baseURI).pathname;
 function route(){ return decodeURIComponent(location.pathname.slice(BASEP.length)).replace(/^index\.html$/, "").replace(/\/+$/, ""); }
@@ -2791,6 +2894,29 @@ function go(to){
 // old links with "#/…" still work: they are turned into the clean address
 if (/^#\//.test(location.hash)) history.replaceState(null, "", BASEP + location.hash.slice(2));
 window.addEventListener("popstate", ()=>{ render(); window.scrollTo(0,0); });
+
+/* reminders: when Clarea opens, today's and tomorrow's deliveries and exams become notices (once each) */
+function checkReminders(){
+  if (!window.PJ6USER || !window.clareaNotify || !myGroup()) return;
+  const now = new Date(), today = ymd(now), tm = new Date(now); tm.setDate(now.getDate() + 1);
+  const tomorrow = ymd(tm), hm = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+  const seen = lget("clarea-remseen") || {t: 0, keys: []}; let added = false;
+  events().forEach(e => {
+    const when = e.date === today ? "Hoy" : e.date === tomorrow ? "Mañana" : null;
+    if (!when) return;
+    if (when === "Hoy" && (e.type === "entrega" ? e.from : e.to) < hm) return;          // already over
+    const key = e.id + "|" + e.date + "|" + (e.from || "") + "|" + when;
+    if (seen.keys.includes(key)) return;
+    const what = (EVT_TYPES.find(t => t[0] === e.type) || ["", "Evento"])[1];
+    window.clareaNotify({kind: "cal", title: when + ": " + what.charAt(0).toLowerCase() + what.slice(1) + " de " + e.subj, body: e.name + " · " + evTime(e), url: "calendario"});
+    seen.keys.push(key); added = true;
+  });
+  if (added){ seen.keys = seen.keys.slice(-200); seen.t = Date.now(); lset("clarea-remseen", seen); }
+}
+// after the first sync (events may come from another device), and again from time to time while open
+if (window.clareaSyncReady) window.clareaSyncReady.then(() => setTimeout(checkReminders, 300)); else setTimeout(checkReminders, 2000);
+setInterval(checkReminders, 10 * 60 * 1000);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkReminders(); });
 
 /* class detail sheet (from the timetable or "Hoy") */
 function openClass(ci){
