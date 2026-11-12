@@ -8,7 +8,7 @@
 <meta property="og:title" content="Clarea">
 <meta property="og:description" content="Asignaturas, horario, faltas y repasos de tus proyectos.">
 <meta property="og:url" content="https://clarea.dev/">
-<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112030036">
+<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112030601">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Logo de Clarea">
@@ -24,7 +24,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
-<script>window.CLAREA_VERSION = "20261112030036";</script>
+<script>window.CLAREA_VERSION = "20261112030601";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -760,6 +760,21 @@ html,body{margin:0}
   .back:hover,.rback:hover,.xback:hover{transform:translateX(-3px)}
   .scard:hover:active,.tdi:hover:active,.lcard:hover:active,.btn:hover:active{transform:scale(.97)}
 }
+
+.authrem{display:flex;align-items:flex-start;gap:10px;font-size:14px;font-weight:600;cursor:pointer;flex-direction:row!important}
+.authrem input{width:20px;height:20px;margin:1px 0 0;accent-color:var(--clarea-blue,#1f5fbf);flex:none}
+.authrem span{display:flex;flex-direction:column;gap:2px}
+.authrem small{font-size:12px;font-weight:500;color:var(--muted)}
+.akrow{display:flex;gap:6px;align-items:stretch}
+.akrow [data-pick]{flex:1}
+.authknown button b{display:flex;flex-direction:column}
+.authknown button b small{font-size:11.5px;font-weight:500;color:var(--muted)}
+.akforget{flex:none;width:44px!important;justify-content:center;padding:0!important;color:var(--muted)!important}
+.authcredit a{color:var(--accent);font-weight:700}
+.umenu .udel{color:#d9534f}
+.deli{width:44px;height:44px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;background:rgba(192,57,43,.14);color:#d9534f}
+.deli svg{width:24px;height:24px}
+.btn.btndel{background:#c0392b}
 </style>
 <script>
 /* ---------- offline accounts: everything stays in this device ---------- */
@@ -1115,6 +1130,9 @@ html,body{margin:0}
     readProgressFile(function(j, msg){ if (!j){ toast(msg); return; } toast(importMsg(j, applyImport(j))); });
   }
 
+  /* ----- remember me: the account stays open on this device; the password itself is never stored ----- */
+  var REMK = "clarea-remember/";
+  function remembered(u){ return !!lsGet(REMK + u) && !!lsGet(ACC) && !!(lsGet(ACC) || {})[u]; }
   /* ----- login screen ----- */
   var pendingImport = null;
   function showLogin(){
@@ -1126,12 +1144,13 @@ html,body{margin:0}
       + '<form class="authform" novalidate><label>Usuario<input id="auth-user" name="user" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="20"></label>'
       + '<label>Contraseña<input id="auth-pass" name="pass" type="password" autocomplete="current-password" maxlength="64"></label>'
       + '<label class="auth-rep">Repite la contraseña<input id="auth-pass2" name="pass2" type="password" autocomplete="new-password" maxlength="64"></label>'
+      + '<label class="authrem"><input type="checkbox" name="remember" checked><span>Recordarme en este dispositivo<small>La próxima vez entras con un toque, sin escribir la contraseña</small></span></label>'
       + '<p class="autherr" aria-live="polite"></p><button class="btn" type="submit"></button></form>'
-      + (names.length ? '<div class="authknown"><span>Cuentas en este dispositivo</span>' + names.map(function(n){ return '<button type="button" data-pick="' + escT(n) + '" aria-pressed="false"><i>' + escT(n.charAt(0).toUpperCase()) + '</i><b>' + escT(n) + '</b><em>Entrar ›</em></button>'; }).join("") + '</div>' : '')
+      + (names.length ? '<div class="authknown"><span>Cuentas en este dispositivo</span>' + names.map(function(n){ var r = remembered(n); return '<div class="akrow"><button type="button" data-pick="' + escT(n) + '"' + (r ? ' data-quick="1"' : '') + ' aria-pressed="false"><i>' + escT(n.charAt(0).toUpperCase()) + '</i><b>' + escT(n) + (r ? '<small>Recordada · sin contraseña</small>' : '<small>Pide la contraseña</small>') + '</b><em>Entrar ›</em></button>' + (r ? '<button type="button" class="akforget" data-forget="' + escT(n) + '" aria-label="Olvidar ' + escT(n) + ' en este dispositivo" title="Olvidar en este dispositivo">✕</button>' : '') + '</div>'; }).join("") + '</div>' : '')
       + '<p class="authinfo" hidden></p>'
       + '<button type="button" class="authimp" data-imp>' + ICO_FILE + 'Importar progreso de un archivo</button>'
       + '<p class="authnote">Tu cuenta se guarda en la nube: entra con el mismo usuario en el móvil o en el PC y el progreso se sincroniza solo. Sin internet también funciona.</p>'
-      + '<p class="authnote authcredit">Clarea · creada por Isaac Castillo Vidal</p>'
+      + '<p class="authnote authcredit">Clarea · creada por Isaac Castillo Vidal · <a href="privacidad.html">Privacidad</a></p>'
       + '</div></div>');
     document.body.appendChild(w); addEyes(w);
     var form = w.querySelector("form"), err = w.querySelector(".autherr"), btn = form.querySelector('button[type="submit"]'), info = w.querySelector(".authinfo");
@@ -1140,6 +1159,7 @@ html,body{margin:0}
       w.querySelectorAll(".authtabs button").forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.m === m); });
       w.querySelector(".auth-rep").hidden = m !== "up";
       var kn = w.querySelector(".authknown"); if (kn) kn.hidden = m === "up";
+      w.querySelector(".authrem span").firstChild.textContent = "Recordarme en este dispositivo";
       w.querySelector("#auth-pass").setAttribute("autocomplete", m === "up" ? "new-password" : "current-password");
       btn.textContent = m === "up" ? "Crear cuenta y entrar" : "Entrar";
     }
@@ -1147,7 +1167,11 @@ html,body{margin:0}
     function busy(on){ btn.disabled = on; btn.textContent = on ? "Conectando…" : (mode === "up" ? "Crear cuenta y entrar" : "Entrar"); }
     w.addEventListener("click", function(e){
       var t = e.target.closest("[data-m]"); if (t){ setMode(t.dataset.m); return; }
-      var p = e.target.closest("[data-pick]"); if (p){ setMode("in"); form.user.value = p.dataset.pick; w.querySelectorAll("[data-pick]").forEach(function(b){ b.setAttribute("aria-pressed", b === p); }); form.pass.focus(); return; }
+      var fg = e.target.closest("[data-forget]");
+      if (fg){ var who = fg.dataset.forget; window.clareaConfirm({title: "¿Olvidar esta cuenta aquí?", html: "La próxima vez que entres con <b>" + escT(who) + "</b> en este dispositivo te pedirá la contraseña. No se borra nada de tu cuenta.", ok: "Olvidar"}).then(function(y){ if (!y) return; try { localStorage.removeItem(REMK + who); localStorage.removeItem(CLOUD + who); } catch(x){} var row = fg.closest(".akrow"); row.querySelector("[data-pick]").removeAttribute("data-quick"); row.querySelector("b small").textContent = "Pide la contraseña"; fg.remove(); toast("Olvidada en este dispositivo."); }); return; }
+      var p = e.target.closest("[data-pick]");
+      if (p && p.dataset.quick){ enter(p.dataset.pick, w, "in"); return; }
+      if (p){ setMode("in"); form.user.value = p.dataset.pick; w.querySelectorAll("[data-pick]").forEach(function(b){ b.setAttribute("aria-pressed", b === p); }); form.pass.focus(); return; }
       if (e.target.closest("[data-imp]")) readProgressFile(function(j, msg){
         if (!j){ err.textContent = msg; return; }
         pendingImport = j; err.textContent = "";
@@ -1194,6 +1218,8 @@ html,body{margin:0}
   }
   function enter(user, w, how){
     lsSet(SES, user); window.PJ6USER = user;
+    var rf = w.querySelector && w.querySelector('input[name="remember"]');
+    if (rf){ if (rf.checked) lsSet(REMK + user, Date.now()); else try { localStorage.removeItem(REMK + user); } catch(e){} }
     w.classList.add("closing"); setTimeout(function(){ w.remove(); }, 220); addBar();
     if (typeof renderExamTab === "function") renderExamTab();
     if (typeof window.clareaRefresh === "function") window.clareaRefresh();
@@ -1252,6 +1278,59 @@ html,body{margin:0}
     setTimeout(function(){ form.pass.focus(); }, 50);
   }
 
+  /* ----- delete the account: everything in the cloud, then this device ----- */
+  function wipeLocal(u){
+    var pre = "u/" + u + "/";
+    try { Object.keys(localStorage).forEach(function(k){ if (k.indexOf(pre) === 0) localStorage.removeItem(k); }); } catch(e){}
+    try { localStorage.removeItem(SYNC + u); localStorage.removeItem(CLOUD + u); localStorage.removeItem(REMK + u); localStorage.removeItem("clarea-syncask/" + u); localStorage.removeItem(SES); } catch(e){}
+    var accs = lsGet(ACC) || {}; delete accs[u]; lsSet(ACC, accs);
+  }
+  function deleteCloud(u, pass){
+    // a fresh sign-in is needed: Firebase only deletes accounts that have just proved their password
+    return cloudAuth("signInWithPassword", u, pass).then(function(j){
+      var uid = j.localId, tok = j.idToken;
+      return postJSON(FS + "/users/" + uid + ":runQuery", {structuredQuery: {from: [{collectionId: "data"}]}}, tok).then(function(rows){
+        var names = (rows || []).filter(function(r){ return r.document; }).map(function(r){ return r.document.name; });
+        var chunks = []; for (var i = 0; i < names.length; i += 400) chunks.push(names.slice(i, i + 400));
+        return chunks.reduce(function(pr, c){ return pr.then(function(){ return postJSON(FS + ":commit", {writes: c.map(function(n){ return {"delete": n}; })}, tok); }); }, Promise.resolve());
+      }).then(function(){ return postJSON(IDT + "delete?key=" + FB_KEY, {idToken: tok}); });
+    });
+  }
+  function openDelete(){
+    var u = window.PJ6USER;
+    var w = el('<div class="authwrap" role="dialog" aria-modal="true" aria-label="Eliminar mi cuenta"><div class="authcard">'
+      + '<div class="authlogo"><span class="deli"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg></span><div><h1>Eliminar mi cuenta</h1><p>Cuenta «' + escT(u) + '»</p></div></div>'
+      + '<p class="authtxt">Se borrará <b>para siempre</b>: tu cuenta, tus faltas, tu calendario, tus proyectos y tus exámenes, de la nube y de este dispositivo. <b>No se puede deshacer.</b></p>'
+      + '<form class="authform" novalidate><input type="text" name="user" autocomplete="username" value="' + escT(u) + '" hidden>'
+      + '<label>Escribe tu contraseña para confirmarlo<input name="pass" type="password" autocomplete="current-password" maxlength="64"></label>'
+      + '<p class="autherr" aria-live="polite"></p><button class="btn btndel" type="submit">Eliminar mi cuenta para siempre</button>'
+      + '<button type="button" class="authalt">Cancelar</button></form></div></div>');
+    document.body.appendChild(w); addEyes(w);
+    var form = w.querySelector("form"), err = w.querySelector(".autherr"), btn = form.querySelector(".btn");
+    function close(){ w.classList.add("closing"); setTimeout(function(){ w.remove(); }, 220); }
+    w.querySelector(".authalt").addEventListener("click", close);
+    form.addEventListener("submit", function(e){
+      e.preventDefault(); if (btn.disabled) return;
+      var pass = form.pass.value; if (!pass){ form.pass.focus(); return; }
+      btn.disabled = true; btn.textContent = "Eliminando…"; err.textContent = "";
+      checkLocal(u, pass).then(function(localOk){
+        var onlyHere = !cloudGet(u) && !lsGet(SYNC + u);
+        if (onlyHere){ if (!localOk) throw {code: "INVALID_PASSWORD"}; return; }
+        return deleteCloud(u, pass).catch(function(x){
+          // never synced to the cloud: deleting it here is enough
+          if (localOk && /INVALID_LOGIN_CREDENTIALS|EMAIL_NOT_FOUND/.test(x.code || "")) return;
+          throw x;
+        });
+      }).then(function(){
+        wipeLocal(u); toast("Cuenta eliminada."); setTimeout(function(){ location.href = "./"; }, 900);
+      }).catch(function(x){
+        err.textContent = x && x.net ? "Sin internet no se puede eliminar la cuenta de la nube. Prueba con conexión." : /INVALID|EMAIL_NOT_FOUND/.test((x && x.code) || "") ? "Contraseña incorrecta." : authMsg(x, "in");
+        btn.disabled = false; btn.textContent = "Eliminar mi cuenta para siempre"; form.pass.value = ""; form.pass.focus();
+      });
+    });
+    setTimeout(function(){ form.pass.focus(); }, 50);
+  }
+
   /* ----- account bar: sync / export / import / logout ----- */
   function addBar(){
     var head = document.querySelector("[data-ubar]") || document.querySelector(".top .wrap"); if (!head || document.querySelector(".ubar")) return;
@@ -1273,6 +1352,8 @@ html,body{margin:0}
               : '<button type="button" role="menuitem" data-a="act">Activar sincronización<small><span class="sdot off"></span>Usa tu cuenta en todos tus dispositivos</small></button><hr>')
         + (lsGet(TH) ? '<button type="button" role="menuitem" data-a="sys">Usar el tema del sistema<small>Claro u oscuro según el dispositivo</small></button><hr>' : '')
         + '<button type="button" role="menuitem" data-a="upd">Buscar actualizaciones<small>Comprueba si hay una versión nueva de Clarea</small></button><hr>'
+        + '<button type="button" role="menuitem" data-a="priv">Privacidad<small>Qué datos se guardan y dónde</small></button>'
+        + '<button type="button" role="menuitem" data-a="del" class="udel">Eliminar mi cuenta<small>Borra todos tus datos de la nube y de aquí</small></button><hr>'
         + '<button type="button" role="menuitem" data-a="out">Cerrar sesión<small>' + (on ? 'Tu progreso sigue en la nube y en este dispositivo' : 'Tu progreso se queda guardado') + '</small></button>'
         + (window.CLAREA_VERSION ? '<p class="uver">Versión del ' + window.CLAREA_VERSION.replace(/^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d).*/, "$3/$2/$1 · $4:$5") + '<br>Creada por Isaac Castillo Vidal</p>' : '') + '</div>');
       bar.appendChild(menu); btn.setAttribute("aria-expanded", "true");
@@ -1284,10 +1365,12 @@ html,body{margin:0}
         else if (act === "exp") exportProgress();
         else if (act === "imp") importProgress();
         else if (act === "upd"){ if (window.clareaCheckUpdate) window.clareaCheckUpdate(toast); else location.reload(); }
+        else if (act === "priv") location.href = "privacidad.html";
+        else if (act === "del") openDelete();
         else if (act === "sys"){ try { localStorage.removeItem(TH); } catch(e){} applyTheme(null); toast("Tema automático: sigue el del dispositivo."); }
         else {
           // upload pending changes first (if there is internet), then forget this device's cloud session
-          var done = false, out = function(){ if (done) return; done = true; cloudSet(u, null); try { localStorage.removeItem(SES); } catch(e){} location.reload(); };
+          var done = false, out = function(){ if (done) return; done = true; if (!remembered(u)) cloudSet(u, null); try { localStorage.removeItem(SES); } catch(e){} location.reload(); };
           syncNow().then(out, out); setTimeout(out, 4000);
         }
       });
