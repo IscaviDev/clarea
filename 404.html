@@ -8,7 +8,7 @@
 <meta property="og:title" content="Clarea">
 <meta property="og:description" content="Asignaturas, horario, faltas y repasos de tus proyectos.">
 <meta property="og:url" content="https://clarea.dev/">
-<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112033203">
+<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112033607">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Logo de Clarea">
@@ -24,7 +24,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
-<script>window.CLAREA_VERSION = "20261112033203";</script>
+<script>window.CLAREA_VERSION = "20261112033607";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -98,6 +98,8 @@ h1,h2{margin:0;line-height:1.15;text-wrap:balance}
 .scard:active{transform:scale(.98)}
 .scard b{font-size:21px;font-weight:800;letter-spacing:-.01em}
 .scard span{font-size:13.5px;font-weight:500;line-height:1.3;opacity:.92}
+.scard .sprof{margin-top:auto;padding-top:4px;font-style:normal;font-size:12px;font-weight:600;line-height:1.3;opacity:.72}
+.scard .sprof + em{margin-top:6px}
 .scard em{margin-top:auto;font-style:normal;font-size:11.5px;font-weight:700;align-self:flex-start;border-radius:999px;padding:2px 8px;background:rgba(255,255,255,.55);color:#18202b}
 
 /* subject page */
@@ -2042,7 +2044,7 @@ function sessionsOf(code, weeks){
   for (let i = 0; i < weeks * 7; i++){
     const d = new Date(today); d.setDate(today.getDate() + i);
     const wd = d.getDay() - 1;
-    mine.filter(c => c[0] === wd).forEach(c => out.push({date: ymd(d), from: SLOTS[c[1]][0], to: SLOTS[c[1] + c[2] - 1][1], subj: c[3]}));
+    mine.filter(c => c[0] === wd).forEach(c => out.push({date: ymd(d), from: SLOTS[c[1]][0], to: SLOTS[c[1] + c[2] - 1][1], subj: c[3], prof: c[5] || ""}));
   }
   return out;
 }
@@ -2196,8 +2198,12 @@ function openPicker(title, body, onMount){
     if (onMount) onMount(w, done);
   });
 }
+// teachers of a subject, from the timetable of the class
+function profsOf(c){ return [...new Set(CLASSES.filter(x => x[3] === c && x[5]).map(x => x[5]))].join(" · "); }
+// (La Salle already names its subjects by their teachers: no repeat)
+const profTag = c => { if (/Profe/.test((SUBJ[c] || {}).n || "")) return ''; const p = profsOf(c); return p ? '<i class="sprof">' + esc(p) + '</i>' : ''; };
 function pickSubject(f){
-  const body = '<div class="sgrid pkgrid">' + evSubjects().map(c => '<button type="button" class="scard" style="' + sv(c) + '" data-pv="' + c + '"><b>' + c + '</b><span>' + esc(SUBJ[c].n) + '</span></button>').join("") + '</div>';
+  const body = '<div class="sgrid pkgrid">' + evSubjects().map(c => '<button type="button" class="scard" style="' + sv(c) + '" data-pv="' + c + '"><b>' + c + '</b><span>' + esc(SUBJ[c].n) + '</span>' + profTag(c) + '</button>').join("") + '</div>';
   openPicker("Elige la asignatura", body, (w, done) => w.addEventListener("click", e => { const b = e.target.closest("[data-pv]"); if (b) done(b.dataset.pv); })).then(c => {
     if (!c) return;
     if (c !== NE.subj){ f.eslot.value = ""; }
@@ -2233,7 +2239,7 @@ function pickSlot(f){
     }
     h += '</div><div class="pkslots"><b>' + dayLabel(st.sel) + '</b>' + (byDay[st.sel] || []).map(x => x.busy
       ? '<button type="button" class="pks busy" style="' + sv(x.subj) + '" disabled><span>' + x.from + '–' + x.to + '</span><small>Ocupada · ' + esc(x.busy.name) + '</small></button>'
-      : '<button type="button" class="pks' + (x.v === cur ? ' on' : '') + '" style="' + sv(x.subj) + '" data-ps="' + x.v + '"><span>' + x.from + '–' + x.to + '</span><small>' + (f.eother.checked ? 'en la clase de ' + x.subj : x.subj) + '</small></button>').join("") + '</div>';
+      : '<button type="button" class="pks' + (x.v === cur ? ' on' : '') + '" style="' + sv(x.subj) + '" data-ps="' + x.v + '"><span>' + x.from + '–' + x.to + '</span><small>' + (f.eother.checked ? 'en la clase de ' + x.subj : x.subj) + (x.prof ? ' · ' + esc(x.prof) : '') + '</small></button>').join("") + '</div>';
     w.querySelector(".pkbody").innerHTML = h;
   };
   openPicker("Elige el día y la hora", "", (w, done) => {
@@ -2342,7 +2348,7 @@ function viewHome(){
   h += '<p class="sect">Asignaturas</p><div class="sgrid"><button class="scard calcard" data-go="#/calendario"><span class="calic">'+ICO_CAL2+'</span><b>Calendario</b><span>'+(nx ? 'Próximo: '+esc(nx.name)+' · '+dayLabel(nx.date) : 'Entregas y exámenes')+'</span></button>'+HOME.map(c=>{
     const s = SUBJ[c], fr = F[c] ? calc(F[c]) : null;
     const warn = fr && fr.st !== "ok" ? '<em>Faltas: '+STL[fr.st]+'</em>' : '';
-    return '<button class="scard" style="'+sv(c)+'" data-go="#/asig/'+c+'"><b>'+(c==="TUT"?HUB:c)+'</b><span>'+esc(s.sub || s.n)+'</span>'+warn+'</button>';
+    return '<button class="scard" style="'+sv(c)+'" data-go="#/asig/'+c+'"><b>'+(c==="TUT"?HUB:c)+'</b><span>'+esc(s.sub || s.n)+'</span>'+profTag(c)+warn+'</button>';
   }).join("")+'</div>';
   h += '<p class="credit">Clarea · creada por <b>Isaac Castillo Vidal</b></p>';
   return h;
