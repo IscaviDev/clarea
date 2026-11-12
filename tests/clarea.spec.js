@@ -2,10 +2,13 @@
 const { test, expect } = require("@playwright/test");
 const { signUp, go, axe } = require("./helpers");
 
-test("inicio: saludo, Hoy, asignaturas y buscador", async ({ page }) => {
+test("inicio: saludo, Hoy, las asignaturas en «Estudiar» y el buscador", async ({ page }) => {
   await signUp(page);
   await expect(page.locator(".today h2")).toContainText("Hoy");
+  await expect(page.locator(".sgrid .scard")).toHaveCount(0);                      // Inicio: only today
+  await page.locator('[data-tab="estudiar"]').click();
   expect(await page.locator(".sgrid .scard").count()).toBeGreaterThan(8);
+  await page.locator('[data-tab=""]').click();
   await page.locator("[data-search]").click();
   await page.locator(".srch input").fill("pj6");
   await expect(page.locator(".srchi").first()).toContainText("PJ6");
@@ -32,7 +35,8 @@ test("calendario: un evento se ve, con sus avisos, y crea el recordatorio de hoy
 test("mi progreso y simulacro", async ({ page }) => {
   await signUp(page);
   await go(page, "progreso");
-  await expect(page.locator(".pgtiles")).toBeVisible();
+  await expect(page.locator(".back")).toHaveText("← Estudiar");
+  await expect(page.locator(".pgtiles")).toHaveCount(0);                           // no tiles with «–»: only sentences, when there is something
   expect(await axe(page, "mi progreso")).toEqual([]);
 });
 
