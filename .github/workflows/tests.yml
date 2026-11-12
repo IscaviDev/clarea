@@ -1,0 +1,34 @@
+# Clarea's automated checks, on GitHub: every push to dev or main builds nothing (the repo already holds the
+# built site) and runs the Playwright tests + the accessibility scan (WCAG 2.1 AA, light and dark).
+name: Pruebas
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+  workflow_dispatch:
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+        env:
+          CLAREA_ROOT: ..
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: resultados
+          path: tests/test-results
+          retention-days: 7
