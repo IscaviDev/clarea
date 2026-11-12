@@ -8,7 +8,7 @@
 <meta property="og:title" content="Clarea">
 <meta property="og:description" content="Asignaturas, horario, faltas y repasos de tus proyectos.">
 <meta property="og:url" content="https://clarea.dev/">
-<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112020501">
+<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112021749">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Logo de Clarea">
@@ -23,8 +23,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="icon" type="image/png" href="icon-192.png">
-<script>window.CLAREA_VERSION = "20261112020501";</script>
+<link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
+<script>window.CLAREA_VERSION = "20261112021749";</script>
 <title>Proyecto · Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -970,6 +970,7 @@ html,body{margin:0}
 .authknown{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
 .authknown button{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:3px 10px;font-size:13px;cursor:pointer;color:var(--fg)}
 .authnote{margin:0;font-size:12px;color:var(--muted);line-height:1.4}
+.authcredit{text-align:center;padding-top:6px;border-top:1px solid var(--line)}
 .authtxt{margin:0;font-size:14px;line-height:1.45}
 .authimp{border:1.5px dashed var(--line);background:none;color:var(--fg);border-radius:9px;padding:10px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
 .authimp svg{width:18px;height:18px}
@@ -1408,6 +1409,7 @@ html,body{margin:0}
       + '<p class="authinfo" hidden></p>'
       + '<button type="button" class="authimp" data-imp>' + ICO_FILE + 'Importar progreso de un archivo</button>'
       + '<p class="authnote">Tu cuenta se guarda en la nube: entra con el mismo usuario en el móvil o en el PC y el progreso se sincroniza solo. Sin internet también funciona.</p>'
+      + '<p class="authnote authcredit">Clarea · creada por Isaac Castillo Vidal</p>'
       + '</div></div>');
     document.body.appendChild(w); addEyes(w);
     var form = w.querySelector("form"), err = w.querySelector(".autherr"), btn = form.querySelector('button[type="submit"]'), info = w.querySelector(".authinfo");
@@ -1549,7 +1551,7 @@ html,body{margin:0}
         + (lsGet(TH) ? '<button type="button" role="menuitem" data-a="sys">Usar el tema del sistema<small>Claro u oscuro según el dispositivo</small></button><hr>' : '')
         + '<button type="button" role="menuitem" data-a="upd">Buscar actualizaciones<small>Comprueba si hay una versión nueva de Clarea</small></button><hr>'
         + '<button type="button" role="menuitem" data-a="out">Cerrar sesión<small>' + (on ? 'Tu progreso sigue en la nube y en este dispositivo' : 'Tu progreso se queda guardado') + '</small></button>'
-        + (window.CLAREA_VERSION ? '<p class="uver">Versión del ' + window.CLAREA_VERSION.replace(/^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d).*/, "$3/$2/$1 · $4:$5") + '</p>' : '') + '</div>');
+        + (window.CLAREA_VERSION ? '<p class="uver">Versión del ' + window.CLAREA_VERSION.replace(/^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d).*/, "$3/$2/$1 · $4:$5") + '<br>Creada por Isaac Castillo Vidal</p>' : '') + '</div>');
       bar.appendChild(menu); btn.setAttribute("aria-expanded", "true");
       menu.addEventListener("click", function(ev){
         var a = ev.target.closest("[data-a]"); if (!a) return; close();

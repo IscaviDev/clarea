@@ -8,7 +8,7 @@
 <meta property="og:title" content="Clarea">
 <meta property="og:description" content="Asignaturas, horario, faltas y repasos de tus proyectos.">
 <meta property="og:url" content="https://clarea.dev/">
-<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112020501">
+<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112021749">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Logo de Clarea">
@@ -23,8 +23,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="icon" type="image/png" href="icon-192.png">
-<script>window.CLAREA_VERSION = "20261112020501";</script>
+<link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
+<script>window.CLAREA_VERSION = "20261112021749";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -279,6 +279,45 @@ details.fr2>summary::-webkit-details-marker{display:none}
 .flist.off{opacity:.55;pointer-events:none}
 @media (min-width:1024px){.pg.v-faltas>.soon,.pg.v-faltas>.flist.off{grid-column:1/-1}}
 @media (hover:hover) and (pointer:fine){.gcard:hover{border-color:var(--accent)}}
+
+/* ---------- calendar ---------- */
+.scard.calcard{background:var(--surface);color:var(--fg);border:1.5px solid var(--line)}
+.scard.calcard b{color:var(--clarea-orange,#b4561b)}
+.scard.calcard span{color:var(--muted)}
+.calic{display:block;width:28px;height:28px;color:var(--clarea-orange,#b4561b)}
+.calic svg{width:28px;height:28px}
+.thead .calnew{margin-left:auto;padding:9px 14px;font-size:14px;width:auto}
+.calbox{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px;display:flex;flex-direction:column;gap:8px}
+.calnav{display:flex;align-items:center;justify-content:space-between}
+.calnav b{font-size:17px;text-transform:capitalize}
+.calnav button{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:20px;cursor:pointer}
+.calgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+.calwd{font-size:11.5px;font-weight:700;color:var(--muted);text-align:center;padding:2px 0}
+.calday{min-height:64px;border:0;border-radius:8px;background:var(--bg);color:var(--fg);padding:4px 3px;display:flex;flex-direction:column;align-items:stretch;gap:2px;cursor:pointer;min-width:0;text-align:left}
+.calday.out{opacity:.4}
+.caln{font-size:12.5px;font-weight:700;padding-left:2px}
+.calday.today .caln{background:var(--clarea-blue,#1f5fbf);color:#fff;border-radius:999px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;padding:0}
+.calday.sel{box-shadow:inset 0 0 0 2px var(--clarea-orange,#b4561b)}
+.evc{display:block;border-radius:4px;background:var(--sbg);color:var(--sfg);font-size:10px;font-weight:700;padding:1px 3px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.evmore{font-size:10px;color:var(--muted);padding-left:2px}
+.calsec{display:flex;flex-direction:column;gap:8px}
+.calsec h2{font-size:15px;font-weight:700;text-transform:capitalize}
+.evr{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--sbg);border-radius:12px;padding:10px 10px 10px 12px}
+.evd{flex:none;width:40px;display:flex;flex-direction:column;align-items:center;line-height:1.1}
+.evd b{font-size:20px}.evd small{font-size:11.5px;color:var(--muted);text-transform:uppercase}
+.evt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.evt b{font-size:14.5px}.evt small{font-size:12.5px;color:var(--muted)}
+.evx{flex:none;width:34px;height:34px;border:0;border-radius:8px;background:none;color:var(--muted);cursor:pointer;font-size:15px}
+.npf select{font:inherit;font-size:16px;color:var(--fg);background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;min-width:0}
+.npf select:disabled{opacity:.55}
+.npf select:focus{border-color:var(--accent);outline:none}
+.admbar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(180,86,27,.12);border:1px solid rgba(180,86,27,.35);border-radius:var(--r);padding:8px 10px 8px 12px;font-size:13.5px}
+.admbar button{flex:none;border:0;background:var(--clarea-orange,#b4561b);color:#fff;border-radius:9px;padding:8px 12px;font-weight:700;font-size:13px;cursor:pointer}
+@media (min-width:720px){.calday{min-height:84px}.evc{font-size:11px}}
+@media (min-width:1024px){.pg.v-cal{max-width:900px}.pg.v-cal .calday{min-height:96px}}
+@media (hover:hover) and (pointer:fine){.calday:hover{box-shadow:inset 0 0 0 1.5px var(--accent)}.evx:hover{background:var(--sunk);color:var(--fg)}.scard.calcard:hover{border-color:var(--accent)}}
+.credit{margin:10px 0 0;text-align:center;font-size:12.5px;color:var(--muted)}
+.credit b{font-weight:700;color:var(--fg)}
 </style>
 <script>
 /* Clarea · projects: reading code (folder, .zip, GitHub), GitHub history and simple code analysis.
@@ -521,6 +560,7 @@ html,body{margin:0}
 .authknown{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
 .authknown button{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:3px 10px;font-size:13px;cursor:pointer;color:var(--fg)}
 .authnote{margin:0;font-size:12px;color:var(--muted);line-height:1.4}
+.authcredit{text-align:center;padding-top:6px;border-top:1px solid var(--line)}
 .authtxt{margin:0;font-size:14px;line-height:1.45}
 .authimp{border:1.5px dashed var(--line);background:none;color:var(--fg);border-radius:9px;padding:10px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
 .authimp svg{width:18px;height:18px}
@@ -959,6 +999,7 @@ html,body{margin:0}
       + '<p class="authinfo" hidden></p>'
       + '<button type="button" class="authimp" data-imp>' + ICO_FILE + 'Importar progreso de un archivo</button>'
       + '<p class="authnote">Tu cuenta se guarda en la nube: entra con el mismo usuario en el móvil o en el PC y el progreso se sincroniza solo. Sin internet también funciona.</p>'
+      + '<p class="authnote authcredit">Clarea · creada por Isaac Castillo Vidal</p>'
       + '</div></div>');
     document.body.appendChild(w); addEyes(w);
     var form = w.querySelector("form"), err = w.querySelector(".autherr"), btn = form.querySelector('button[type="submit"]'), info = w.querySelector(".authinfo");
@@ -1100,7 +1141,7 @@ html,body{margin:0}
         + (lsGet(TH) ? '<button type="button" role="menuitem" data-a="sys">Usar el tema del sistema<small>Claro u oscuro según el dispositivo</small></button><hr>' : '')
         + '<button type="button" role="menuitem" data-a="upd">Buscar actualizaciones<small>Comprueba si hay una versión nueva de Clarea</small></button><hr>'
         + '<button type="button" role="menuitem" data-a="out">Cerrar sesión<small>' + (on ? 'Tu progreso sigue en la nube y en este dispositivo' : 'Tu progreso se queda guardado') + '</small></button>'
-        + (window.CLAREA_VERSION ? '<p class="uver">Versión del ' + window.CLAREA_VERSION.replace(/^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d).*/, "$3/$2/$1 · $4:$5") + '</p>' : '') + '</div>');
+        + (window.CLAREA_VERSION ? '<p class="uver">Versión del ' + window.CLAREA_VERSION.replace(/^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d).*/, "$3/$2/$1 · $4:$5") + '<br>Creada por Isaac Castillo Vidal</p>' : '') + '</div>');
       bar.appendChild(menu); btn.setAttribute("aria-expanded", "true");
       menu.addEventListener("click", function(ev){
         var a = ev.target.closest("[data-a]"); if (!a) return; close();
@@ -1212,7 +1253,7 @@ const GROUPS = {
     names: {BBDD:"Bases de dades", PROG:"Programació (E.S.)", SIST:"Sistemes informàtics", DIG:"Web i Digitalització", TUT:"Tu horario y tus faltas de asistencia"}}
 };
 let GNAME = "DAW-2A", TUTOR = GROUPS["DAW-2A"].tutor, FALTAS_ON = true, HUB = "Tutoría", BRK = "Patio";
-const myGroup = () => { const g = lget("clarea-group"); return g && GROUPS[g.g] ? g.g : null; };
+const myGroup = () => { if (isAdmin()) return adminGroup(); const g = lget("clarea-group"); return g && GROUPS[g.g] ? g.g : null; };
 function applyGroup(id){
   const G = GROUPS[id] || GROUPS["DAW-2A"];
   GNAME = GROUPS[id] ? (G.label || id) : "DAW-2A"; SLOTS = G.slots; HUB = G.hub || "Tutoría"; BRK = G.brk || "Patio"; HOME = G.home; FALTAS_ORDER = G.order; FALTAS_SEED = G.seed; CLASSES = G.classes; ROOM = G.room; TUTOR = G.tutor; FALTAS_ON = G.faltasOn;
@@ -1338,6 +1379,117 @@ document.addEventListener("submit", async e => {
   } catch(x){ err.textContent = (x && x.msg) || (x && x.code ? CL.ghMsg(x) : "No se ha podido crear: " + x); go.disabled = false; go.textContent = "Crear proyecto"; }
 });
 
+/* ===================== admin: can look at every class without choosing one for good ===================== */
+const ADMINS = ["admin"];
+const isAdmin = () => ADMINS.includes(window.PJ6USER);
+function adminGroup(){ try { const g = sessionStorage.getItem("clarea-admin-group"); return GROUPS[g] ? g : null; } catch(e){ return null; } }
+function setAdminGroup(g){ try { if (g) sessionStorage.setItem("clarea-admin-group", g); else sessionStorage.removeItem("clarea-admin-group"); } catch(e){} }
+
+/* ===================== calendar ===================== */
+const EVT_TYPES = [["entrega","Entrega"],["practico","Examen práctico"],["teorico","Examen teórico"],["codigo","Examen de código"]];
+const EVT_SHORT = {entrega:"Entrega", practico:"Ex. práctico", teorico:"Ex. teórico", codigo:"Ex. código"};
+const MONTHS = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const WD = ["dom","lun","mar","mié","jue","vie","sáb"];
+const ICO_CAL2 = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/><circle cx="8.5" cy="14.5" r="1" fill="currentColor"/><circle cx="12" cy="14.5" r="1" fill="currentColor"/></svg>';
+const ymd = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+const fromYmd = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const dayLabel = s => { const d = fromYmd(s); return WD[d.getDay()] + " " + d.getDate() + " " + MONTHS[d.getMonth()].slice(0, 3); };
+// events of the class being shown (an admin may look at several classes)
+function allEvents(){ return (lget("clarea-events") || {}).list || []; }
+function events(){ return allEvents().filter(e => (e.group || GNAME_ID()) === GNAME_ID()); }
+function saveEvents(list){ lset("clarea-events", {t: Date.now(), list}); }
+const GNAME_ID = () => myGroup() || "DAW-2A";
+const sortEv = (a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : (a.from || "").localeCompare(b.from || "");
+function upcoming(n){ const t = ymd(new Date()); return events().filter(e => e.date >= t).sort(sortEv).slice(0, n); }
+/* the classes of a subject in the next weeks, from the timetable: these are the only dates and times offered */
+function sessionsOf(code, weeks){
+  const out = [], today = new Date(); today.setHours(0, 0, 0, 0);
+  const mine = CLASSES.filter(c => c[3] === code).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  for (let i = 0; i < weeks * 7; i++){
+    const d = new Date(today); d.setDate(today.getDate() + i);
+    const wd = d.getDay() - 1;
+    mine.filter(c => c[0] === wd).forEach(c => out.push({date: ymd(d), from: SLOTS[c[1]][0], to: SLOTS[c[1] + c[2] - 1][1]}));
+  }
+  return out;
+}
+const CAL = {y: null, m: null, sel: null};
+function evChip(e, big){
+  return '<span class="evc ev-' + e.type + '" style="' + sv(e.subj) + '">' + (big ? '<b>' + esc(e.subj) + '</b> ' + esc(EVT_SHORT[e.type] || "") : esc(e.subj)) + '</span>';
+}
+function evRow(e){
+  return '<div class="evr" style="' + sv(e.subj) + '"><span class="evd"><b>' + fromYmd(e.date).getDate() + '</b><small>' + WD[fromYmd(e.date).getDay()] + '</small></span><span class="evt"><b>' + esc(e.name) + '</b><small>' + esc(EVT_SHORT[e.type] || "") + ' · ' + esc(e.subj) + ' · ' + esc(e.from) + '–' + esc(e.to) + '</small></span><button class="evx" data-evdel="' + esc(e.id) + '" aria-label="Borrar ' + esc(e.name) + '">✕</button></div>';
+}
+function viewCalendar(){
+  const now = new Date();
+  if (CAL.y === null){ CAL.y = now.getFullYear(); CAL.m = now.getMonth(); CAL.sel = ymd(now); }
+  const first = new Date(CAL.y, CAL.m, 1), start = new Date(first); start.setDate(1 - ((first.getDay() + 6) % 7));
+  const evs = events(), byDay = {}; evs.forEach(e => (byDay[e.date] = byDay[e.date] || []).push(e));
+  const today = ymd(now);
+  let h = '<button class="back" data-go="#/">← Inicio</button><div class="thead"><h1>Calendario</h1><button class="btn calnew" data-go="#/calendario/nuevo">+ Nuevo evento</button></div>';
+  h += '<div class="calbox"><div class="calnav"><button data-calm="-1" aria-label="Mes anterior">‹</button><b>' + MONTHS[CAL.m] + ' ' + CAL.y + '</b><button data-calm="1" aria-label="Mes siguiente">›</button></div>';
+  h += '<div class="calgrid">' + ["L","M","X","J","V","S","D"].map(x => '<span class="calwd">' + x + '</span>').join("");
+  for (let i = 0; i < 42; i++){
+    const d = new Date(start); d.setDate(start.getDate() + i);
+    if (i >= 35 && d.getMonth() !== CAL.m) break;
+    const k = ymd(d), list = (byDay[k] || []).sort(sortEv);
+    h += '<button class="calday' + (d.getMonth() !== CAL.m ? ' out' : '') + (k === today ? ' today' : '') + (k === CAL.sel ? ' sel' : '') + '" data-calday="' + k + '"><span class="caln">' + d.getDate() + '</span>' + list.slice(0, 3).map(e => evChip(e, false)).join("") + (list.length > 3 ? '<span class="evmore">+' + (list.length - 3) + '</span>' : '') + '</button>';
+  }
+  h += '</div></div>';
+  const selList = (byDay[CAL.sel] || []).sort(sortEv);
+  h += '<div class="calsec"><h2>' + (CAL.sel === today ? 'Hoy' : dayLabel(CAL.sel)) + '</h2>' + (selList.length ? selList.map(evRow).join("") : '<p class="fnote">No hay nada este día.</p>') + '</div>';
+  const up = upcoming(8);
+  h += '<div class="calsec"><h2>Próximos</h2>' + (up.length ? up.map(evRow).join("") : '<p class="fnote">No tienes entregas ni exámenes apuntados. Toca «+ Nuevo evento».</p>') + '</div>';
+  return h;
+}
+const NE = {subj: null};
+function viewNewEvent(){
+  const subs = [...new Set(CLASSES.map(c => c[3]))].filter(c => c !== "TUT" && c !== "MNT").sort((a, b) => HOME.indexOf(a) - HOME.indexOf(b));
+  let h = '<button class="back" data-go="#/calendario">← Calendario</button><div class="thead"><h1>Nuevo evento</h1><span>' + esc(GNAME) + '</span></div>';
+  h += '<form class="npf" id="evf" novalidate>'
+    + '<label>Nombre<input name="ename" maxlength="80" autocomplete="off" placeholder="Ej.: Entrega proyecto SM6"></label>'
+    + '<label>Tipo<select name="etype">' + EVT_TYPES.map(t => '<option value="' + t[0] + '">' + t[1] + '</option>').join("") + '</select></label>'
+    + '<label>Asignatura<select name="esubj"><option value="">Elige la asignatura…</option>' + subs.map(c => '<option value="' + c + '"' + (NE.subj === c ? ' selected' : '') + '>' + c + ' · ' + esc(SUBJ[c].n) + '</option>').join("") + '</select></label>'
+    + '<label>Día y hora<select name="eslot"' + (NE.subj ? '' : ' disabled') + '>' + slotOptions(NE.subj) + '</select><small>Salen las clases que tienes de esa asignatura en las próximas semanas, según tu horario.</small></label>'
+    + '<p class="autherr" id="everr" aria-live="polite"></p><button class="btn" type="submit">Guardar evento</button></form>';
+  return h;
+}
+function slotOptions(code){
+  if (!code) return '<option value="">Primero elige la asignatura</option>';
+  const s = sessionsOf(code, 10);
+  if (!s.length) return '<option value="">Esta asignatura no tiene clases en tu horario</option>';
+  return s.map(x => '<option value="' + x.date + '|' + x.from + '|' + x.to + '">' + dayLabel(x.date) + ' · ' + x.from + '–' + x.to + '</option>').join("");
+}
+document.addEventListener("change", e => {
+  if (e.target.name !== "esubj") return;
+  NE.subj = e.target.value || null;
+  const sl = e.target.form.eslot; sl.innerHTML = slotOptions(NE.subj); sl.disabled = !NE.subj;
+  const nm = e.target.form.ename, ty = e.target.form.etype;
+  if (NE.subj && !nm.value.trim()) nm.placeholder = (EVT_TYPES.find(t => t[0] === ty.value) || ["", "Evento"])[1] + " " + NE.subj;
+});
+document.addEventListener("submit", e => {
+  if (e.target.id !== "evf") return;
+  e.preventDefault();
+  const f = e.target, err = $("#everr");
+  const subj = f.esubj.value, slot = f.eslot.value, type = f.etype.value;
+  const name = f.ename.value.trim() || ((EVT_TYPES.find(t => t[0] === type) || ["", "Evento"])[1] + " " + subj);
+  if (!subj){ err.textContent = "Elige la asignatura."; f.esubj.focus(); return; }
+  if (!slot){ err.textContent = "Elige el día y la hora."; return; }
+  const [date, from, to] = slot.split("|");
+  const list = allEvents(); list.push({id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name, type, subj, date, from, to, group: GNAME_ID(), created: Date.now()});
+  saveEvents(list);
+  CAL.y = fromYmd(date).getFullYear(); CAL.m = fromYmd(date).getMonth(); CAL.sel = date; NE.subj = null;
+  go("#/calendario"); toast("Guardado: " + name + " · " + dayLabel(date) + ".");
+});
+document.addEventListener("click", e => {
+  const m = e.target.closest("[data-calm]");
+  if (m){ CAL.m += +m.dataset.calm; if (CAL.m < 0){ CAL.m = 11; CAL.y--; } if (CAL.m > 11){ CAL.m = 0; CAL.y++; } render(); return; }
+  const d = e.target.closest("[data-calday]");
+  if (d){ CAL.sel = d.dataset.calday; const dt = fromYmd(CAL.sel); if (dt.getMonth() !== CAL.m){ CAL.m = dt.getMonth(); CAL.y = dt.getFullYear(); } render(); return; }
+  const x = e.target.closest("[data-evdel]");
+  if (x){ const ev = allEvents().find(v => v.id === x.dataset.evdel); if (!ev || !confirm("¿Borrar «" + ev.name + "»?")) return; saveEvents(allEvents().filter(v => v.id !== ev.id)); render(); toast("Borrado."); return; }
+  if (e.target.closest("[data-admchg]")){ setAdminGroup(null); lastRoute = null; go("#/"); return; }
+});
+
 /* ===================== views ===================== */
 const LOGO_PJ6 = '<svg viewBox="0 0 120 120" aria-hidden="true"><polygon points="60,8 112,50 8,50" fill="var(--fg)"/><rect x="14" y="50" width="92" height="62" fill="#d4600a"/><g stroke="var(--surface)" stroke-width="5"><line x1="14" y1="71" x2="106" y2="71"/><line x1="14" y1="92" x2="106" y2="92"/><line x1="60" y1="50" x2="60" y2="71"/><line x1="37" y1="71" x2="37" y2="92"/><line x1="83" y1="71" x2="83" y2="92"/><line x1="60" y1="92" x2="60" y2="112"/></g></svg>';
 const ICO_CAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>';
@@ -1355,11 +1507,14 @@ function viewHome(){
   h += '<div class="today"><h2>Hoy'+(todays.length ? '<small>'+todays.length+' clase'+(todays.length>1?'s':'')+(todays.length>3?' · desliza →':'')+'</small>' : '')+'</h2>'+(todays.length
     ? '<div class="tdlist">'+todays.map(c=>'<button class="tdi'+(N.isNow(c[0],c[1],c[2])?' now':'')+'" style="'+sv(c[3])+'" data-cls="'+CLASSES.indexOf(c)+'"><small>'+SLOTS[c[1]][0]+'</small><b>'+c[3]+'</b><small>'+esc(c[4])+'</small></button>').join("")+'</div>'
     : '<p class="tdempty">Hoy no tienes clase.</p>')+'</div>';
-  h += '<p class="sect">Asignaturas</p><div class="sgrid">'+HOME.map(c=>{
+  if (isAdmin()) h = '<div class="admbar"><span><b>Modo admin</b> · estás viendo '+esc(GNAME)+'</span><button data-admchg>Cambiar curso</button></div>' + h;
+  const nx = upcoming(1)[0];
+  h += '<p class="sect">Asignaturas</p><div class="sgrid"><button class="scard calcard" data-go="#/calendario"><span class="calic">'+ICO_CAL2+'</span><b>Calendario</b><span>'+(nx ? 'Próximo: '+esc(nx.name)+' · '+dayLabel(nx.date) : 'Entregas y exámenes')+'</span></button>'+HOME.map(c=>{
     const s = SUBJ[c], fr = F[c] ? calc(F[c]) : null;
     const warn = fr && fr.st !== "ok" ? '<em>Faltas: '+STL[fr.st]+'</em>' : '';
     return '<button class="scard" style="'+sv(c)+'" data-go="#/asig/'+c+'"><b>'+(c==="TUT"?HUB:c)+'</b><span>'+esc(s.sub || s.n)+'</span>'+warn+'</button>';
   }).join("")+'</div>';
+  h += '<p class="credit">Clarea · creada por <b>Isaac Castillo Vidal</b></p>';
   return h;
 }
 function viewSubject(c){
@@ -1424,13 +1579,15 @@ function viewFaltas(){
 
 /* ===================== router ===================== */
 let lastRoute = null;
-const depth = r => /^asig\/[^/]+\/nuevo$/.test(r) ? 2 : r.startsWith("asig/") ? 1 : (r === "horario" || r === "faltas") ? 2 : 0;
+const depth = r => /^asig\/[^/]+\/nuevo$/.test(r) || r === "calendario/nuevo" ? 2 : r.startsWith("asig/") || r === "calendario" ? 1 : (r === "horario" || r === "faltas") ? 2 : 0;
 function viewPickGroup(){
-  return '<div class="hello"><h1>Hola, '+esc(window.PJ6USER || "")+'</h1><p>Antes de empezar, elige tu clase.</p></div>'
+  const adm = isAdmin();
+  return '<div class="hello"><h1>Hola, '+esc(window.PJ6USER || "")+'</h1><p>'+(adm ? 'Modo admin: ¿qué curso quieres ver?' : 'Antes de empezar, elige tu clase.')+'</p></div>'
     + '<div class="gpick">'+Object.keys(GROUPS).map(id=>'<button class="gcard" data-grp="'+id+'"><b>'+(GROUPS[id].label || id)+'</b><span>'+esc(GROUPS[id].full)+'</span><small>'+GROUPS[id].school+' · aula '+GROUPS[id].room+' · '+GROUPS[id].when+'</small></button>').join("")+'</div>'
-    + '<p class="gwarn"><b>Elige bien: después no se puede cambiar.</b> Tu horario, tus asignaturas y tus faltas dependen de la clase.</p>';
+    + (adm ? '<p class="gwarn">Puedes cambiar de curso cuando quieras con «Cambiar curso».</p>' : '<p class="gwarn"><b>Elige bien: después no se puede cambiar.</b> Tu horario, tus asignaturas y tus faltas dependen de la clase.</p>');
 }
 function pickGroup(id){
+  if (isAdmin()){ setAdminGroup(id); CAL.y = null; lastRoute = null; render(); toast("Viendo "+(GROUPS[id].label || id)+"."); return; }
   const bg = document.createElement("div"); bg.className = "sheetbg";
   bg.innerHTML = '<div class="sheet" role="dialog" aria-modal="true" aria-label="Confirmar clase"><span class="grab"></span><h2 class="gq">¿Eres de '+(GROUPS[id].label || id)+'?</h2><p class="gwarn">'+esc(GROUPS[id].full)+'. <b>Ya no podrás cambiarla.</b></p><div class="row2"><button class="btn" data-gok>Sí, es mi clase</button><button class="btn2" data-close>Volver</button></div></div>';
   const close = ()=>{ bg.classList.add("closing"); setTimeout(()=>bg.remove(), 230); };
@@ -1446,7 +1603,7 @@ function render(){
   const grp = myGroup();
   if (!grp){
     // on a new device the class arrives with the first sync: wait for it before asking
-    if (!waitedSync && window.clareaSyncReady){ $("#app").innerHTML = '<div class="pg"><p class="fnote">Cargando tu cuenta…</p></div>'; window.clareaSyncReady.then(()=>{ waitedSync = true; render(); }); return; }
+    if (!isAdmin() && !waitedSync && window.clareaSyncReady){ $("#app").innerHTML = '<div class="pg"><p class="fnote">Cargando tu cuenta…</p></div>'; window.clareaSyncReady.then(()=>{ waitedSync = true; render(); }); return; }
     $("#app").innerHTML = '<div class="pg v-home enter">'+viewPickGroup()+'</div>'; lastRoute = "__group"; return;
   }
   applyGroup(grp);
@@ -1459,10 +1616,12 @@ function render(){
   else if (r.startsWith("asig/")) h = viewSubject(r.slice(5));
   else if (r === "horario") h = viewTimetable();
   else if (r === "faltas") h = viewFaltas();
+  else if (r === "calendario") h = viewCalendar();
+  else if (r === "calendario/nuevo"){ if (r === lastRoute && document.getElementById("evf")) return; h = viewNewEvent(); }
   else h = viewHome();
   // a new screen slides in (from the right going forward, from the left going back); edits on the same screen don't move
   const isNew = r !== lastRoute, back = lastRoute !== null && depth(r) < depth(lastRoute);
-  const vcls = nw ? "v-new" : r.startsWith("asig/") ? "v-asig" : r === "horario" ? "v-horario" : r === "faltas" ? "v-faltas" : "v-home";
+  const vcls = r.startsWith("calendario") ? "v-cal" : nw ? "v-new" : r.startsWith("asig/") ? "v-asig" : r === "horario" ? "v-horario" : r === "faltas" ? "v-faltas" : "v-home";
   $("#app").innerHTML = '<div class="pg '+vcls+(isNew ? ' enter'+(back ? ' rev' : '') : '')+'">'+h+'</div>';
   lastRoute = r;
   if (isNew) [".scard", ".tdi", ".lcard", ".tt .cl", ".tt .fr", ".fr2"].forEach(sel=>document.querySelectorAll("#app "+sel).forEach((el,i)=>el.style.setProperty("--i", Math.min(i, 16))));
