@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<script>window.CLAREA_VERSION = "20261112013058";</script>
+<script>window.CLAREA_VERSION = "20261112013207";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1353,7 +1353,7 @@ function viewHome(){
 function viewSubject(c){
   const s = SUBJ[c]; if (!s) return viewHome();
   let h = '<button class="back" data-go="#/">← Inicio</button><div class="sban" style="'+sv(c)+'"><b>'+(c==="TUT"?HUB:c)+'</b><span>'+esc(c==="TUT" ? TUTOR : s.n)+'</span></div>';
-  if (c === "PJ6" && myGroup() === "DAW-2A"){
+  if (c === "PJ6" && window.PJ6USER === "isaac"){   // BuildPro review: only for the account it was made for
     h += '<a class="lcard" href="repaso-pj6.html"><span class="lico">'+LOGO_PJ6+'</span><span class="ltx"><b>BuildPro Order Manager</b><span>Repaso del examen · PJ6 · orderManagementApp</span></span><span class="lgo">›</span></a>';
   } else if (c === "TUT"){
     const F = faltas(); let tf = 0, worst = "ok"; const ord = ["ok","aviso","limite","susp"];

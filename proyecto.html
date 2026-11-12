@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<script>window.CLAREA_VERSION = "20261112013058";</script>
+<script>window.CLAREA_VERSION = "20261112013207";</script>
 <title>Proyecto · Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -707,6 +707,12 @@ details.lbk.imp3,details.lbk.imp2,details.lbk.imp1,details.lbk.imp0{border-left:
 }
 </style>
 <script>
+/* the BuildPro review belongs to the account "isaac": anyone else goes back to the home page */
+(function () {
+  function check() { if (window.PJ6USER && window.PJ6USER !== "isaac") location.replace("./"); }
+  window.clareaRefresh = check;
+  document.addEventListener("DOMContentLoaded", check);
+})();
 /* always open the review at the top, so the "← PJ6" link is visible */
 if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 window.addEventListener("load", function () { setTimeout(function () { window.scrollTo(0, 0); }, 0); });
