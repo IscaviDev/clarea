@@ -8,7 +8,7 @@
 <meta property="og:title" content="Clarea">
 <meta property="og:description" content="Asignaturas, horario, faltas y repasos de tus proyectos.">
 <meta property="og:url" content="https://clarea.dev/">
-<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112023001">
+<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112023513">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Logo de Clarea">
@@ -24,7 +24,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
-<script>window.CLAREA_VERSION = "20261112023001";</script>
+<script>window.CLAREA_VERSION = "20261112023513";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -318,6 +318,11 @@ details.fr2>summary::-webkit-details-marker{display:none}
 .evdue input{font:inherit;font-size:16px;color:var(--fg);background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0;color-scheme:inherit}
 .evdue input:focus{border-color:var(--accent);outline:none}
 .ev-due[hidden],.ev-exam[hidden]{display:none!important}
+.npf>label.evother{flex-direction:row;font-weight:600}
+.tdi s{font-size:12px;font-weight:700;opacity:.7;text-decoration-thickness:2px}
+.tdi.exam{box-shadow:inset 0 0 0 2.5px #c0392b}
+.tdi .tdex{font-weight:800;opacity:1}
+.tdi.due{background:var(--surface);color:var(--fg);border:1.5px dashed var(--sbg)}
 .evn{font-size:13px;color:var(--fg);white-space:pre-wrap;margin-top:4px;padding-top:4px;border-top:1px dashed var(--line)}
 .npf select:focus{border-color:var(--accent);outline:none}
 .admbar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(180,86,27,.12);border:1px solid rgba(180,86,27,.35);border-radius:var(--r);padding:8px 10px 8px 12px;font-size:13.5px}
@@ -1419,11 +1424,11 @@ function upcoming(n){ const t = ymd(new Date()); return events().filter(e => e.d
 /* the classes of a subject in the next weeks, from the timetable: these are the only dates and times offered */
 function sessionsOf(code, weeks){
   const out = [], today = new Date(); today.setHours(0, 0, 0, 0);
-  const mine = CLASSES.filter(c => c[3] === code).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const mine = CLASSES.filter(c => !code || c[3] === code).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   for (let i = 0; i < weeks * 7; i++){
     const d = new Date(today); d.setDate(today.getDate() + i);
     const wd = d.getDay() - 1;
-    mine.filter(c => c[0] === wd).forEach(c => out.push({date: ymd(d), from: SLOTS[c[1]][0], to: SLOTS[c[1] + c[2] - 1][1]}));
+    mine.filter(c => c[0] === wd).forEach(c => out.push({date: ymd(d), from: SLOTS[c[1]][0], to: SLOTS[c[1] + c[2] - 1][1], subj: c[3]}));
   }
   return out;
 }
@@ -1431,7 +1436,7 @@ const CAL = {y: null, m: null, sel: null};
 function evChip(e, big){
   return '<span class="evc ev-' + e.type + '" style="' + sv(e.subj) + '">' + (big ? '<b>' + esc(e.subj) + '</b> ' + esc(EVT_SHORT[e.type] || "") : esc(e.subj)) + '</span>';
 }
-const evTime = e => e.type === "entrega" ? "hasta las " + e.from : e.from + "–" + e.to;
+const evTime = e => e.type === "entrega" ? "hasta las " + e.from : e.from + "–" + e.to + (e.over ? " · en la clase de " + e.over : "");
 function evRow(e){
   return '<div class="evr" style="' + sv(e.subj) + '"><span class="evd"><b>' + fromYmd(e.date).getDate() + '</b><small>' + WD[fromYmd(e.date).getDay()] + '</small></span><span class="evt"><b>' + esc(e.name) + '</b><small>' + esc(EVT_SHORT[e.type] || "") + ' · ' + esc(e.subj) + ' · ' + esc(evTime(e)) + '</small>' + (e.notes ? '<span class="evn">' + esc(e.notes) + '</span>' : '') + '</span><button class="evx" data-evdel="' + esc(e.id) + '" aria-label="Borrar ' + esc(e.name) + '">✕</button></div>';
 }
@@ -1465,27 +1470,30 @@ function viewNewEvent(){
     + '<label>Nombre<input name="ename" maxlength="80" autocomplete="off" placeholder="Ej.: Entrega proyecto SM6"></label>'
     + '<label>Tipo<select name="etype">' + EVT_TYPES.map(t => '<option value="' + t[0] + '">' + t[1] + '</option>').join("") + '</select></label>'
     + '<label>Asignatura<select name="esubj"><option value="">Elige la asignatura…</option>' + subs.map(c => '<option value="' + c + '"' + (NE.subj === c ? ' selected' : '') + '>' + c + ' · ' + esc(SUBJ[c].n) + '</option>').join("") + '</select></label>'
-    + '<label class="ev-exam" hidden>Día y hora<select name="eslot"' + (NE.subj ? '' : ' disabled') + '>' + slotOptions(NE.subj) + '</select><small>Salen las clases que tienes de esa asignatura en las próximas semanas, según tu horario.</small></label>'
+    + '<label class="ev-exam npchk evother" hidden><input type="checkbox" name="eother"><span>El profe lo ha puesto en la clase de otra asignatura<small>Salen todas tus clases; ese día, en «Hoy», esa clase saldrá tachada con el examen</small></span></label>'
+    + '<label class="ev-exam" hidden>Día y hora<select name="eslot"' + (NE.subj ? '' : ' disabled') + '>' + slotOptions(NE.subj) + '</select><small>Salen las clases de las próximas semanas, según tu horario.</small></label>'
     + '<div class="ev-due"><div class="evdue"><label>Día de entrega<input type="date" name="edate" min="' + ymd(new Date()) + '" value="' + ymd(new Date()) + '"></label><label>Hora límite<input type="time" name="etime" value="23:59"></label></div><small class="nphint">La entrega es hasta una hora concreta: ese día, a esa hora.</small></div>'
     + '<label>Notas <small>opcional</small><textarea name="enotes" rows="4" maxlength="1000" placeholder="Ej.: temas que entran, qué hay que entregar, material…"></textarea></label>'
     + '<p class="autherr" id="everr" aria-live="polite"></p><button class="btn" type="submit">Guardar evento</button></form>';
   return h;
 }
-function slotOptions(code){
+function slotOptions(code, other){
   if (!code) return '<option value="">Primero elige la asignatura</option>';
-  const s = sessionsOf(code, 10);
+  // "other": the teacher put the exam in the class of another subject
+  const s = other ? sessionsOf(null, 10).filter(x => x.subj !== code) : sessionsOf(code, 10);
   if (!s.length) return '<option value="">Esta asignatura no tiene clases en tu horario</option>';
-  return s.map(x => '<option value="' + x.date + '|' + x.from + '|' + x.to + '">' + dayLabel(x.date) + ' · ' + x.from + '–' + x.to + '</option>').join("");
+  return s.map(x => '<option value="' + x.date + '|' + x.from + '|' + x.to + '|' + (other ? x.subj : '') + '">' + dayLabel(x.date) + ' · ' + x.from + '–' + x.to + (other ? ' · en la clase de ' + x.subj : '') + '</option>').join("");
 }
 function evTypeUI(f){
   const due = f.etype.value === "entrega";
-  f.querySelector(".ev-due").hidden = !due; f.querySelector(".ev-exam").hidden = due;
+  f.querySelector(".ev-due").hidden = !due; f.querySelectorAll(".ev-exam").forEach(x => x.hidden = due);
 }
 document.addEventListener("change", e => {
   if (e.target.name === "etype" && e.target.form && e.target.form.id === "evf"){ evTypeUI(e.target.form); return; }
+  if (e.target.name === "eother" && e.target.form && e.target.form.id === "evf"){ const sl = e.target.form.eslot; sl.innerHTML = slotOptions(NE.subj, e.target.checked); return; }
   if (e.target.name !== "esubj") return;
   NE.subj = e.target.value || null;
-  const sl = e.target.form.eslot; sl.innerHTML = slotOptions(NE.subj); sl.disabled = !NE.subj;
+  const sl = e.target.form.eslot; sl.innerHTML = slotOptions(NE.subj, e.target.form.eother.checked); sl.disabled = !NE.subj;
   const nm = e.target.form.ename, ty = e.target.form.etype;
   if (NE.subj && !nm.value.trim()) nm.placeholder = (EVT_TYPES.find(t => t[0] === ty.value) || ["", "Evento"])[1] + " " + NE.subj;
 });
@@ -1496,16 +1504,16 @@ document.addEventListener("submit", e => {
   const subj = f.esubj.value, slot = f.eslot.value, type = f.etype.value;
   const name = f.ename.value.trim() || ((EVT_TYPES.find(t => t[0] === type) || ["", "Evento"])[1] + " " + subj);
   if (!subj){ err.textContent = "Elige la asignatura."; f.esubj.focus(); return; }
-  let date, from, to;
+  let date, from, to, over = "";
   if (type === "entrega"){
     date = f.edate.value; from = f.etime.value; to = "";
     if (!date){ err.textContent = "Elige el día de la entrega."; f.edate.focus(); return; }
     if (!from){ err.textContent = "Pon la hora límite de la entrega."; f.etime.focus(); return; }
   } else {
     if (!slot){ err.textContent = "Elige el día y la hora."; return; }
-    [date, from, to] = slot.split("|");
+    [date, from, to, over] = slot.split("|");
   }
-  const list = allEvents(); list.push({id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name, type, subj, date, from, to, notes: f.enotes.value.trim(), group: GNAME_ID(), created: Date.now()});
+  const list = allEvents(); list.push({id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name, type, subj, date, from, to, over: over || "", notes: f.enotes.value.trim(), group: GNAME_ID(), created: Date.now()});
   saveEvents(list);
   CAL.y = fromYmd(date).getFullYear(); CAL.m = fromYmd(date).getMonth(); CAL.sel = date; NE.subj = null;
   go("#/calendario"); toast("Guardado: " + name + " · " + dayLabel(date) + (type === "entrega" ? " · hasta las " + from : "") + ".");
@@ -1533,9 +1541,17 @@ function nowInfo(){
 function viewHome(){
   const N = nowInfo(), F = faltas();
   const todays = CLASSES.filter(c=>c[0]===N.wd).sort((a,b)=>a[1]-b[1]);
+  const todayEv = events().filter(e=>e.date===ymd(new Date()));
+  const nDue = todayEv.filter(e=>e.type==="entrega").length;
   let h = '<div class="hello"><h1>Hola, '+esc(window.PJ6USER || "")+'</h1><p>'+(N.wd>=0 && N.wd<5 ? DAYS[N.wd] : "Fin de semana")+' · '+GNAME+' · aula '+ROOM+'</p></div>';
-  h += '<div class="today"><h2>Hoy'+(todays.length ? '<small>'+todays.length+' clase'+(todays.length>1?'s':'')+(todays.length>3?' · desliza →':'')+'</small>' : '')+'</h2>'+(todays.length
-    ? '<div class="tdlist">'+todays.map(c=>'<button class="tdi'+(N.isNow(c[0],c[1],c[2])?' now':'')+'" style="'+sv(c[3])+'" data-cls="'+CLASSES.indexOf(c)+'"><small>'+SLOTS[c[1]][0]+' – '+SLOTS[c[1]+c[2]-1][1]+'</small><b>'+c[3]+'</b><small>'+esc(c[4])+'</small></button>').join("")+'</div>'
+  h += '<div class="today"><h2>Hoy'+(todays.length ? '<small>'+todays.length+' clase'+(todays.length>1?'s':'')+(nDue?' · '+nDue+' entrega'+(nDue>1?'s':''):'')+(todays.length+nDue>3?' · desliza →':'')+'</small>' : '')+'</h2>'+(todays.length
+    ? '<div class="tdlist">'+todays.map(c=>{
+        const t0 = SLOTS[c[1]][0], t1 = SLOTS[c[1]+c[2]-1][1], ex = todayEv.find(e=>e.type!=="entrega" && e.from===t0);
+        const base = '<button class="tdi'+(N.isNow(c[0],c[1],c[2])?' now':'')+(ex?' exam':'')+'" style="'+sv(ex ? ex.subj : c[3])+'" data-cls="'+CLASSES.indexOf(c)+'"><small>'+t0+' – '+t1+'</small>';
+        if (ex && ex.subj !== c[3]) return base+'<s>'+c[3]+'</s><b>'+ex.subj+'</b><small class="tdex">'+esc(EVT_SHORT[ex.type]||"Examen")+'</small></button>';
+        if (ex) return base+'<b>'+c[3]+'</b><small class="tdex">'+esc(EVT_SHORT[ex.type]||"Examen")+'</small></button>';
+        return base+'<b>'+c[3]+'</b><small>'+esc(c[4])+'</small></button>';
+      }).join("")+todayEv.filter(e=>e.type==="entrega").map(e=>'<button class="tdi due" style="'+sv(e.subj)+'" data-go="#/calendario"><small>hasta las '+esc(e.from)+'</small><b>'+e.subj+'</b><small class="tdex">Entrega</small></button>').join("")+'</div>'
     : '<p class="tdempty">Hoy no tienes clase.</p>')+'</div>';
   if (isAdmin()) h = '<div class="admbar"><span><b>Modo admin</b> · estás viendo '+esc(GNAME)+'</span><button data-admchg>Cambiar curso</button></div>' + h;
   const nx = upcoming(1)[0];
