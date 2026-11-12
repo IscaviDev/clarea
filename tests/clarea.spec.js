@@ -77,12 +77,14 @@ test("mi progreso y simulacro", async ({ page }) => {
   expect(await axe(page, "mi progreso")).toEqual([]);
 });
 
-test("configuración: las 4 IA y la elección por defecto", async ({ page }) => {
+test("configuración: Claude con tu cuenta y Gemini como clave", async ({ page }) => {
   await signUp(page);
   await go(page, "configuracion");
-  await expect(page.locator(".cfgprov")).toHaveCount(4);
-  await page.locator('.cfgprov[data-cfgdef="openrouter"]').click();
-  await expect(page.locator('.cfgprov[data-cfgdef="openrouter"]')).toHaveAttribute("aria-checked", "true");
+  // first, Claude with the student's account (the connector); then Gemini, the only key
+  await expect(page.locator(".cfgh").first()).toHaveText("Claude con tu cuenta");
+  await expect(page.locator("[data-mcpon]")).toBeVisible();
+  await expect(page.locator("details.cfgai")).toHaveCount(1);
+  await expect(page.locator('details.cfgai[data-cfgai="gemini"]')).toHaveAttribute("open", "");
   expect(await axe(page, "configuración")).toEqual([]);
 });
 
