@@ -8,7 +8,7 @@
 <meta property="og:title" content="Clarea">
 <meta property="og:description" content="Asignaturas, horario, faltas y repasos de tus proyectos.">
 <meta property="og:url" content="https://clarea.dev/">
-<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112025121">
+<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112030036">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Logo de Clarea">
@@ -24,7 +24,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
-<script>window.CLAREA_VERSION = "20261112025121";</script>
+<script>window.CLAREA_VERSION = "20261112030036";</script>
 <title>Proyecto · Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -967,8 +967,14 @@ html,body{margin:0}
 .authform input{font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1.5px solid var(--line);border-radius:9px;padding:10px 12px}
 .authform input:focus{border-color:var(--accent);outline:none}
 .autherr{margin:0;font-size:13.5px;color:var(--err);min-height:1em}
-.authknown{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
-.authknown button{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:3px 10px;font-size:13px;cursor:pointer;color:var(--fg)}
+.authknown{display:flex;flex-direction:column;gap:6px}
+.authknown[hidden]{display:none}
+.authknown>span{font-size:12.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.authknown button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1.5px solid var(--line);background:var(--bg);border-radius:12px;padding:8px 12px 8px 8px;cursor:pointer;color:var(--fg);font:inherit}
+.authknown button i{width:34px;height:34px;flex:none;border-radius:50%;background:var(--accent);color:#fff;font-style:normal;font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center}
+.authknown button b{flex:1;min-width:0;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.authknown button em{font-style:normal;font-size:13px;font-weight:700;color:var(--accent)}
+.authknown button[aria-pressed="true"]{border-color:var(--accent);background:var(--surface)}
 .authnote{margin:0;font-size:12px;color:var(--muted);line-height:1.4}
 .authcredit{text-align:center;padding-top:6px;border-top:1px solid var(--line)}
 .authtxt{margin:0;font-size:14px;line-height:1.45}
@@ -1431,13 +1437,13 @@ html,body{margin:0}
     var accs = lsGet(ACC) || {}, names = Object.keys(accs);
     var mode = "in";
     var w = el('<div class="authwrap" role="dialog" aria-modal="true" aria-label="Iniciar sesión"><div class="authcard">'
-      + '<div class="authlogo">' + LOGO + '<div><h1>Clarea</h1><p>Tus asignaturas de DAW2 · funciona sin internet</p></div></div>'
+      + '<div class="authlogo">' + LOGO + '<div><h1>Clarea</h1><p>Asignaturas, horario, faltas y repasos</p></div></div>'
       + '<div class="authtabs"><button type="button" data-m="in">Entrar</button><button type="button" data-m="up">Crear cuenta</button></div>'
       + '<form class="authform" novalidate><label>Usuario<input id="auth-user" name="user" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="20"></label>'
       + '<label>Contraseña<input id="auth-pass" name="pass" type="password" autocomplete="current-password" maxlength="64"></label>'
       + '<label class="auth-rep">Repite la contraseña<input id="auth-pass2" name="pass2" type="password" autocomplete="new-password" maxlength="64"></label>'
       + '<p class="autherr" aria-live="polite"></p><button class="btn" type="submit"></button></form>'
-      + (names.length ? '<div class="authknown">En este dispositivo: ' + names.map(function(n){ return '<button type="button" data-pick="' + escT(n) + '">' + escT(n) + '</button>'; }).join("") + '</div>' : '')
+      + (names.length ? '<div class="authknown"><span>Cuentas en este dispositivo</span>' + names.map(function(n){ return '<button type="button" data-pick="' + escT(n) + '" aria-pressed="false"><i>' + escT(n.charAt(0).toUpperCase()) + '</i><b>' + escT(n) + '</b><em>Entrar ›</em></button>'; }).join("") + '</div>' : '')
       + '<p class="authinfo" hidden></p>'
       + '<button type="button" class="authimp" data-imp>' + ICO_FILE + 'Importar progreso de un archivo</button>'
       + '<p class="authnote">Tu cuenta se guarda en la nube: entra con el mismo usuario en el móvil o en el PC y el progreso se sincroniza solo. Sin internet también funciona.</p>'
@@ -1449,6 +1455,7 @@ html,body{margin:0}
       mode = m; err.textContent = "";
       w.querySelectorAll(".authtabs button").forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.m === m); });
       w.querySelector(".auth-rep").hidden = m !== "up";
+      var kn = w.querySelector(".authknown"); if (kn) kn.hidden = m === "up";
       w.querySelector("#auth-pass").setAttribute("autocomplete", m === "up" ? "new-password" : "current-password");
       btn.textContent = m === "up" ? "Crear cuenta y entrar" : "Entrar";
     }
@@ -1456,7 +1463,7 @@ html,body{margin:0}
     function busy(on){ btn.disabled = on; btn.textContent = on ? "Conectando…" : (mode === "up" ? "Crear cuenta y entrar" : "Entrar"); }
     w.addEventListener("click", function(e){
       var t = e.target.closest("[data-m]"); if (t){ setMode(t.dataset.m); return; }
-      var p = e.target.closest("[data-pick]"); if (p){ setMode("in"); form.user.value = p.dataset.pick; form.pass.focus(); return; }
+      var p = e.target.closest("[data-pick]"); if (p){ setMode("in"); form.user.value = p.dataset.pick; w.querySelectorAll("[data-pick]").forEach(function(b){ b.setAttribute("aria-pressed", b === p); }); form.pass.focus(); return; }
       if (e.target.closest("[data-imp]")) readProgressFile(function(j, msg){
         if (!j){ err.textContent = msg; return; }
         pendingImport = j; err.textContent = "";

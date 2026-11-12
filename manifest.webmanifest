@@ -1,7 +1,7 @@
 {
   "name": "Clarea",
   "short_name": "Clarea",
-  "description": "Tus asignaturas de DAW2: horario, faltas de asistencia y repasos. Funciona sin internet.",
+  "description": "Asignaturas, horario, faltas de asistencia y repasos de tus proyectos.",
   "lang": "es",
   "start_url": "./",
   "scope": "./",
