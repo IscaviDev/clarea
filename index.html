@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<script>window.CLAREA_VERSION = "20261112011443";</script>
+<script>window.CLAREA_VERSION = "20261112012536";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -250,6 +250,23 @@ details.fr2>summary::-webkit-details-marker{display:none}
 .npgh label{display:flex;flex-direction:column;gap:5px;font-size:14px;font-weight:600}
 @media (min-width:1024px){.pg.v-new{max-width:720px}}
 @media (hover:hover) and (pointer:fine){.npbtn:hover{border-color:var(--accent)}}
+
+/* ---------- classes ---------- */
+.gpick{display:grid;grid-template-columns:1fr;gap:12px}
+@media (min-width:640px){.gpick{grid-template-columns:1fr 1fr}}
+.gcard{display:flex;flex-direction:column;gap:6px;text-align:left;border:1.5px solid var(--line);background:var(--surface);color:var(--fg);border-radius:var(--r);padding:18px 16px;cursor:pointer}
+.gcard b{font-size:26px;font-weight:800;letter-spacing:-.02em;color:var(--clarea-blue,#1f5fbf)}
+.gcard span{font-size:14.5px;font-weight:600}
+.gcard small{font-size:12.5px;color:var(--muted)}
+.gwarn{margin:0;font-size:13.5px;color:var(--muted);line-height:1.45}
+.gwarn b{color:var(--fg)}
+.gq{margin:4px 0 0;font-size:22px}
+.soon{background:var(--surface);border:1px dashed var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:4px}
+.soon b{font-size:17px;color:var(--clarea-orange,#b4561b)}
+.soon span{font-size:14px;color:var(--muted)}
+.flist.off{opacity:.55;pointer-events:none}
+@media (min-width:1024px){.pg.v-faltas>.soon,.pg.v-faltas>.flist.off{grid-column:1/-1}}
+@media (hover:hover) and (pointer:fine){.gcard:hover{border-color:var(--accent)}}
 </style>
 <script>
 /* Clarea · projects: reading code (folder, .zip, GitHub), GitHub history and simple code analysis.
@@ -732,6 +749,10 @@ html,body{margin:0}
     return "No se ha podido conectar con la nube (" + (c || "error") + "). Prueba otra vez en un momento.";
   }
   var pendingPw = null; // password kept only in memory after an offline login, to connect to the cloud when internet comes back
+  // resolved once the first sync after opening the app (or logging in) has finished, or after 8 s at most
+  var syncReadyDone;
+  window.clareaSyncReady = new Promise(function(r){ syncReadyDone = r; });
+  function firstSyncDone(){ if (syncReadyDone){ syncReadyDone(); syncReadyDone = null; } }
 
   /* ----- sync: every saved item of the account (exams, absences…) is one document in Firestore.
      Each change is stamped with the time it was made; the newest version of each item wins. ----- */
@@ -998,7 +1019,8 @@ html,body{margin:0}
     var imp = pendingImport; pendingImport = null;
     // first bring the account's progress from the cloud, then add the imported file on top
     toast(msg);
-    syncNow().then(function(){ if (imp){ var n = applyImport(imp); setTimeout(function(){ toast(importMsg(imp, n)); }, 3300); } });
+    setTimeout(firstSyncDone, 8000);
+    syncNow().then(function(){ firstSyncDone(); if (imp){ var n = applyImport(imp); setTimeout(function(){ toast(importMsg(imp, n)); }, 3300); } });
   }
 
   /* ----- one-time invitation for accounts created before the cloud existed ----- */
@@ -1087,7 +1109,7 @@ html,body{margin:0}
     document.addEventListener("click", function(e){ if (menu && !bar.contains(e.target)) close(); });
   }
   document.addEventListener("DOMContentLoaded", function(){
-    if (window.PJ6USER){ addBar(); lastAuto = Date.now(); syncNow().then(function(){ setTimeout(maybeInvite, 1200); }); }
+    if (window.PJ6USER){ addBar(); lastAuto = Date.now(); setTimeout(firstSyncDone, 8000); syncNow().then(function(){ firstSyncDone(); setTimeout(maybeInvite, 1200); }); }
     else showLogin();
   });
 })();
@@ -1120,24 +1142,54 @@ const SUBJ = {
  SM9:{n:"UX", bg:"#76a5af", fg:"#0c1f23"},
  SOST:{n:"Sostenibilitat", bg:"#f6b26b", fg:"#2e1800"},
  EH3:{n:"Prompting IA i bones pràctiques", bg:"#6d9eeb", fg:"#0a1a33"},
+ PJ10:{n:"PJ10", bg:"#b4a7d6", fg:"#1d1530"},
  TUT:{n:"Tutoría", bg:"#1f5fbf", fg:"#ffffff", sub:"Horario y faltas de asistencia"},
  MNT:{n:"Mentoría", bg:"#c9ced6", fg:"#18202b"}
 };
-const HOME = ["PJ5","PJ6","PJ7","PJ8","PJ9","RP1","SM5","SM6","SM7","SM8","SM9","SOST","EH3","TUT"];
+let HOME = ["PJ5","PJ6","PJ7","PJ8","PJ9","RP1","SM5","SM6","SM7","SM8","SM9","SOST","EH3","TUT"];
 // Excel "Control de faltas de asistencia": horas totales of each subject; every new account starts with 0 horas faltadas
-const FALTAS_SEED = {MNT:[33,0],TUT:[33,0],PJ5:[71,0],PJ6:[53,0],PJ7:[48,0],PJ8:[62,0],PJ9:[62,0],RP1:[99,0],SM5:[54,0],SM6:[28,0],SM7:[24,0],SM8:[28,0],SM9:[29,0],SOST:[33,0],EH3:[29,0]};
-const FALTAS_ORDER = ["MNT","TUT","PJ5","PJ6","PJ7","PJ8","PJ9","RP1","SM5","SM6","SM7","SM8","SM9","SOST","EH3"];
+let FALTAS_SEED = {MNT:[33,0],TUT:[33,0],PJ5:[71,0],PJ6:[53,0],PJ7:[48,0],PJ8:[62,0],PJ9:[62,0],RP1:[99,0],SM5:[54,0],SM6:[28,0],SM7:[24,0],SM8:[28,0],SM9:[29,0],SOST:[33,0],EH3:[29,0]};
+let FALTAS_ORDER = ["MNT","TUT","PJ5","PJ6","PJ7","PJ8","PJ9","RP1","SM5","SM6","SM7","SM8","SM9","SOST","EH3"];
 // timetable DAW-2A, valid from 21/09/2026, room 308
 const DAYS = ["Lunes","Martes","Miércoles","Jueves","Viernes"], DSH = ["Lun","Mar","Mié","Jue","Vie"];
 const SLOTS = [["15:00","15:55"],["15:55","16:50"],["16:50","17:45"],["18:15","19:10"],["19:10","20:05"],["20:05","21:00"]];
-const CLASSES = [
+let CLASSES = [
  [0,1,1,"SM8","Desp. web","Collados"],[0,2,1,"PJ9","Apps mòbils","Grau S."],[0,3,1,"MNT","Mentoría","Olive"],[0,4,2,"SM7","Serveis web","Grau S."],
  [1,0,2,"SM5","UML","López H."],[1,2,1,"PJ6","PHP","Collados"],[1,3,1,"PJ6","PHP","Collados"],[1,4,1,"SM6","JS","Grau S."],[1,5,1,"EH3","IA","Catrisse"],
  [2,2,1,"SM6","JS","Collados"],[2,3,1,"SM9","UX","Catrisse"],[2,4,1,"SM7","Serveis web","Olive"],[2,5,1,"SOST","Sostenib.","Olive"],
  [3,2,1,"SM6","JS","Grau S."],[3,3,1,"TUT","Tutoría","Grau S."],[3,4,1,"PJ9","Apps mòbils","Olive"],[3,5,1,"PJ6","PHP","Collados"],
  [4,0,1,"SM6","JS","Grau S."],[4,1,2,"PJ8","Framew. JS","Grau S."]
 ];
-const ROOM = "308";
+let ROOM = "308";
+
+/* ===================== classes (groups) =====================
+   Each account belongs to one class, chosen once and never changed: it decides the subjects, the timetable and the absences. */
+const DAW_NAMES = Object.fromEntries(Object.keys(SUBJ).map(k => [k, SUBJ[k].n]));
+const GROUPS = {
+  "DAW-2A": {full: "2n Desenvolupament d'aplicacions web", room: "308", tutor: "Grau S. · jueves 18:15", faltasOn: true,
+    home: HOME, order: FALTAS_ORDER, seed: FALTAS_SEED, classes: CLASSES, names: DAW_NAMES},
+  // ASIX-2A, timetable valid from 08/09/2026 (photo sent by the user). The subjects' total hours are not known yet: absences are "coming soon".
+  "ASIX-2A": {full: "2n Administració de sistemes informàtics en la xarxa", room: "310", tutor: "Collados · jueves 18:15", faltasOn: false,
+    home: ["PJ5","PJ6","PJ7","PJ8","PJ9","PJ10","SM5","SM6","SM7","SOST","EH3","TUT"],
+    order: ["MNT","TUT","PJ5","PJ6","PJ7","PJ8","PJ9","PJ10","SM5","SM6","SM7","SOST","EH3"], seed: null,
+    classes: [
+      [0,1,1,"PJ5","","Reixach J."],[0,2,1,"PJ7","","Collados"],[0,3,1,"PJ7","","Collados"],[0,4,2,"PJ9","","Collados"],
+      [1,0,1,"PJ6","","Collados"],[1,1,1,"PJ10","","Reixach J."],[1,2,1,"SM7","","Binefa"],[1,3,1,"SM7","","Binefa"],[1,4,1,"PJ5","","Fernández J."],[1,5,1,"SOST","Sostenib.","Olive"],
+      [2,2,1,"PJ10","","Fernández J."],[2,3,1,"MNT","Mentoría","Olive"],[2,4,1,"PJ9","","Collados"],[2,5,1,"PJ8","","Catrisse"],
+      [3,2,1,"PJ7","","Collados"],[3,3,1,"TUT","Tutoría","Collados"],[3,4,2,"PJ8","","Catrisse"],
+      [4,0,2,"PJ6","","Binefa"],[4,2,1,"EH3","EH3/EH4","Simon · Collados","508/509"],[4,3,1,"EH3","EH3/EH4","Simon · Collados","508/509"],[4,4,1,"SM5","aula 508/509","Collados","508/509"],[4,5,1,"SM6","aula 508/509","Collados","508/509"]
+    ],
+    // official names still unknown: the teachers are shown instead
+    names: {PJ5:"Profes: Reixach J. · Fernández J.", PJ6:"Profes: Collados · Binefa", PJ7:"Profe: Collados", PJ8:"Profe: Catrisse", PJ9:"Profe: Collados", PJ10:"Profes: Reixach J. · Fernández J.",
+      SM5:"Profe: Collados", SM6:"Profe: Collados", SM7:"Profe: Binefa", SOST:"Sostenibilitat", EH3:"EH3/EH4 · Profes: Simon · Collados", MNT:"Mentoría", TUT:"Tutoría"}}
+};
+let GNAME = "DAW-2A", TUTOR = GROUPS["DAW-2A"].tutor, FALTAS_ON = true;
+const myGroup = () => { const g = lget("clarea-group"); return g && GROUPS[g.g] ? g.g : null; };
+function applyGroup(id){
+  const G = GROUPS[id] || GROUPS["DAW-2A"];
+  GNAME = GROUPS[id] ? id : "DAW-2A"; HOME = G.home; FALTAS_ORDER = G.order; FALTAS_SEED = G.seed; CLASSES = G.classes; ROOM = G.room; TUTOR = G.tutor; FALTAS_ON = G.faltasOn;
+  Object.keys(SUBJ).forEach(k => { SUBJ[k].n = G.names[k] || DAW_NAMES[k]; });
+}
 
 /* ===================== helpers ===================== */
 const $ = s => document.querySelector(s);
@@ -1153,6 +1205,7 @@ function toast(msg){ const t = document.createElement("div"); t.className = "toa
 function faltas(){
   const st = lget("clarea-faltas") || {t:0, rows:{}};
   const out = {};
+  if (!FALTAS_ON) return out;
   FALTAS_ORDER.forEach(c=>{ const s = FALTAS_SEED[c], r = st.rows[c] || {}; out[c] = {tot: r.tot ?? s[0], f: r.f ?? s[1]}; });
   return out;
 }
@@ -1270,7 +1323,7 @@ function nowInfo(){
 function viewHome(){
   const N = nowInfo(), F = faltas();
   const todays = CLASSES.filter(c=>c[0]===N.wd).sort((a,b)=>a[1]-b[1]);
-  let h = '<div class="hello"><h1>Hola, '+esc(window.PJ6USER || "")+'</h1><p>'+(N.wd>=0 && N.wd<5 ? DAYS[N.wd] : "Fin de semana")+' · DAW-2A · aula '+ROOM+'</p></div>';
+  let h = '<div class="hello"><h1>Hola, '+esc(window.PJ6USER || "")+'</h1><p>'+(N.wd>=0 && N.wd<5 ? DAYS[N.wd] : "Fin de semana")+' · '+GNAME+' · aula '+ROOM+'</p></div>';
   h += '<div class="today"><h2>Hoy'+(todays.length ? '<small>'+todays.length+' clase'+(todays.length>1?'s':'')+(todays.length>3?' · desliza →':'')+'</small>' : '')+'</h2>'+(todays.length
     ? '<div class="tdlist">'+todays.map(c=>'<button class="tdi'+(N.isNow(c[0],c[1],c[2])?' now':'')+'" style="'+sv(c[3])+'" data-cls="'+CLASSES.indexOf(c)+'"><small>'+SLOTS[c[1]][0]+'</small><b>'+c[3]+'</b><small>'+esc(c[4])+'</small></button>').join("")+'</div>'
     : '<p class="tdempty">Hoy no tienes clase.</p>')+'</div>';
@@ -1283,14 +1336,14 @@ function viewHome(){
 }
 function viewSubject(c){
   const s = SUBJ[c]; if (!s) return viewHome();
-  let h = '<button class="back" data-go="#/">← Inicio</button><div class="sban" style="'+sv(c)+'"><b>'+(c==="TUT"?"Tutoría":c)+'</b><span>'+esc(c==="TUT" ? "Grau S. · jueves 18:15" : s.n)+'</span></div>';
-  if (c === "PJ6"){
+  let h = '<button class="back" data-go="#/">← Inicio</button><div class="sban" style="'+sv(c)+'"><b>'+(c==="TUT"?"Tutoría":c)+'</b><span>'+esc(c==="TUT" ? TUTOR : s.n)+'</span></div>';
+  if (c === "PJ6" && GNAME === "DAW-2A"){
     h += '<a class="lcard" href="repaso-pj6.html"><span class="lico">'+LOGO_PJ6+'</span><span class="ltx"><b>BuildPro Order Manager</b><span>Repaso del examen · PJ6 · orderManagementApp</span></span><span class="lgo">›</span></a>';
   } else if (c === "TUT"){
     const F = faltas(); let tf = 0, worst = "ok"; const ord = ["ok","aviso","limite","susp"];
-    FALTAS_ORDER.forEach(k=>{ tf += F[k].f; const st = calc(F[k]).st; if (ord.indexOf(st) > ord.indexOf(worst)) worst = st; });
-    h += '<button class="lcard" data-go="#/horario"><span class="lico" style="color:var(--clarea-blue)">'+ICO_CAL+'</span><span class="ltx"><b>Horario</b><span>DAW-2A · lunes a viernes · aula '+ROOM+'</span></span><span class="lgo">›</span></button>';
-    h += '<button class="lcard" data-go="#/faltas"><span class="lico" style="color:var(--clarea-orange)">'+ICO_LIST+'</span><span class="ltx"><b>Faltas de asistencia</b><span>'+num(tf)+' h faltadas · '+(worst==="ok"?"todo en orden":"hay asignaturas en "+STL[worst].toLowerCase())+'</span></span><span class="lgo">›</span></button>';
+    if (FALTAS_ON) FALTAS_ORDER.forEach(k=>{ tf += F[k].f; const st = calc(F[k]).st; if (ord.indexOf(st) > ord.indexOf(worst)) worst = st; });
+    h += '<button class="lcard" data-go="#/horario"><span class="lico" style="color:var(--clarea-blue)">'+ICO_CAL+'</span><span class="ltx"><b>Horario</b><span>'+GNAME+' · lunes a viernes · aula '+ROOM+'</span></span><span class="lgo">›</span></button>';
+    h += '<button class="lcard" data-go="#/faltas"><span class="lico" style="color:var(--clarea-orange)">'+ICO_LIST+'</span><span class="ltx"><b>Faltas de asistencia</b><span>'+(FALTAS_ON ? num(tf)+' h faltadas · '+(worst==="ok"?"todo en orden":"hay asignaturas en "+STL[worst].toLowerCase()) : 'Próximamente')+'</span></span><span class="lgo">›</span></button>';
   }
   if (c !== "TUT"){
     h += projList().filter(p=>p.subj===c).map(p=>'<a class="lcard" href="proyecto.html?id='+encodeURIComponent(p.id)+'"><span class="lico pcode" style="'+sv(c)+'">'+ICO_CODE+'</span><span class="ltx"><b>'+esc(p.name)+'</b><span>'+esc(p.desc || (p.files+" archivos · "+p.lines+" líneas"))+'</span></span><span class="lgo">›</span></a>').join("");
@@ -1300,7 +1353,7 @@ function viewSubject(c){
 }
 function viewTimetable(){
   const N = nowInfo();
-  let h = '<button class="back" data-go="#/asig/TUT">← Tutoría</button><div class="thead"><h1>Horario</h1><span>DAW-2A · aula '+ROOM+' · toca una clase</span></div><div class="tt">';
+  let h = '<button class="back" data-go="#/asig/TUT">← Tutoría</button><div class="thead"><h1>Horario</h1><span>'+GNAME+' · aula '+ROOM+' · toca una clase</span></div><div class="tt">';
   h += '<div></div>'+DSH.map((d,i)=>'<div class="dh'+(i===N.wd?' td':'')+'">'+d+'</div>').join("");
   const rowOf = slot => slot < 3 ? slot + 2 : slot + 3;   // grid rows: 1 header, 2-4 slots, 5 break, 6-8 slots
   SLOTS.forEach((s,i)=>{ h += '<div class="tm" style="grid-row:'+rowOf(i)+';grid-column:1">'+s[0]+'<small>'+s[1]+'</small></div>'; });
@@ -1330,6 +1383,9 @@ function fsumHtml(F){
    + (risk.length ? '<p class="fnote">Más cerca del límite: '+risk.map(x=>'<b>'+x[0]+'</b> '+Math.round(x[1].use*100)+' %').join(" · ")+'</p>' : '')+'</div>';
 }
 function viewFaltas(){
+  if (!FALTAS_ON) return '<button class="back" data-go="#/asig/TUT">← Tutoría</button><div class="thead"><h1>Faltas de asistencia</h1><span>'+GNAME+'</span></div>'
+    + '<div class="soon"><b>Próximamente</b><span>Aún no tenemos las horas totales de cada asignatura de '+GNAME+', así que todavía no se pueden apuntar faltas.</span></div>'
+    + '<div class="flist off" aria-disabled="true">'+FALTAS_ORDER.map(c=>'<details class="fr2 fdis" style="'+sv(c)+'"><summary tabindex="-1"><span class="fcode">'+c+'</span><span class="fname">'+esc(SUBJ[c].n)+'</span><span class="fhrs">— h</span><span class="fmeter"><span class="fbar"><i style="width:0"></i></span><span class="stchip">Próximamente</span></span></summary></details>').join("")+'</div>';
   const F = faltas();
   let h = '<button class="back" data-go="#/asig/TUT">← Tutoría</button><div class="thead"><h1>Faltas de asistencia</h1><span>Límite: 20 % de las horas de cada asignatura</span></div>';
   h += fsumHtml(F);
@@ -1341,8 +1397,31 @@ function viewFaltas(){
 /* ===================== router ===================== */
 let lastRoute = null;
 const depth = r => /^asig\/[^/]+\/nuevo$/.test(r) ? 2 : r.startsWith("asig/") ? 1 : (r === "horario" || r === "faltas") ? 2 : 0;
+function viewPickGroup(){
+  return '<div class="hello"><h1>Hola, '+esc(window.PJ6USER || "")+'</h1><p>Antes de empezar, elige tu clase.</p></div>'
+    + '<div class="gpick">'+Object.keys(GROUPS).map(id=>'<button class="gcard" data-grp="'+id+'"><b>'+id+'</b><span>'+esc(GROUPS[id].full)+'</span><small>Aula '+GROUPS[id].room+' · tardes</small></button>').join("")+'</div>'
+    + '<p class="gwarn"><b>Elige bien: después no se puede cambiar.</b> Tu horario, tus asignaturas y tus faltas dependen de la clase.</p>';
+}
+function pickGroup(id){
+  const bg = document.createElement("div"); bg.className = "sheetbg";
+  bg.innerHTML = '<div class="sheet" role="dialog" aria-modal="true" aria-label="Confirmar clase"><span class="grab"></span><h2 class="gq">¿Eres de '+id+'?</h2><p class="gwarn">'+esc(GROUPS[id].full)+'. <b>Ya no podrás cambiarla.</b></p><div class="row2"><button class="btn" data-gok>Sí, es mi clase</button><button class="btn2" data-close>Volver</button></div></div>';
+  const close = ()=>{ bg.classList.add("closing"); setTimeout(()=>bg.remove(), 230); };
+  bg.addEventListener("click", e=>{
+    if (e.target === bg || e.target.closest("[data-close]")){ close(); return; }
+    if (e.target.closest("[data-gok]")){ if (!myGroup()) lset("clarea-group", {g: id, t: Date.now()}); close(); lastRoute = null; render(); toast("Clase guardada: "+id+"."); }
+  });
+  document.body.appendChild(bg);
+}
+let waitedSync = false;
 function render(){
   if (!window.PJ6USER){ $("#app").innerHTML = ""; return; }
+  const grp = myGroup();
+  if (!grp){
+    // on a new device the class arrives with the first sync: wait for it before asking
+    if (!waitedSync && window.clareaSyncReady){ $("#app").innerHTML = '<div class="pg"><p class="fnote">Cargando tu cuenta…</p></div>'; window.clareaSyncReady.then(()=>{ waitedSync = true; render(); }); return; }
+    $("#app").innerHTML = '<div class="pg v-home enter">'+viewPickGroup()+'</div>'; lastRoute = "__group"; return;
+  }
+  applyGroup(grp);
   const r = route();
   let h;
   const nw = r.match(/^asig\/([^/]+)\/nuevo$/);
@@ -1378,7 +1457,7 @@ function openClass(ci){
   const c = CLASSES[ci], code = c[3], s = SUBJ[code], F = faltas()[code];
   const k = F ? calc(F) : null;
   const bg = document.createElement("div"); bg.className = "sheetbg";
-  bg.innerHTML = '<div class="sheet" role="dialog" aria-modal="true" aria-label="'+code+'"><span class="grab"></span><div class="shh" style="'+sv(code)+'"><i>'+(code==="TUT"?"TUT":code)+'</i><div><b>'+esc(s.n)+'</b><span>'+DAYS[c[0]]+' · '+SLOTS[c[1]][0]+' – '+SLOTS[c[1]+c[2]-1][1]+' · '+esc(c[5])+' · aula '+ROOM+'</span></div></div>'
+  bg.innerHTML = '<div class="sheet" role="dialog" aria-modal="true" aria-label="'+code+'"><span class="grab"></span><div class="shh" style="'+sv(code)+'"><i>'+(code==="TUT"?"TUT":code)+'</i><div><b>'+esc(s.n)+'</b><span>'+DAYS[c[0]]+' · '+SLOTS[c[1]][0]+' – '+SLOTS[c[1]+c[2]-1][1]+' · '+esc(c[5])+' · aula '+(c[6] || ROOM)+'</span></div></div>'
    + (k ? '<div class="kv"><div><small>Faltas</small><b>'+num(F.f)+' h</b></div><div><small>Máximo</small><b>'+num(k.max)+' h</b></div><div><small>Estado</small><b>'+STL[k.st]+'</b></div></div>'
         + '<div class="row2"><button class="btn" data-sadd="'+code+'" data-h="'+c[2]+'">+ Apuntar falta ('+c[2]+' h)</button><button class="btn2" data-close>Cerrar</button></div>'
         : '<button class="btn2" data-close>Cerrar</button>')
@@ -1395,6 +1474,7 @@ function openClass(ci){
 /* clicks + edits */
 document.addEventListener("click", e=>{
   const g = e.target.closest("[data-go]"); if (g){ e.preventDefault(); go(g.dataset.go); return; }
+  const gp = e.target.closest("[data-grp]"); if (gp){ pickGroup(gp.dataset.grp); return; }
   const cl = e.target.closest("[data-cls]"); if (cl){ openClass(+cl.dataset.cls); return; }
   const ad = e.target.closest("[data-fadd]");
   if (ad){ const row = ad.closest("[data-f]"), c = row.dataset.f, cur = faltas()[c];

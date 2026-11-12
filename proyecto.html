@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<script>window.CLAREA_VERSION = "20261112011443";</script>
+<script>window.CLAREA_VERSION = "20261112012536";</script>
 <title>Proyecto · Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1192,6 +1192,10 @@ html,body{margin:0}
     return "No se ha podido conectar con la nube (" + (c || "error") + "). Prueba otra vez en un momento.";
   }
   var pendingPw = null; // password kept only in memory after an offline login, to connect to the cloud when internet comes back
+  // resolved once the first sync after opening the app (or logging in) has finished, or after 8 s at most
+  var syncReadyDone;
+  window.clareaSyncReady = new Promise(function(r){ syncReadyDone = r; });
+  function firstSyncDone(){ if (syncReadyDone){ syncReadyDone(); syncReadyDone = null; } }
 
   /* ----- sync: every saved item of the account (exams, absences…) is one document in Firestore.
      Each change is stamped with the time it was made; the newest version of each item wins. ----- */
@@ -1458,7 +1462,8 @@ html,body{margin:0}
     var imp = pendingImport; pendingImport = null;
     // first bring the account's progress from the cloud, then add the imported file on top
     toast(msg);
-    syncNow().then(function(){ if (imp){ var n = applyImport(imp); setTimeout(function(){ toast(importMsg(imp, n)); }, 3300); } });
+    setTimeout(firstSyncDone, 8000);
+    syncNow().then(function(){ firstSyncDone(); if (imp){ var n = applyImport(imp); setTimeout(function(){ toast(importMsg(imp, n)); }, 3300); } });
   }
 
   /* ----- one-time invitation for accounts created before the cloud existed ----- */
@@ -1547,7 +1552,7 @@ html,body{margin:0}
     document.addEventListener("click", function(e){ if (menu && !bar.contains(e.target)) close(); });
   }
   document.addEventListener("DOMContentLoaded", function(){
-    if (window.PJ6USER){ addBar(); lastAuto = Date.now(); syncNow().then(function(){ setTimeout(maybeInvite, 1200); }); }
+    if (window.PJ6USER){ addBar(); lastAuto = Date.now(); setTimeout(firstSyncDone, 8000); syncNow().then(function(){ firstSyncDone(); setTimeout(maybeInvite, 1200); }); }
     else showLogin();
   });
 })();
@@ -1658,7 +1663,7 @@ const U = () => "u/" + (window.PJ6USER || "_") + "/";
 function lget(k){ try { return JSON.parse(localStorage.getItem(U() + k)); } catch(e){ return null; } }
 function lset(k, v){ try { localStorage.setItem(U() + k, JSON.stringify(v)); return true; } catch(e){ return false; } }
 const QS = new URLSearchParams(location.search), PID = QS.get("id");
-const SUBJC = {PJ5:["#93c47d","#13230b"],PJ6:["#ffd966","#2b2100"],PJ7:["#d5a6bd","#2a1320"],PJ8:["#9fc5e8","#0d2236"],PJ9:["#6fa8dc","#0b1d30"],RP1:["#3d85c6","#ffffff"],SM5:["#d0e0e3","#14262a"],SM6:["#d9ead3","#16290f"],SM7:["#ead1dc","#2e1522"],SM8:["#ffe599","#2b2200"],SM9:["#76a5af","#0c1f23"],SOST:["#f6b26b","#2e1800"],EH3:["#6d9eeb","#0a1a33"]};
+const SUBJC = {PJ5:["#93c47d","#13230b"],PJ6:["#ffd966","#2b2100"],PJ7:["#d5a6bd","#2a1320"],PJ8:["#9fc5e8","#0d2236"],PJ9:["#6fa8dc","#0b1d30"],RP1:["#3d85c6","#ffffff"],SM5:["#d0e0e3","#14262a"],SM6:["#d9ead3","#16290f"],SM7:["#ead1dc","#2e1522"],SM8:["#ffe599","#2b2200"],SM9:["#76a5af","#0c1f23"],SOST:["#f6b26b","#2e1800"],EH3:["#6d9eeb","#0a1a33"],PJ10:["#b4a7d6","#1d1530"]};
 let P = null, CODE = null, AID = null, GIT = null, DEFS = null;
 function load(){
   P = ((lget("clarea-projs") || {}).list || []).find(x => x.id === PID) || null;
