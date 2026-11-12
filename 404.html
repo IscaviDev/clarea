@@ -8,7 +8,7 @@
 <meta property="og:title" content="Clarea">
 <meta property="og:description" content="Asignaturas, horario, faltas y repasos de tus proyectos.">
 <meta property="og:url" content="https://clarea.dev/">
-<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112022126">
+<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112022843">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Logo de Clarea">
@@ -24,7 +24,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
-<script>window.CLAREA_VERSION = "20261112022126";</script>
+<script>window.CLAREA_VERSION = "20261112022843";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -312,6 +312,12 @@ details.fr2>summary::-webkit-details-marker{display:none}
 .npf select:disabled{opacity:.55}
 .npf textarea{font:inherit;font-size:16px;color:var(--fg);background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;resize:vertical;min-height:96px}
 .npf textarea:focus{border-color:var(--accent);outline:none}
+.ev-due{display:flex;flex-direction:column;gap:6px}
+.evdue{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:10px}
+.evdue label{display:flex;flex-direction:column;gap:5px;font-size:14px;font-weight:600}
+.evdue input{font:inherit;font-size:16px;color:var(--fg);background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0;color-scheme:inherit}
+.evdue input:focus{border-color:var(--accent);outline:none}
+.ev-due[hidden],.ev-exam[hidden]{display:none!important}
 .evn{font-size:13px;color:var(--fg);white-space:pre-wrap;margin-top:4px;padding-top:4px;border-top:1px dashed var(--line)}
 .npf select:focus{border-color:var(--accent);outline:none}
 .admbar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(180,86,27,.12);border:1px solid rgba(180,86,27,.35);border-radius:var(--r);padding:8px 10px 8px 12px;font-size:13.5px}
@@ -1425,8 +1431,9 @@ const CAL = {y: null, m: null, sel: null};
 function evChip(e, big){
   return '<span class="evc ev-' + e.type + '" style="' + sv(e.subj) + '">' + (big ? '<b>' + esc(e.subj) + '</b> ' + esc(EVT_SHORT[e.type] || "") : esc(e.subj)) + '</span>';
 }
+const evTime = e => e.type === "entrega" ? "hasta las " + e.from : e.from + "–" + e.to;
 function evRow(e){
-  return '<div class="evr" style="' + sv(e.subj) + '"><span class="evd"><b>' + fromYmd(e.date).getDate() + '</b><small>' + WD[fromYmd(e.date).getDay()] + '</small></span><span class="evt"><b>' + esc(e.name) + '</b><small>' + esc(EVT_SHORT[e.type] || "") + ' · ' + esc(e.subj) + ' · ' + esc(e.from) + '–' + esc(e.to) + '</small>' + (e.notes ? '<span class="evn">' + esc(e.notes) + '</span>' : '') + '</span><button class="evx" data-evdel="' + esc(e.id) + '" aria-label="Borrar ' + esc(e.name) + '">✕</button></div>';
+  return '<div class="evr" style="' + sv(e.subj) + '"><span class="evd"><b>' + fromYmd(e.date).getDate() + '</b><small>' + WD[fromYmd(e.date).getDay()] + '</small></span><span class="evt"><b>' + esc(e.name) + '</b><small>' + esc(EVT_SHORT[e.type] || "") + ' · ' + esc(e.subj) + ' · ' + esc(evTime(e)) + '</small>' + (e.notes ? '<span class="evn">' + esc(e.notes) + '</span>' : '') + '</span><button class="evx" data-evdel="' + esc(e.id) + '" aria-label="Borrar ' + esc(e.name) + '">✕</button></div>';
 }
 function viewCalendar(){
   const now = new Date();
@@ -1458,7 +1465,8 @@ function viewNewEvent(){
     + '<label>Nombre<input name="ename" maxlength="80" autocomplete="off" placeholder="Ej.: Entrega proyecto SM6"></label>'
     + '<label>Tipo<select name="etype">' + EVT_TYPES.map(t => '<option value="' + t[0] + '">' + t[1] + '</option>').join("") + '</select></label>'
     + '<label>Asignatura<select name="esubj"><option value="">Elige la asignatura…</option>' + subs.map(c => '<option value="' + c + '"' + (NE.subj === c ? ' selected' : '') + '>' + c + ' · ' + esc(SUBJ[c].n) + '</option>').join("") + '</select></label>'
-    + '<label>Día y hora<select name="eslot"' + (NE.subj ? '' : ' disabled') + '>' + slotOptions(NE.subj) + '</select><small>Salen las clases que tienes de esa asignatura en las próximas semanas, según tu horario.</small></label>'
+    + '<label class="ev-exam" hidden>Día y hora<select name="eslot"' + (NE.subj ? '' : ' disabled') + '>' + slotOptions(NE.subj) + '</select><small>Salen las clases que tienes de esa asignatura en las próximas semanas, según tu horario.</small></label>'
+    + '<div class="ev-due"><div class="evdue"><label>Día de entrega<input type="date" name="edate" min="' + ymd(new Date()) + '" value="' + ymd(new Date()) + '"></label><label>Hora límite<input type="time" name="etime" value="23:59"></label></div><small class="nphint">La entrega es hasta una hora concreta: ese día, a esa hora.</small></div>'
     + '<label>Notas <small>opcional</small><textarea name="enotes" rows="4" maxlength="1000" placeholder="Ej.: temas que entran, qué hay que entregar, material…"></textarea></label>'
     + '<p class="autherr" id="everr" aria-live="polite"></p><button class="btn" type="submit">Guardar evento</button></form>';
   return h;
@@ -1469,7 +1477,12 @@ function slotOptions(code){
   if (!s.length) return '<option value="">Esta asignatura no tiene clases en tu horario</option>';
   return s.map(x => '<option value="' + x.date + '|' + x.from + '|' + x.to + '">' + dayLabel(x.date) + ' · ' + x.from + '–' + x.to + '</option>').join("");
 }
+function evTypeUI(f){
+  const due = f.etype.value === "entrega";
+  f.querySelector(".ev-due").hidden = !due; f.querySelector(".ev-exam").hidden = due;
+}
 document.addEventListener("change", e => {
+  if (e.target.name === "etype" && e.target.form && e.target.form.id === "evf"){ evTypeUI(e.target.form); return; }
   if (e.target.name !== "esubj") return;
   NE.subj = e.target.value || null;
   const sl = e.target.form.eslot; sl.innerHTML = slotOptions(NE.subj); sl.disabled = !NE.subj;
@@ -1483,12 +1496,19 @@ document.addEventListener("submit", e => {
   const subj = f.esubj.value, slot = f.eslot.value, type = f.etype.value;
   const name = f.ename.value.trim() || ((EVT_TYPES.find(t => t[0] === type) || ["", "Evento"])[1] + " " + subj);
   if (!subj){ err.textContent = "Elige la asignatura."; f.esubj.focus(); return; }
-  if (!slot){ err.textContent = "Elige el día y la hora."; return; }
-  const [date, from, to] = slot.split("|");
+  let date, from, to;
+  if (type === "entrega"){
+    date = f.edate.value; from = f.etime.value; to = "";
+    if (!date){ err.textContent = "Elige el día de la entrega."; f.edate.focus(); return; }
+    if (!from){ err.textContent = "Pon la hora límite de la entrega."; f.etime.focus(); return; }
+  } else {
+    if (!slot){ err.textContent = "Elige el día y la hora."; return; }
+    [date, from, to] = slot.split("|");
+  }
   const list = allEvents(); list.push({id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name, type, subj, date, from, to, notes: f.enotes.value.trim(), group: GNAME_ID(), created: Date.now()});
   saveEvents(list);
   CAL.y = fromYmd(date).getFullYear(); CAL.m = fromYmd(date).getMonth(); CAL.sel = date; NE.subj = null;
-  go("#/calendario"); toast("Guardado: " + name + " · " + dayLabel(date) + ".");
+  go("#/calendario"); toast("Guardado: " + name + " · " + dayLabel(date) + (type === "entrega" ? " · hasta las " + from : "") + ".");
 });
 document.addEventListener("click", e => {
   const m = e.target.closest("[data-calm]");
