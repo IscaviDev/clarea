@@ -8,7 +8,7 @@
 <meta property="og:title" content="Clarea">
 <meta property="og:description" content="Asignaturas, horario, faltas y repasos de tus proyectos.">
 <meta property="og:url" content="https://clarea.dev/">
-<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112021749">
+<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112021937">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Logo de Clarea">
@@ -24,7 +24,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
-<script>window.CLAREA_VERSION = "20261112021749";</script>
+<script>window.CLAREA_VERSION = "20261112021937";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1505,7 +1505,7 @@ function viewHome(){
   const todays = CLASSES.filter(c=>c[0]===N.wd).sort((a,b)=>a[1]-b[1]);
   let h = '<div class="hello"><h1>Hola, '+esc(window.PJ6USER || "")+'</h1><p>'+(N.wd>=0 && N.wd<5 ? DAYS[N.wd] : "Fin de semana")+' · '+GNAME+' · aula '+ROOM+'</p></div>';
   h += '<div class="today"><h2>Hoy'+(todays.length ? '<small>'+todays.length+' clase'+(todays.length>1?'s':'')+(todays.length>3?' · desliza →':'')+'</small>' : '')+'</h2>'+(todays.length
-    ? '<div class="tdlist">'+todays.map(c=>'<button class="tdi'+(N.isNow(c[0],c[1],c[2])?' now':'')+'" style="'+sv(c[3])+'" data-cls="'+CLASSES.indexOf(c)+'"><small>'+SLOTS[c[1]][0]+'</small><b>'+c[3]+'</b><small>'+esc(c[4])+'</small></button>').join("")+'</div>'
+    ? '<div class="tdlist">'+todays.map(c=>'<button class="tdi'+(N.isNow(c[0],c[1],c[2])?' now':'')+'" style="'+sv(c[3])+'" data-cls="'+CLASSES.indexOf(c)+'"><small>'+SLOTS[c[1]][0]+' – '+SLOTS[c[1]+c[2]-1][1]+'</small><b>'+c[3]+'</b><small>'+esc(c[4])+'</small></button>').join("")+'</div>'
     : '<p class="tdempty">Hoy no tienes clase.</p>')+'</div>';
   if (isAdmin()) h = '<div class="admbar"><span><b>Modo admin</b> · estás viendo '+esc(GNAME)+'</span><button data-admchg>Cambiar curso</button></div>' + h;
   const nx = upcoming(1)[0];
