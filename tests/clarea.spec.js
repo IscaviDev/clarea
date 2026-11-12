@@ -1,47 +1,6 @@
 // End-to-end checks of the main screens, plus an accessibility scan (WCAG 2.1 AA) of each one.
 const { test, expect } = require("@playwright/test");
-const AxeBuilder = require("@axe-core/playwright").default;
-
-const PASS = "prueba123";
-const newUser = () => "t" + Math.random().toString(36).slice(2, 10);
-
-// a fresh account on the local stand-in for Firebase, class DAW-2A, welcome skipped
-async function signUp(page){
-  await page.addInitScript(() => { try { localStorage.setItem("clarea-dev-api", "http://127.0.0.1:9299"); } catch(e){} });
-  await page.goto("/index.html");
-  const user = newUser();
-  const f = page.locator(".authwrap form");
-  // the «Crear cuenta» tab (tapped again until the second password field shows: the page may still be starting)
-  for (let i = 0; i < 3 && !(await f.locator('[name="pass2"]').isVisible()); i++){
-    await page.getByRole("button", { name: "Crear cuenta" }).first().click();
-    await f.locator('[name="pass2"]').waitFor({ state: "visible", timeout: 4000 }).catch(() => {});
-  }
-  await f.locator('[name="user"]').fill(user);
-  await f.locator('[name="pass"]').fill(PASS);
-  await f.locator('[name="pass2"]').fill(PASS);
-  await f.locator('button[type="submit"], .btn[type="submit"]').first().click();
-  await page.locator('[data-grp="DAW-2A"]').click();
-  await page.locator("[data-gok]").click();
-  await page.locator("[data-wskip]").click();                         // the welcome, once
-  await expect(page.locator(".hello h1")).toContainText(user);
-  return user;
-}
-const go = (page, route) => page.evaluate(r => window.clareaGo(r), route);
-
-async function axe(page, name){
-  // light and dark: every screen is checked in both themes
-  const light = await axeOnce(page, name);
-  await page.emulateMedia({ colorScheme: "dark" }); await page.waitForTimeout(150);
-  const dark = await axeOnce(page, name + " (oscuro)");
-  await page.emulateMedia({ colorScheme: "light" });
-  return light.concat(dark);
-}
-async function axeOnce(page, name){
-  const r = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
-  const bad = r.violations.filter(v => v.impact === "serious" || v.impact === "critical");
-  if (bad.length) console.log("\n[a11y] " + name + ":\n" + bad.map(v => "  - " + v.id + " (" + v.impact + ", " + v.nodes.length + "): " + v.help + "\n      " + v.nodes.slice(0, 3).map(n => n.target.join(" ")).join("\n      ")).join("\n"));
-  return bad;
-}
+const { signUp, go, axe } = require("./helpers");
 
 test("inicio: saludo, Hoy, asignaturas y buscador", async ({ page }) => {
   await signUp(page);
