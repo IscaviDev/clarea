@@ -8,7 +8,7 @@
 <meta property="og:title" content="Clarea">
 <meta property="og:description" content="Asignaturas, horario, faltas y repasos de tus proyectos.">
 <meta property="og:url" content="https://clarea.dev/">
-<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112031337">
+<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112031911">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Logo de Clarea">
@@ -24,7 +24,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
-<script>window.CLAREA_VERSION = "20261112031337";</script>
+<script>window.CLAREA_VERSION = "20261112031911";</script>
 <title>Proyecto · Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -719,12 +719,6 @@ details.lbk.imp3,details.lbk.imp2,details.lbk.imp1,details.lbk.imp0{border-left:
 }
 </style>
 <script>
-/* the BuildPro review belongs to the account "isaac": anyone else goes back to the home page */
-(function () {
-  function check() { if (window.PJ6USER && window.PJ6USER !== "isaac") location.replace("./"); }
-  window.clareaRefresh = check;
-  document.addEventListener("DOMContentLoaded", check);
-})();
 /* always open the review at the top, so the "← PJ6" link is visible */
 if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 window.addEventListener("load", function () { setTimeout(function () { window.scrollTo(0, 0); }, 0); });
@@ -1808,7 +1802,8 @@ button.aclink{font:inherit;font-weight:700;font-size:15px;text-align:left;cursor
 .prov[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
 .kbox{position:relative;display:flex}
 .kbox input{flex:1;padding-right:46px}
-.keye{position:absolute;right:3px;top:0;bottom:0;margin:auto 0;width:40px;height:40px;border:0;background:none;color:var(--muted);cursor:pointer;border-radius:8px}
+.keye{position:absolute;right:3px;top:0;bottom:0;margin:auto 0;width:40px;height:40px;border:0;background:none;color:var(--muted);cursor:pointer;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0}
+.keye svg{width:20px;height:20px}
 .aimsg{margin:0;font-size:13.5px;border-radius:8px;padding:8px 10px;background:var(--sunk)}
 .aimsg.err{background:var(--err-soft);color:var(--err)}
 .aimsg.ok{background:var(--ok-soft);color:var(--ok)}
@@ -2208,6 +2203,9 @@ const PROV = {
   openai: {t: "ChatGPT", s: "OpenAI", url: "https://platform.openai.com/api-keys", note: "De pago por uso: unos céntimos por proyecto."},
   gemini: {t: "Gemini", s: "Google", url: "https://aistudio.google.com/apikey", note: "Tiene un uso gratuito con límites diarios."}
 };
+// same eye as the password fields of the login
+const EYE_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.6 5.1A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-2.6 3.5M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2M3 3l18 18"/></svg>';
 const CLAUDE_MODELS = ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"];
 function aiCfg(){ try { return JSON.parse(localStorage.getItem("clarea-ai")) || {}; } catch(e){ return {}; } }  // only on this device: the key never syncs
 function aiCfgSet(c){ try { localStorage.setItem("clarea-ai", JSON.stringify(c)); } catch(e){} }
@@ -2420,7 +2418,7 @@ function viewAI(){
     h += '<div class="panel aikey"><p class="hint2">Conecta tu IA de confianza con tu clave (API key). Clarea la llama directamente desde este dispositivo. <b>La clave solo se guarda en este dispositivo</b>, no se sincroniza.</p>'
       + '<div class="provs">' + Object.keys(PROV).map(k => '<button class="prov" data-aiprov="' + k + '" aria-pressed="' + (k === prov) + '"><b>' + PROV[k].t + '</b><small>' + PROV[k].s + '</small></button>').join("") + '</div>'
       + '<p class="hint2">' + esc(P2.note) + ' <a href="' + P2.url + '" target="_blank" rel="noopener">Conseguir una clave de ' + P2.t + ' ›</a></p>'
-      + '<label>Clave de ' + P2.t + '<span class="kbox"><input id="aikey" type="password" autocomplete="off" spellcheck="false" value="' + esc(key) + '" placeholder="Pega aquí tu clave"><button type="button" class="keye" data-keye="1" aria-label="Mostrar la clave">👁</button></span></label>'
+      + '<label>Clave de ' + P2.t + '<span class="kbox"><input id="aikey" type="password" autocomplete="off" spellcheck="false" value="' + esc(key) + '" placeholder="Pega aquí tu clave"><button type="button" class="keye" data-keye="1" aria-label="Mostrar la clave" title="Mostrar la clave">' + EYE_ON + '</button></span></label>'
       + (ml.length ? '<label>Modelo<select id="aimodel">' + ml.map(m => '<option' + (c.models && c.models[prov] === m ? ' selected' : '') + '>' + esc(m) + '</option>').join("") + '</select></label>' : '')
       + '<div class="qa"><button class="btn ghost" data-aisave="1">' + (ml.length ? 'Guardar' : 'Comprobar la clave') + '</button>' + (aiReady() && c.prov === prov ? '<button class="btn" data-airun="1"' + (AIRUN.on ? ' hidden' : '') + '>' + (st.done < st.total ? 'Generar lo que falta' : 'Todo hecho') + '</button>' : '') + (AIRUN.on ? '<button class="btn ghost" data-aistop="1">Parar</button>' : '') + '</div></div>';
     h += '<div class="aist" id="aijobs">' + jobsHtml() + '</div>';
@@ -2504,7 +2502,8 @@ document.addEventListener("click", e => {
   // AI
   const am = T.closest("[data-aimode]"); if (am){ AIMODE = am.dataset.aimode; sessionStorageSet("aimode", AIMODE); AIMSG = null; render(true); return; }
   const pv = T.closest("[data-aiprov]"); if (pv){ const c = aiCfg(); c.prov = pv.dataset.aiprov; aiCfgSet(c); AIMSG = null; render(true); return; }
-  if (T.closest("[data-keye]")){ const i = $("#aikey"); i.type = i.type === "password" ? "text" : "password"; return; }
+  const ke = T.closest("[data-keye]");
+  if (ke){ const i = $("#aikey"), show = i.type === "password"; i.type = show ? "text" : "password"; ke.innerHTML = show ? EYE_OFF : EYE_ON; ke.setAttribute("aria-label", show ? "Ocultar la clave" : "Mostrar la clave"); ke.title = ke.getAttribute("aria-label"); return; }
   if (T.closest("[data-aisave]")){ saveKey(); return; }
   if (T.closest("[data-airun]")){ runAll(); return; }
   if (T.closest("[data-aistop]")){ AIRUN.stop = true; return; }
