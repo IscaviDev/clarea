@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<script>window.CLAREA_VERSION = "20261112012536";</script>
+<script>window.CLAREA_VERSION = "20261112012748";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1143,6 +1143,10 @@ const SUBJ = {
  SOST:{n:"Sostenibilitat", bg:"#f6b26b", fg:"#2e1800"},
  EH3:{n:"Prompting IA i bones pràctiques", bg:"#6d9eeb", fg:"#0a1a33"},
  PJ10:{n:"PJ10", bg:"#b4a7d6", fg:"#1d1530"},
+ BBDD:{n:"Bases de dades", bg:"#9fc5e8", fg:"#0d2236"},
+ PROG:{n:"Programació", bg:"#ffd966", fg:"#2b2100"},
+ SIST:{n:"Sistemes informàtics", bg:"#d5a6bd", fg:"#2a1320"},
+ DIG:{n:"Web i Digitalització", bg:"#b6d7a8", fg:"#14260d"},
  TUT:{n:"Tutoría", bg:"#1f5fbf", fg:"#ffffff", sub:"Horario y faltas de asistencia"},
  MNT:{n:"Mentoría", bg:"#c9ced6", fg:"#18202b"}
 };
@@ -1152,7 +1156,7 @@ let FALTAS_SEED = {MNT:[33,0],TUT:[33,0],PJ5:[71,0],PJ6:[53,0],PJ7:[48,0],PJ8:[6
 let FALTAS_ORDER = ["MNT","TUT","PJ5","PJ6","PJ7","PJ8","PJ9","RP1","SM5","SM6","SM7","SM8","SM9","SOST","EH3"];
 // timetable DAW-2A, valid from 21/09/2026, room 308
 const DAYS = ["Lunes","Martes","Miércoles","Jueves","Viernes"], DSH = ["Lun","Mar","Mié","Jue","Vie"];
-const SLOTS = [["15:00","15:55"],["15:55","16:50"],["16:50","17:45"],["18:15","19:10"],["19:10","20:05"],["20:05","21:00"]];
+let SLOTS = [["15:00","15:55"],["15:55","16:50"],["16:50","17:45"],["18:15","19:10"],["19:10","20:05"],["20:05","21:00"]];
 let CLASSES = [
  [0,1,1,"SM8","Desp. web","Collados"],[0,2,1,"PJ9","Apps mòbils","Grau S."],[0,3,1,"MNT","Mentoría","Olive"],[0,4,2,"SM7","Serveis web","Grau S."],
  [1,0,2,"SM5","UML","López H."],[1,2,1,"PJ6","PHP","Collados"],[1,3,1,"PJ6","PHP","Collados"],[1,4,1,"SM6","JS","Grau S."],[1,5,1,"EH3","IA","Catrisse"],
@@ -1166,10 +1170,10 @@ let ROOM = "308";
    Each account belongs to one class, chosen once and never changed: it decides the subjects, the timetable and the absences. */
 const DAW_NAMES = Object.fromEntries(Object.keys(SUBJ).map(k => [k, SUBJ[k].n]));
 const GROUPS = {
-  "DAW-2A": {full: "2n Desenvolupament d'aplicacions web", room: "308", tutor: "Grau S. · jueves 18:15", faltasOn: true,
+  "DAW-2A": {full: "2n Desenvolupament d'aplicacions web", school: "Jesuïtes", when: "tardes", room: "308", tutor: "Grau S. · jueves 18:15", faltasOn: true, slots: SLOTS,
     home: HOME, order: FALTAS_ORDER, seed: FALTAS_SEED, classes: CLASSES, names: DAW_NAMES},
   // ASIX-2A, timetable valid from 08/09/2026 (photo sent by the user). The subjects' total hours are not known yet: absences are "coming soon".
-  "ASIX-2A": {full: "2n Administració de sistemes informàtics en la xarxa", room: "310", tutor: "Collados · jueves 18:15", faltasOn: false,
+  "ASIX-2A": {full: "2n Administració de sistemes informàtics en la xarxa", school: "Jesuïtes", when: "tardes", room: "310", tutor: "Collados · jueves 18:15", faltasOn: false, slots: SLOTS,
     home: ["PJ5","PJ6","PJ7","PJ8","PJ9","PJ10","SM5","SM6","SM7","SOST","EH3","TUT"],
     order: ["MNT","TUT","PJ5","PJ6","PJ7","PJ8","PJ9","PJ10","SM5","SM6","SM7","SOST","EH3"], seed: null,
     classes: [
@@ -1181,13 +1185,25 @@ const GROUPS = {
     ],
     // official names still unknown: the teachers are shown instead
     names: {PJ5:"Profes: Reixach J. · Fernández J.", PJ6:"Profes: Collados · Binefa", PJ7:"Profe: Collados", PJ8:"Profe: Catrisse", PJ9:"Profe: Collados", PJ10:"Profes: Reixach J. · Fernández J.",
-      SM5:"Profe: Collados", SM6:"Profe: Collados", SM7:"Profe: Binefa", SOST:"Sostenibilitat", EH3:"EH3/EH4 · Profes: Simon · Collados", MNT:"Mentoría", TUT:"Tutoría"}}
+      SM5:"Profe: Collados", SM6:"Profe: Collados", SM7:"Profe: Binefa", SOST:"Sostenibilitat", EH3:"EH3/EH4 · Profes: Simon · Collados", MNT:"Mentoría", TUT:"Tutoría"}},
+  // DAW at La Salle Gràcia, mornings, room 408 (photo sent by the user on 12/11/2026). No subject hours yet: absences are "coming soon".
+  "DAW La Salle": {full: "Desenvolupament d'aplicacions web", school: "La Salle Gràcia", when: "mañanas", room: "408", tutor: "Horario y faltas de asistencia", hub: "Horario y faltas", brk: "Descanso", faltasOn: false,
+    slots: [["8:00","8:55"],["8:55","9:50"],["9:50","10:45"],["11:15","12:10"],["12:10","13:05"],["13:05","14:00"]],
+    home: ["BBDD","PROG","SIST","DIG","TUT"], order: ["BBDD","PROG","SIST","DIG"], seed: null,
+    classes: [
+      [0,2,1,"BBDD","Bases de dades","Guillem Casacuberta"],[0,3,1,"BBDD","Bases de dades","Guillem Casacuberta"],[0,4,2,"PROG","Prog. E.S.","Jordi Cortés"],
+      [1,1,2,"BBDD","Bases de dades","Guillem Casacuberta"],[1,3,2,"PROG","Prog. E.S.","Jordi Cortés"],
+      [2,2,1,"SIST","Sistemes","Francesc Constans"],[2,3,2,"SIST","Sistemes","Francesc Constans"],
+      [3,3,2,"DIG","Web i Digit.","Oriol C. (Sub FC)"],
+      [4,1,2,"PROG","Prog. E.S.","Jordi Cortés (Cod. FC)"],[4,3,1,"PROG","Prog. E.S.","Yuri (Cod. FC)"],[4,4,2,"PROG","Prog. E.S.","Yuri (Cod. JC)"]
+    ],
+    names: {BBDD:"Bases de dades", PROG:"Programació (E.S.)", SIST:"Sistemes informàtics", DIG:"Web i Digitalització", TUT:"Tu horario y tus faltas de asistencia"}}
 };
-let GNAME = "DAW-2A", TUTOR = GROUPS["DAW-2A"].tutor, FALTAS_ON = true;
+let GNAME = "DAW-2A", TUTOR = GROUPS["DAW-2A"].tutor, FALTAS_ON = true, HUB = "Tutoría", BRK = "Patio";
 const myGroup = () => { const g = lget("clarea-group"); return g && GROUPS[g.g] ? g.g : null; };
 function applyGroup(id){
   const G = GROUPS[id] || GROUPS["DAW-2A"];
-  GNAME = GROUPS[id] ? id : "DAW-2A"; HOME = G.home; FALTAS_ORDER = G.order; FALTAS_SEED = G.seed; CLASSES = G.classes; ROOM = G.room; TUTOR = G.tutor; FALTAS_ON = G.faltasOn;
+  GNAME = GROUPS[id] ? id : "DAW-2A"; SLOTS = G.slots; HUB = G.hub || "Tutoría"; BRK = G.brk || "Patio"; HOME = G.home; FALTAS_ORDER = G.order; FALTAS_SEED = G.seed; CLASSES = G.classes; ROOM = G.room; TUTOR = G.tutor; FALTAS_ON = G.faltasOn;
   Object.keys(SUBJ).forEach(k => { SUBJ[k].n = G.names[k] || DAW_NAMES[k]; });
 }
 
@@ -1330,13 +1346,13 @@ function viewHome(){
   h += '<p class="sect">Asignaturas</p><div class="sgrid">'+HOME.map(c=>{
     const s = SUBJ[c], fr = F[c] ? calc(F[c]) : null;
     const warn = fr && fr.st !== "ok" ? '<em>Faltas: '+STL[fr.st]+'</em>' : '';
-    return '<button class="scard" style="'+sv(c)+'" data-go="#/asig/'+c+'"><b>'+(c==="TUT"?"Tutoría":c)+'</b><span>'+esc(s.sub || s.n)+'</span>'+warn+'</button>';
+    return '<button class="scard" style="'+sv(c)+'" data-go="#/asig/'+c+'"><b>'+(c==="TUT"?HUB:c)+'</b><span>'+esc(s.sub || s.n)+'</span>'+warn+'</button>';
   }).join("")+'</div>';
   return h;
 }
 function viewSubject(c){
   const s = SUBJ[c]; if (!s) return viewHome();
-  let h = '<button class="back" data-go="#/">← Inicio</button><div class="sban" style="'+sv(c)+'"><b>'+(c==="TUT"?"Tutoría":c)+'</b><span>'+esc(c==="TUT" ? TUTOR : s.n)+'</span></div>';
+  let h = '<button class="back" data-go="#/">← Inicio</button><div class="sban" style="'+sv(c)+'"><b>'+(c==="TUT"?HUB:c)+'</b><span>'+esc(c==="TUT" ? TUTOR : s.n)+'</span></div>';
   if (c === "PJ6" && GNAME === "DAW-2A"){
     h += '<a class="lcard" href="repaso-pj6.html"><span class="lico">'+LOGO_PJ6+'</span><span class="ltx"><b>BuildPro Order Manager</b><span>Repaso del examen · PJ6 · orderManagementApp</span></span><span class="lgo">›</span></a>';
   } else if (c === "TUT"){
@@ -1353,11 +1369,11 @@ function viewSubject(c){
 }
 function viewTimetable(){
   const N = nowInfo();
-  let h = '<button class="back" data-go="#/asig/TUT">← Tutoría</button><div class="thead"><h1>Horario</h1><span>'+GNAME+' · aula '+ROOM+' · toca una clase</span></div><div class="tt">';
+  let h = '<button class="back" data-go="#/asig/TUT">← '+HUB+'</button><div class="thead"><h1>Horario</h1><span>'+GNAME+' · aula '+ROOM+' · toca una clase</span></div><div class="tt">';
   h += '<div></div>'+DSH.map((d,i)=>'<div class="dh'+(i===N.wd?' td':'')+'">'+d+'</div>').join("");
   const rowOf = slot => slot < 3 ? slot + 2 : slot + 3;   // grid rows: 1 header, 2-4 slots, 5 break, 6-8 slots
   SLOTS.forEach((s,i)=>{ h += '<div class="tm" style="grid-row:'+rowOf(i)+';grid-column:1">'+s[0]+'<small>'+s[1]+'</small></div>'; });
-  h += '<div class="brk" style="grid-row:5"><span>Patio</span></div>';
+  h += '<div class="brk" style="grid-row:5"><span>'+BRK+'</span></div>';
   const used = {};
   CLASSES.forEach((c,ci)=>{
     const r0 = rowOf(c[1]), r1 = rowOf(c[1]+c[2]-1) + 1;
@@ -1383,11 +1399,11 @@ function fsumHtml(F){
    + (risk.length ? '<p class="fnote">Más cerca del límite: '+risk.map(x=>'<b>'+x[0]+'</b> '+Math.round(x[1].use*100)+' %').join(" · ")+'</p>' : '')+'</div>';
 }
 function viewFaltas(){
-  if (!FALTAS_ON) return '<button class="back" data-go="#/asig/TUT">← Tutoría</button><div class="thead"><h1>Faltas de asistencia</h1><span>'+GNAME+'</span></div>'
+  if (!FALTAS_ON) return '<button class="back" data-go="#/asig/TUT">← '+HUB+'</button><div class="thead"><h1>Faltas de asistencia</h1><span>'+GNAME+'</span></div>'
     + '<div class="soon"><b>Próximamente</b><span>Aún no tenemos las horas totales de cada asignatura de '+GNAME+', así que todavía no se pueden apuntar faltas.</span></div>'
     + '<div class="flist off" aria-disabled="true">'+FALTAS_ORDER.map(c=>'<details class="fr2 fdis" style="'+sv(c)+'"><summary tabindex="-1"><span class="fcode">'+c+'</span><span class="fname">'+esc(SUBJ[c].n)+'</span><span class="fhrs">— h</span><span class="fmeter"><span class="fbar"><i style="width:0"></i></span><span class="stchip">Próximamente</span></span></summary></details>').join("")+'</div>';
   const F = faltas();
-  let h = '<button class="back" data-go="#/asig/TUT">← Tutoría</button><div class="thead"><h1>Faltas de asistencia</h1><span>Límite: 20 % de las horas de cada asignatura</span></div>';
+  let h = '<button class="back" data-go="#/asig/TUT">← '+HUB+'</button><div class="thead"><h1>Faltas de asistencia</h1><span>Límite: 20 % de las horas de cada asignatura</span></div>';
   h += fsumHtml(F);
   h += '<p class="fnote">Toca una asignatura para apuntar o quitar horas. Se guarda solo, en tu cuenta.</p>';
   h += '<div class="flist">'+FALTAS_ORDER.map(c=>faltaRow(c, F[c])).join("")+'</div>';
@@ -1399,7 +1415,7 @@ let lastRoute = null;
 const depth = r => /^asig\/[^/]+\/nuevo$/.test(r) ? 2 : r.startsWith("asig/") ? 1 : (r === "horario" || r === "faltas") ? 2 : 0;
 function viewPickGroup(){
   return '<div class="hello"><h1>Hola, '+esc(window.PJ6USER || "")+'</h1><p>Antes de empezar, elige tu clase.</p></div>'
-    + '<div class="gpick">'+Object.keys(GROUPS).map(id=>'<button class="gcard" data-grp="'+id+'"><b>'+id+'</b><span>'+esc(GROUPS[id].full)+'</span><small>Aula '+GROUPS[id].room+' · tardes</small></button>').join("")+'</div>'
+    + '<div class="gpick">'+Object.keys(GROUPS).map(id=>'<button class="gcard" data-grp="'+id+'"><b>'+id+'</b><span>'+esc(GROUPS[id].full)+'</span><small>'+GROUPS[id].school+' · aula '+GROUPS[id].room+' · '+GROUPS[id].when+'</small></button>').join("")+'</div>'
     + '<p class="gwarn"><b>Elige bien: después no se puede cambiar.</b> Tu horario, tus asignaturas y tus faltas dependen de la clase.</p>';
 }
 function pickGroup(id){
