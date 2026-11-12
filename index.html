@@ -8,7 +8,7 @@
 <meta property="og:title" content="Clarea">
 <meta property="og:description" content="Asignaturas, horario, faltas y repasos de tus proyectos.">
 <meta property="og:url" content="https://clarea.dev/">
-<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112025018">
+<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112025121">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Logo de Clarea">
@@ -24,7 +24,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
-<script>window.CLAREA_VERSION = "20261112025018";</script>
+<script>window.CLAREA_VERSION = "20261112025121";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -404,6 +404,14 @@ details.fr2>summary::-webkit-details-marker{display:none}
 .tycard b{font-size:17px!important;line-height:1.2}
 .pks.busy{opacity:.45;cursor:not-allowed;border-left-style:dashed}
 .pks.busy span{text-decoration:line-through}
+
+.evtags{display:flex;flex-wrap:wrap;gap:5px;margin:2px 0}
+.evtag{display:inline-flex;align-items:center;gap:4px;background:var(--sbg);color:var(--sfg);border-radius:999px;padding:2px 9px 2px 6px;font-size:12px;font-weight:800}
+.evtag svg{width:13px;height:13px}
+.evsub{display:inline-flex;align-items:center;background:var(--sbg);color:var(--sfg);border-radius:6px;padding:2px 7px;font-size:12px;font-weight:800}
+.evleg{display:flex;flex-wrap:wrap;gap:6px 12px;padding:4px 2px 2px;font-size:12px;font-weight:600;color:var(--muted)}
+.evleg span{display:inline-flex;align-items:center;gap:5px}
+.evleg i{width:12px;height:12px;border-radius:4px;background:var(--sbg)}
 </style>
 <script>
 /* Clarea · projects: reading code (folder, .zip, GitHub), GitHub history and simple code analysis.
@@ -1532,11 +1540,12 @@ function sessionsOf(code, weeks){
 }
 const CAL = {y: null, m: null, sel: null};
 function evChip(e, big){
-  return '<span class="evc ev-' + e.type + '" style="' + sv(e.subj) + '">' + (big ? '<b>' + esc(e.subj) + '</b> ' + esc(EVT_SHORT[e.type] || "") : esc(e.subj)) + '</span>';
+  return '<span class="evc ev-' + e.type + '" style="' + (EVT_LOOK[e.type] ? tyVars(e.type) : sv(e.subj)) + '">' + (big ? '<b>' + esc(e.subj) + '</b> ' + esc(EVT_SHORT[e.type] || "") : esc(e.subj)) + '</span>';
 }
 const evTime = e => e.type === "entrega" ? "hasta las " + e.from : e.from + "–" + e.to + (e.over ? " · en la clase de " + e.over : "");
 function evRow(e){
-  return '<div class="evr" style="' + sv(e.subj) + '"><span class="evd"><b>' + fromYmd(e.date).getDate() + '</b><small>' + WD[fromYmd(e.date).getDay()] + '</small></span><span class="evt"><b>' + esc(e.name) + '</b><small>' + esc(EVT_SHORT[e.type] || "") + ' · ' + esc(e.subj) + ' · ' + esc(evTime(e)) + '</small>' + (e.notes ? '<span class="evn">' + esc(e.notes) + '</span>' : '') + '</span><span class="evbtns"><button class="evx" data-go="#/calendario/editar/' + esc(e.id) + '" aria-label="Editar ' + esc(e.name) + '" title="Editar">✎</button><button class="evx" data-evdel="' + esc(e.id) + '" aria-label="Borrar ' + esc(e.name) + '" title="Borrar">✕</button></span></div>';
+  const ty = EVT_LOOK[e.type] ? e.type : "teorico";
+  return '<div class="evr" style="' + tyVars(ty) + '"><span class="evd"><b>' + fromYmd(e.date).getDate() + '</b><small>' + WD[fromYmd(e.date).getDay()] + '</small></span><span class="evt"><b>' + esc(e.name) + '</b><span class="evtags"><span class="evtag" style="' + tyVars(ty) + '">' + tyIco(ty) + esc(EVT_SHORT[e.type] || "") + '</span><span class="evsub" style="' + sv(e.subj) + '">' + esc(e.subj) + '</span></span><small>' + esc(evTime(e)) + '</small>' + (e.notes ? '<span class="evn">' + esc(e.notes) + '</span>' : '') + '</span><span class="evbtns"><button class="evx" data-go="#/calendario/editar/' + esc(e.id) + '" aria-label="Editar ' + esc(e.name) + '" title="Editar">✎</button><button class="evx" data-evdel="' + esc(e.id) + '" aria-label="Borrar ' + esc(e.name) + '" title="Borrar">✕</button></span></div>';
 }
 function viewCalendar(){
   const now = new Date();
@@ -1553,7 +1562,7 @@ function viewCalendar(){
     const k = ymd(d), list = (byDay[k] || []).sort(sortEv);
     h += '<button class="calday' + (d.getMonth() !== CAL.m ? ' out' : '') + (k === today ? ' today' : '') + (k === CAL.sel ? ' sel' : '') + '" data-calday="' + k + '"><span class="caln">' + d.getDate() + '</span>' + list.slice(0, 3).map(e => evChip(e, false)).join("") + (list.length > 3 ? '<span class="evmore">+' + (list.length - 3) + '</span>' : '') + '</button>';
   }
-  h += '</div></div>';
+  h += '</div><div class="evleg" aria-label="Leyenda de colores">' + EVT_TYPES.map(t => '<span><i style="' + tyVars(t[0]) + '"></i>' + esc(EVT_SHORT[t[0]]) + '</span>').join("") + '</div></div>';
   const selList = (byDay[CAL.sel] || []).sort(sortEv);
   h += '<div class="calside"><div class="calsec"><h2>' + (CAL.sel === today ? 'Hoy' : dayLabel(CAL.sel)) + '</h2>' + (selList.length ? selList.map(evRow).join("") : '<p class="fnote">No hay nada este día.</p>') + '</div>';
   const up = upcoming(8);
