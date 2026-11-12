@@ -8,7 +8,7 @@
 <meta property="og:title" content="Clarea">
 <meta property="og:description" content="Asignaturas, horario, faltas y repasos de tus proyectos.">
 <meta property="og:url" content="https://clarea.dev/">
-<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112023640">
+<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112023931">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Logo de Clarea">
@@ -24,7 +24,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
-<script>window.CLAREA_VERSION = "20261112023640";</script>
+<script>window.CLAREA_VERSION = "20261112023931";</script>
 <title>Proyecto · Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -992,6 +992,21 @@ html,body{margin:0}
 .umenu small{display:block;font-size:12px;color:var(--muted)}
 .umenu hr{border:0;border-top:1px solid var(--line);margin:4px 0}
 .uver{margin:4px 12px 4px;font-size:11.5px;color:var(--muted)}
+/* ---------- confirmation dialog (in place of the browser's own) ---------- */
+.cdlg{position:fixed;inset:0;z-index:130;background:rgba(10,14,20,.55);display:flex;align-items:center;justify-content:center;padding:20px}
+.cdlg>div{width:100%;max-width:380px;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:16px;padding:20px 18px 16px;box-shadow:0 18px 50px rgba(0,0,0,.35);display:flex;flex-direction:column;gap:10px;text-align:center}
+.cdlg .cdi{align-self:center;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(192,57,43,.14);color:#d9534f}
+.cdlg .cdi svg{width:24px;height:24px}
+.cdlg h3{margin:0;font-size:18px;font-weight:800}
+.cdlg p{margin:0;font-size:14.5px;color:var(--muted);line-height:1.45}
+.cdlg p b{color:var(--fg)}
+.cdlg .cdb{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.cdlg .cdb button{border:0;border-radius:11px;padding:12px;font-weight:700;font-size:15px;cursor:pointer}
+.cdlg .cdno{background:var(--sunk);color:var(--fg)}
+.cdlg .cdok{background:#c0392b;color:#fff}
+@keyframes cd-in{from{opacity:0;transform:scale(.94) translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: no-preference){.cdlg{animation:cl-fade .18s ease both}.cdlg>div{animation:cd-in .22s cubic-bezier(.2,.8,.2,1) both}.cdlg.closing{animation:cl-fade .16s ease reverse both}}
+@media (hover:hover) and (pointer:fine){.cdlg .cdok:hover{filter:brightness(1.1)}.cdlg .cdno:hover{background:var(--line)}}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:120;background:var(--fg);color:var(--bg);border-radius:10px;padding:10px 16px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:90vw}
 
 /* ---------- "new version" banner ---------- */
@@ -1111,6 +1126,23 @@ html,body{margin:0}
   function newSalt(){ var a = new Uint8Array(16); (window.crypto || {}).getRandomValues ? crypto.getRandomValues(a) : a.forEach(function(_, i){ a[i] = Math.random() * 256; }); return hex(a); }
   function el(html){ var d = document.createElement("div"); d.innerHTML = html.trim(); return d.firstChild; }
   function escT(s){ return String(s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+  /* "are you sure?" dialog with Clarea's look; resolves true (confirm) or false (cancel) */
+  window.clareaConfirm = function (o) {
+    return new Promise(function (resolve) {
+      var w = el('<div class="cdlg" role="alertdialog" aria-modal="true"><div><span class="cdi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg></span>'
+        + '<h3></h3><p></p><div class="cdb"><button type="button" class="cdno"></button><button type="button" class="cdok"></button></div></div></div>');
+      w.querySelector("h3").textContent = o.title || "¿Seguro?";
+      w.querySelector("p").innerHTML = o.html || "";
+      w.querySelector(".cdno").textContent = o.cancel || "Cancelar";
+      w.querySelector(".cdok").textContent = o.ok || "Borrar";
+      function done(v) { document.removeEventListener("keydown", key); w.classList.add("closing"); setTimeout(function () { w.remove(); }, 170); resolve(v); }
+      function key(e) { if (e.key === "Escape") done(false); }
+      w.addEventListener("click", function (e) { if (e.target === w || e.target.closest(".cdno")) done(false); else if (e.target.closest(".cdok")) done(true); });
+      document.addEventListener("keydown", key);
+      document.body.appendChild(w);
+      setTimeout(function () { w.querySelector(".cdno").focus(); }, 30);
+    });
+  };
   function toast(msg){ var t = el('<div class="toast" role="status"></div>'); t.textContent = msg; document.body.appendChild(t); setTimeout(function(){ t.classList.add("closing"); setTimeout(function(){ t.remove(); }, 220); }, 3000); }
   var LOGO = '<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="8" y="4" width="22" height="6" rx="3" fill="var(--clarea-blue,#1f5fbf)"/><rect x="2" y="14" width="14" height="6" rx="3" fill="var(--clarea-blue,#1f5fbf)"/><rect x="20" y="14" width="6" height="6" rx="1.5" fill="var(--clarea-orange,#b4561b)"/><rect x="8" y="24" width="22" height="6" rx="3" fill="var(--clarea-blue,#1f5fbf)"/></svg>';
   var ICO_FILE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 18v-6M9 15l3 3 3-3"/></svg>';
@@ -2291,7 +2323,7 @@ function openSettings(){
     if (a === "close"){ s.remove(); return; }
     const list = (lget("clarea-projs") || {}).list || [], me = list.find(x => x.id === PID);
     if (a === "del"){
-      if (!confirm("¿Borrar «" + P.name + "» de todos tus dispositivos? No se puede deshacer.")) return;
+      if (!(await window.clareaConfirm({title: "¿Eliminar este proyecto?", html: "Vas a eliminar <b>«" + esc(P.name) + "»</b> de todos tus dispositivos: el código, las explicaciones y los exámenes hechos. No se puede deshacer.", ok: "Eliminar"}))) return;
       const pre = U(); Object.keys(localStorage).filter(k => k.startsWith(pre + "clarea-p") && k.includes(PID)).forEach(k => localStorage.removeItem(k));
       lset("clarea-projs", {t: Date.now(), list: list.filter(x => x.id !== PID)});
       location.href = "./asig/" + P.subj; return;
