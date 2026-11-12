@@ -8,7 +8,7 @@
 <meta property="og:title" content="Clarea">
 <meta property="og:description" content="Asignaturas, horario, faltas y repasos de tus proyectos.">
 <meta property="og:url" content="https://clarea.dev/">
-<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112024311">
+<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112024626">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Logo de Clarea">
@@ -24,7 +24,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
-<script>window.CLAREA_VERSION = "20261112024311";</script>
+<script>window.CLAREA_VERSION = "20261112024626";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -378,6 +378,24 @@ details.fr2>summary::-webkit-details-marker{display:none}
 .pkp .calnav button:disabled{opacity:.3;cursor:default}
 @media (prefers-reduced-motion: no-preference){.pkw{animation:cl-fade .18s ease both}.pkp{animation:cd-in .22s cubic-bezier(.2,.8,.2,1) both}.pkw.closing{animation:cl-fade .16s ease reverse both}}
 @media (hover:hover) and (pointer:fine){.pkb:not(:disabled):hover,.pks:hover{border-color:var(--accent)}.pks:hover{box-shadow:inset 0 0 0 1.5px var(--accent)}.pkcal .calday.av:hover{box-shadow:inset 0 0 0 1.5px var(--accent)}}
+
+.pktime{flex:1;font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
+.pkquick{display:flex;flex-wrap:wrap;gap:6px}
+.pkquick button{border:1.5px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:7px 12px;font-weight:700;font-size:13.5px;cursor:pointer}
+.pktnow{text-align:center;font-size:40px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.pktg{display:grid;gap:6px}
+.pktg.h{grid-template-columns:repeat(6,minmax(0,1fr))}
+.pktg.m{grid-template-columns:repeat(5,minmax(0,1fr))}
+.pktg button{border:0;background:var(--surface);color:var(--fg);border-radius:10px;padding:10px 0;font-weight:700;font-size:15px;cursor:pointer;font-variant-numeric:tabular-nums;box-shadow:inset 0 0 0 1px var(--line)}
+.pktg button.on{background:var(--clarea-blue,#1f5fbf);color:#fff;box-shadow:none}
+.pkok{margin-top:4px}
+.pkcal .calday.today .caln{width:auto;height:auto;background:none;color:var(--clarea-blue,#6aa1ff);border-radius:0}
+@media (hover:hover) and (pointer:fine){.pkquick button:hover,.pktg button:not(.on):hover{box-shadow:inset 0 0 0 1.5px var(--accent)}}
+
+.evtypes{display:flex;flex-wrap:wrap;gap:6px}
+.evty{border:1.5px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:9px 13px;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.evty[aria-checked="true"]{background:var(--clarea-blue,#1f5fbf);border-color:var(--clarea-blue,#1f5fbf);color:#fff}
+@media (hover:hover) and (pointer:fine){.evty[aria-checked="false"]:hover{border-color:var(--accent)}}
 </style>
 <script>
 /* Clarea · projects: reading code (folder, .zip, GitHub), GitHub history and simple code analysis.
@@ -1546,11 +1564,11 @@ function viewNewEvent(editId){
   let h = '<button class="back" data-go="#/calendario">← Calendario</button><div class="thead"><h1>' + (ev ? 'Editar evento' : 'Nuevo evento') + '</h1><span>' + esc(GNAME) + '</span></div>';
   h += '<form class="npf" id="evf" novalidate><input type="hidden" name="eid" value="' + (ev ? esc(ev.id) : '') + '">'
     + '<label>Nombre<input name="ename" maxlength="80" autocomplete="off" placeholder="Ej.: Entrega proyecto SM6" value="' + (ev ? esc(ev.name) : '') + '"></label>'
-    + '<label>Tipo<select name="etype">' + EVT_TYPES.map(t => '<option value="' + t[0] + '"' + (t[0] === type ? ' selected' : '') + '>' + t[1] + '</option>').join("") + '</select></label>'
+    + '<div class="pkf"><span class="pkl">Tipo</span><input type="hidden" name="etype" value="' + type + '"><div class="evtypes" role="radiogroup">' + EVT_TYPES.map(t => '<button type="button" role="radio" class="evty" aria-checked="' + (t[0] === type) + '" data-ety="' + t[0] + '">' + t[1] + '</button>').join("") + '</div></div>'
     + '<div class="pkf"><span class="pkl">Asignatura</span><input type="hidden" name="esubj" value="' + (NE.subj || '') + '"><button type="button" class="pkb" data-pick="subj">' + subjBtn(NE.subj) + '</button></div>'
     + '<label class="ev-exam npchk evother"' + (due ? ' hidden' : '') + '><input type="checkbox" name="eother"' + (other ? ' checked' : '') + '><span>El profe lo ha puesto en la clase de otra asignatura<small>Salen todas tus clases; ese día, en «Hoy», esa clase saldrá tachada con el examen</small></span></label>'
     + '<div class="pkf ev-exam"' + (due ? ' hidden' : '') + '><span class="pkl">Día y hora</span><input type="hidden" name="eslot" value="' + cur + '"><button type="button" class="pkb" data-pick="slot"' + (NE.subj ? '' : ' disabled') + '>' + slotBtn(cur) + '</button><small class="nphint">Salen las clases de las próximas semanas, según tu horario.</small></div>'
-    + '<div class="ev-due"' + (due ? '' : ' hidden') + '><div class="evdue"><label>Día de entrega<input type="date" name="edate" value="' + (ev && due ? ev.date : today) + '"></label><label>Hora límite<input type="time" name="etime" value="' + (ev && due ? esc(ev.from) : '23:59') + '"></label></div><small class="nphint">La entrega es hasta una hora concreta: ese día, a esa hora.</small></div>'
+    + '<div class="ev-due"' + (due ? '' : ' hidden') + '><div class="evdue"><div class="pkf"><span class="pkl">Día de entrega</span><input type="hidden" name="edate" value="' + (ev && due ? ev.date : today) + '"><button type="button" class="pkb" data-pick="date">' + dateBtn(ev && due ? ev.date : today) + '</button></div><div class="pkf"><span class="pkl">Hora límite</span><input type="hidden" name="etime" value="' + (ev && due ? esc(ev.from) : '23:59') + '"><button type="button" class="pkb" data-pick="time">' + timeBtn(ev && due ? ev.from : '23:59') + '</button></div></div><small class="nphint">La entrega es hasta una hora concreta: ese día, a esa hora.</small></div>'
     + '<label>Notas <small>opcional</small><textarea name="enotes" rows="4" maxlength="1000" placeholder="Ej.: temas que entran, qué hay que entregar, material…">' + (ev ? esc(ev.notes || "") : '') + '</textarea></label>'
     + '<p class="autherr" id="everr" aria-live="polite"></p><button class="btn" type="submit">' + (ev ? 'Guardar cambios' : 'Guardar evento') + '</button></form>';
   return h;
@@ -1564,6 +1582,54 @@ function slotBtn(v){
   if (!v) return '<span class="pkt pkph">' + (NE.subj ? 'Elige el día y la hora' : 'Primero elige la asignatura') + '</span><span class="pkg">›</span>';
   const [date, from, to, over] = v.split("|");
   return '<span class="pkd"><b>' + fromYmd(date).getDate() + '</b><small>' + WD[fromYmd(date).getDay()] + '</small></span><span class="pkt">' + dayLabel(date) + ' · ' + from + '–' + to + (over ? '<small>en la clase de ' + over + '</small>' : '') + '</span><span class="pkg">Cambiar</span>';
+}
+function dateBtn(v){ return '<span class="pkd"><b>' + fromYmd(v).getDate() + '</b><small>' + WD[fromYmd(v).getDay()] + '</small></span><span class="pkt">' + MONTHS[fromYmd(v).getMonth()] + ' ' + fromYmd(v).getFullYear() + '</span>'; }
+function timeBtn(v){ return '<span class="pktime">' + esc(v) + '</span>'; }
+/* day of a delivery: any day from today, on a calendar like the rest of Clarea */
+function pickDate(f){
+  const today = ymd(new Date()), cur = f.edate.value || today;
+  const st = {sel: cur, y: fromYmd(cur).getFullYear(), m: fromYmd(cur).getMonth()};
+  const draw = w => {
+    const f1 = new Date(st.y, st.m, 1), start = new Date(f1); start.setDate(1 - ((f1.getDay() + 6) % 7));
+    const canPrev = new Date(st.y, st.m, 1) > new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    let h = '<div class="calnav"><button type="button" data-pm="-1"' + (canPrev ? '' : ' disabled') + ' aria-label="Mes anterior">‹</button><b>' + MONTHS[st.m] + ' ' + st.y + '</b><button type="button" data-pm="1" aria-label="Mes siguiente">›</button></div><div class="calgrid pkcal">' + ["L","M","X","J","V","S","D"].map(x => '<span class="calwd">' + x + '</span>').join("");
+    for (let i = 0; i < 42; i++){
+      const d = new Date(start); d.setDate(start.getDate() + i);
+      if (i >= 35 && d.getMonth() !== st.m) break;
+      const k = ymd(d), ok = k >= today;
+      h += '<button type="button" class="calday' + (d.getMonth() !== st.m ? ' out' : '') + (ok ? ' av' : '') + (k === st.sel ? ' sel' : '') + (k === today ? ' today' : '') + '"' + (ok ? ' data-pd="' + k + '"' : ' disabled') + '><span class="caln">' + d.getDate() + '</span></button>';
+    }
+    w.querySelector(".pkbody").innerHTML = h + '</div><div class="pkquick">' + [[0, "Hoy"], [1, "Mañana"], [7, "En una semana"]].map(q => { const d = new Date(); d.setDate(d.getDate() + q[0]); return '<button type="button" data-pd="' + ymd(d) + '">' + q[1] + '</button>'; }).join("") + '</div>';
+  };
+  openPicker("Día de la entrega", "", (w, done) => {
+    draw(w);
+    w.addEventListener("click", e => {
+      const m = e.target.closest("[data-pm]"); if (m){ st.m += +m.dataset.pm; if (st.m < 0){ st.m = 11; st.y--; } if (st.m > 11){ st.m = 0; st.y++; } draw(w); return; }
+      const d = e.target.closest("[data-pd]"); if (d) done(d.dataset.pd);
+    });
+  }).then(v => { if (!v) return; f.edate.value = v; f.querySelector('[data-pick="date"]').innerHTML = dateBtn(v); });
+}
+/* deadline time: hour and minutes as buttons */
+function pickTime(f){
+  const [h0, m0] = (f.etime.value || "23:59").split(":");
+  const st = {h: h0, m: m0};
+  const mins = ["00","05","10","15","20","25","30","35","40","45","50","55","59"];
+  const draw = w => {
+    w.querySelector(".pkbody").innerHTML = '<div class="pktnow">' + st.h + ':' + st.m + '</div>'
+      + '<div class="pkquick">' + ["23:59","14:00","15:00","20:00","21:00"].map(t => '<button type="button" data-pt="' + t + '">' + t + '</button>').join("") + '</div>'
+      + '<span class="pkl">Hora</span><div class="pktg h">' + Array.from({length: 24}, (_, i) => String(i).padStart(2, "0")).map(x => '<button type="button" class="' + (x === st.h ? 'on' : '') + '" data-ph="' + x + '">' + x + '</button>').join("") + '</div>'
+      + '<span class="pkl">Minutos</span><div class="pktg m">' + mins.map(x => '<button type="button" class="' + (x === st.m ? 'on' : '') + '" data-pmn="' + x + '">' + x + '</button>').join("") + '</div>'
+      + '<button type="button" class="btn pkok" data-pok>Listo · ' + st.h + ':' + st.m + '</button>';
+  };
+  openPicker("Hora límite", "", (w, done) => {
+    draw(w);
+    w.addEventListener("click", e => {
+      const q = e.target.closest("[data-pt]"); if (q){ done(q.dataset.pt); return; }
+      const h = e.target.closest("[data-ph]"); if (h){ st.h = h.dataset.ph; draw(w); return; }
+      const m = e.target.closest("[data-pmn]"); if (m){ st.m = m.dataset.pmn; draw(w); return; }
+      if (e.target.closest("[data-pok]")) done(st.h + ":" + st.m);
+    });
+  }).then(v => { if (!v) return; f.etime.value = v; f.querySelector('[data-pick="time"]').innerHTML = timeBtn(v); });
 }
 function availSlots(code, other){
   if (!code) return [];
@@ -1645,9 +1711,12 @@ document.addEventListener("change", e => {
   if (NE.subj && !nm.value.trim()) nm.placeholder = (EVT_TYPES.find(t => t[0] === ty.value) || ["", "Evento"])[1] + " " + NE.subj;
 });
 document.addEventListener("click", e => {
+  const ty = e.target.closest("#evf [data-ety]");
+  if (ty){ const f = ty.closest("form"); f.etype.value = ty.dataset.ety; f.querySelectorAll("[data-ety]").forEach(x => x.setAttribute("aria-checked", x === ty)); evTypeUI(f);
+    if (!f.ename.value.trim() && NE.subj) f.ename.placeholder = (EVT_TYPES.find(t => t[0] === ty.dataset.ety) || ["", "Evento"])[1] + " " + NE.subj; return; }
   const b = e.target.closest("#evf [data-pick]"); if (!b || b.disabled) return;
   const f = b.closest("form");
-  if (b.dataset.pick === "subj") pickSubject(f); else pickSlot(f);
+  ({subj: pickSubject, slot: pickSlot, date: pickDate, time: pickTime})[b.dataset.pick](f);
 });
 document.addEventListener("submit", e => {
   if (e.target.id !== "evf") return;
@@ -1659,8 +1728,8 @@ document.addEventListener("submit", e => {
   let date, from, to, over = "";
   if (type === "entrega"){
     date = f.edate.value; from = f.etime.value; to = "";
-    if (!date){ err.textContent = "Elige el día de la entrega."; f.edate.focus(); return; }
-    if (!from){ err.textContent = "Pon la hora límite de la entrega."; f.etime.focus(); return; }
+    if (!date){ err.textContent = "Elige el día de la entrega."; return; }
+    if (!from){ err.textContent = "Pon la hora límite de la entrega."; return; }
   } else {
     if (!slot){ err.textContent = "Elige el día y la hora."; return; }
     [date, from, to, over] = slot.split("|");
