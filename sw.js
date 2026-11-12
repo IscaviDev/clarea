@@ -2,7 +2,7 @@
    - Each published version has its own cache, filled when the new version is downloaded.
    - The new version waits until the user taps "Actualizar" (message SKIP_WAITING), then the page reloads.
    - Works without internet: everything is answered from the cache. */
-const CACHE = "clarea-20261112031911";
+const CACHE = "clarea-20261112032540";
 const CORE = ["./", "./index.html", "./repaso-pj6.html", "./proyecto.html", "./privacidad.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 function pageKey(req){ const p = new URL(req.url).pathname; return /repaso-pj6\.html$/.test(p) ? "./repaso-pj6.html" : /proyecto\.html$/.test(p) ? "./proyecto.html" : /privacidad\.html$/.test(p) ? "./privacidad.html" : "./index.html"; }
@@ -43,4 +43,14 @@ self.addEventListener("fetch", e => {
       return res;
     }).catch(() => hit || Response.error()))
   ));
+});
+
+// tapping a notification opens (or brings to the front) the page it talks about
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  const url = new URL((e.notification.data && e.notification.data.url) || "./", self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({type: "window", includeUncontrolled: true}).then(list => {
+    for (const c of list) if ("focus" in c) { c.navigate(url).catch(() => {}); return c.focus(); }
+    return self.clients.openWindow(url);
+  }));
 });
