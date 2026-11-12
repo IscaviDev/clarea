@@ -8,7 +8,7 @@
 <meta property="og:title" content="Clarea">
 <meta property="og:description" content="Asignaturas, horario, faltas y repasos de tus proyectos.">
 <meta property="og:url" content="https://clarea.dev/">
-<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112032540">
+<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112033049">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Logo de Clarea">
@@ -24,7 +24,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
-<script>window.CLAREA_VERSION = "20261112032540";</script>
+<script>window.CLAREA_VERSION = "20261112033049";</script>
 <title>Proyecto · Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1464,6 +1464,18 @@ button.aclink{font:inherit;font-weight:700;font-size:15px;text-align:left;cursor
 .aipx{flex:none;width:30px;height:30px;border:0;border-radius:8px;background:none;color:var(--muted);cursor:pointer}
 body:has(.updbar) .aipill{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 @media (prefers-reduced-motion: no-preference){.aipill{animation:upd-in .3s cubic-bezier(.2,.8,.2,1) both}}
+
+/* hover on the rows of "Mi cuenta" */
+.aclink,.acdel,.acdanger>summary{transition:border-color .2s ease,background-color .2s ease,color .2s ease,transform .2s ease}
+@media (hover:hover) and (pointer:fine){
+  .aclink:hover{border-color:var(--accent);background:var(--surface)}
+  .aclink:hover span{color:var(--accent)}
+  .acout:hover{border-color:#c0392b;color:#d9534f}
+  .acdanger>summary:hover{color:var(--fg)}
+  .acdel:hover{background:rgba(192,57,43,.12)}
+}
+@media (hover:hover) and (pointer:fine) and (prefers-reduced-motion: no-preference){.aclink:hover{transform:translateY(-1px)}}
+.aclink:active{transform:scale(.98)}
 </style>
 <script>
 /* ---------- offline accounts: everything stays in this device ---------- */
@@ -1974,6 +1986,7 @@ body:has(.updbar) .aipill{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
   }
   /* ----- "Mi cuenta": details, privacy, log out, and (well hidden) deleting the account ----- */
   function openAccount(){
+    if (document.querySelector('.authwrap[aria-label="Mi cuenta"]')) return;
     var u = window.PJ6USER, on = !!cloudGet(u), sl = syncLabel(u), rem = remembered(u);
     var w = el('<div class="authwrap" role="dialog" aria-modal="true" aria-label="Mi cuenta"><div class="authcard">'
       + '<div class="authlogo"><span class="acav">' + escT(u.charAt(0).toUpperCase()) + '</span><div><h1>' + escT(u) + '</h1><p>Mi cuenta</p></div></div>'
