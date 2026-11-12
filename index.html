@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<script>window.CLAREA_VERSION = "20261112013002";</script>
+<script>window.CLAREA_VERSION = "20261112013039";</script>
 <title>Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1170,10 +1170,10 @@ let ROOM = "308";
    Each account belongs to one class, chosen once and never changed: it decides the subjects, the timetable and the absences. */
 const DAW_NAMES = Object.fromEntries(Object.keys(SUBJ).map(k => [k, SUBJ[k].n]));
 const GROUPS = {
-  "DAW-2A": {full: "2n Desenvolupament d'aplicacions web", school: "Jesuïtes", when: "tardes", room: "308", tutor: "Grau S. · jueves 18:15", faltasOn: true, slots: SLOTS,
+  "DAW-2A": {label: "DAW-2A Jesuitas Clot", full: "2n Desenvolupament d'aplicacions web", school: "Jesuitas Clot", when: "tardes", room: "308", tutor: "Grau S. · jueves 18:15", faltasOn: true, slots: SLOTS,
     home: HOME, order: FALTAS_ORDER, seed: FALTAS_SEED, classes: CLASSES, names: DAW_NAMES},
   // ASIX-2A, timetable valid from 08/09/2026 (photo sent by the user). The subjects' total hours are not known yet: absences are "coming soon".
-  "ASIX-2A": {full: "2n Administració de sistemes informàtics en la xarxa", school: "Jesuïtes", when: "tardes", room: "310", tutor: "Collados · jueves 18:15", faltasOn: false, slots: SLOTS,
+  "ASIX-2A": {label: "ASIX-2A Jesuitas Clot", full: "2n Administració de sistemes informàtics en la xarxa", school: "Jesuitas Clot", when: "tardes", room: "310", tutor: "Collados · jueves 18:15", faltasOn: false, slots: SLOTS,
     home: ["PJ5","PJ6","PJ7","PJ8","PJ9","PJ10","SM5","SM6","SM7","SOST","EH3","TUT"],
     order: ["MNT","TUT","PJ5","PJ6","PJ7","PJ8","PJ9","PJ10","SM5","SM6","SM7","SOST","EH3"], seed: null,
     classes: [
