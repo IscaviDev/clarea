@@ -8,7 +8,7 @@
 <meta property="og:title" content="Clarea">
 <meta property="og:description" content="Asignaturas, horario, faltas y repasos de tus proyectos.">
 <meta property="og:url" content="https://clarea.dev/">
-<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112101922">
+<meta property="og:image" content="https://clarea.dev/og-image.png?v=20261112102148">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Logo de Clarea">
@@ -24,7 +24,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
-<script>window.CLAREA_VERSION = "20261112101922"; window.CLAREA_RELEASE = "1.0";</script>
+<script>window.CLAREA_VERSION = "20261112102148"; window.CLAREA_RELEASE = "1.0";</script>
 <title>PJ6 · Repaso · Clarea</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -888,6 +888,15 @@ body:has(.updbar) .aipill{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 @keyframes instdn{50%{transform:translateY(8px)}}
 @keyframes instup{50%{transform:translateY(-8px)}}
 @media (hover:hover) and (pointer:fine){.instbtn:hover{color:var(--accent)}}
+
+.instchips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -2px;padding:2px}
+.instchips::-webkit-scrollbar{display:none}
+.instchips button{flex:none;display:flex;flex-direction:column;align-items:center;gap:1px;font:inherit;font-size:13.5px;font-weight:700;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:10px;padding:7px 12px;cursor:pointer}
+.instchips button small{font-size:10.5px;font-weight:600;color:var(--muted)}
+.instchips button.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--bg))}
+.instchips button.on small{color:var(--accent)}
+.instarrow[hidden]{display:none}
+@media (hover:hover) and (pointer:fine){.instchips button:hover{border-color:var(--accent)}}
 </style>
 <script>
 /* ---------- offline accounts: everything stays in this device ---------- */
@@ -1622,41 +1631,65 @@ body:has(.updbar) .aipill{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
   var ICO_ARROW_DN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v15M6 13l6 6 6-6"/></svg>';
   var ICO_ARROW_UP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20V5M6 11l6-6 6 6"/></svg>';
   function ik(svg){ return '<span class="ik">' + svg + '</span>'; }
-  function installSteps(){
-    var ua = UA, v = +((ua.match(/Version\/(\d+)/) || [])[1] || 0);
-    var other = /CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);   // Chrome, Firefox, Edge… on iPhone
-    if (IOS){
-      if (other) return {arrow: IPAD ? "up right" : "down right", steps: [
-        'Toca ' + ik(ICO_SHARE) + ' <b>Compartir</b>, en la barra de direcciones (o en el menú ' + ik(ICO_MORE) + ')',
-        'Elige ' + ik(ICO_ADD) + ' <b>Añadir a pantalla de inicio</b>',
-        'Toca <b>Añadir</b>, arriba a la derecha'], note: 'Si no te sale la opción, abre clarea.dev en Safari y hazlo desde allí.'};
-      if (v >= 26 && !IPAD) return {arrow: "down right", steps: [
-        'Toca ' + ik(ICO_MORE) + ' abajo a la derecha',
-        'Toca ' + ik(ICO_SHARE) + ' <b>Compartir</b>',
-        'Elige ' + ik(ICO_ADD) + ' <b>Añadir a pantalla de inicio</b> (si no está, toca «Ver más»)',
-        'Deja activado «Abrir como app web» y toca <b>Añadir</b>'], note: ''};
-      return {arrow: IPAD ? "up right" : "down mid", steps: [
-        'Toca ' + ik(ICO_SHARE) + ' <b>Compartir</b>, ' + (IPAD ? 'arriba a la derecha' : 'en la barra de abajo'),
-        'Desliza y elige ' + ik(ICO_ADD) + ' <b>Añadir a pantalla de inicio</b>',
-        'Toca <b>Añadir</b>, arriba a la derecha'], note: ''};
-    }
-    return {arrow: "up right", steps: [
-      'Toca el menú ' + ik(ICO_DOTS) + ' del navegador, arriba a la derecha',
-      'Elige <b>Instalar app</b> o <b>Añadir a pantalla de inicio</b>',
-      'Confirma con <b>Instalar</b>'], note: ''};
+  var ICO_MENU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
+  // one guide per browser: where its button is (for the arrow) and the steps
+  function guides(){
+    var v = +((UA.match(/Version\/(\d+)/) || [])[1] || 0), add = ik(ICO_ADD) + ' <b>Añadir a pantalla de inicio</b>', share = ik(ICO_SHARE) + ' <b>Compartir</b>';
+    if (IOS) return [
+      {id: "safari", name: "Safari", arrow: IPAD ? "up right" : v >= 26 ? "down right" : "down mid",
+        steps: IPAD ? ['Toca ' + share + ', arriba a la derecha', 'Elige ' + add, 'Toca <b>Añadir</b>']
+          : v >= 26 ? ['Toca ' + ik(ICO_MORE) + ' abajo a la derecha', 'Toca ' + share, 'Elige ' + add + ' (si no está, toca «Ver más»)', 'Deja activado «Abrir como app web» y toca <b>Añadir</b>']
+          : ['Toca ' + share + ' en la barra de abajo', 'Desliza hacia arriba y elige ' + add, 'Toca <b>Añadir</b>, arriba a la derecha']},
+      {id: "chrome", name: "Chrome", arrow: "up right",
+        steps: ['Toca ' + share + ', a la derecha de la barra de direcciones', 'Elige ' + add + ' (si no está, toca «Ver más»)', 'Toca <b>Añadir</b>']},
+      {id: "edge", name: "Edge", arrow: "down mid",
+        steps: ['Toca ' + ik(ICO_MORE) + ' en la barra de abajo', 'Toca ' + share, 'Elige ' + add, 'Toca <b>Añadir</b>']},
+      {id: "firefox", name: "Firefox", arrow: "down right",
+        steps: ['Toca el menú ' + ik(ICO_MENU) + ' abajo a la derecha', 'Toca ' + share, 'Elige ' + add, 'Toca <b>Añadir</b>']}
+    ];
+    return [
+      {id: "chrome", name: "Chrome", arrow: "up right",
+        steps: ['Toca el menú ' + ik(ICO_DOTS) + ' arriba a la derecha', 'Elige ' + add + ' o <b>Instalar app</b>', 'Toca <b>Instalar</b>']},
+      {id: "samsung", name: "Samsung Internet", arrow: "down right",
+        steps: ['Toca el menú ' + ik(ICO_MENU) + ' abajo a la derecha', 'Elige ' + ik(ICO_ADD) + ' <b>Añadir página a</b>', 'Toca <b>Pantalla de inicio</b> y luego <b>Añadir</b>']},
+      {id: "firefox", name: "Firefox", arrow: "down right",
+        steps: ['Toca el menú ' + ik(ICO_DOTS) + ' (abajo o arriba a la derecha)', 'Elige ' + add + ' o <b>Instalar</b>', 'Toca <b>Añadir</b>']},
+      {id: "edge", name: "Edge", arrow: "down mid",
+        steps: ['Toca el menú ' + ik(ICO_MORE) + ' en la barra de abajo', 'Elige <b>Añadir al teléfono</b> o ' + add, 'Toca <b>Instalar</b>']}
+    ];
+  }
+  function myBrowser(){
+    if (/EdgiOS|EdgA/.test(UA)) return "edge";
+    if (/FxiOS|Firefox/.test(UA)) return "firefox";
+    if (/CriOS/.test(UA)) return "chrome";
+    if (/SamsungBrowser/.test(UA)) return "samsung";
+    return IOS ? "safari" : "chrome";
   }
   function openInstall(){
     if (document.querySelector('.authwrap[aria-label="Instalar Clarea"]')) return;
-    var st = installSteps();
+    var G = guides(), mine = myBrowser(), cur = G.filter(function(g){ return g.id === mine; })[0] || G[0];
     var w = el('<div class="authwrap" role="dialog" aria-modal="true" aria-label="Instalar Clarea"><div class="authcard">'
       + '<div class="insthead"><img src="apple-touch-icon.png" alt=""><div><h1>Instala Clarea</h1><p>Tenla en tu pantalla de inicio y ábrela como una app, a pantalla completa.</p></div></div>'
-      + '<ol class="inststeps">' + st.steps.map(function(x){ return '<li><span>' + x + '</span></li>'; }).join("") + '</ol>'
-      + (st.note ? '<p class="instnote">' + st.note + '</p>' : '')
+      + '<div class="instchips" role="tablist" aria-label="Navegador">' + G.map(function(g){ return '<button type="button" role="tab" data-ig="' + g.id + '">' + g.name + (g.id === mine ? '<small>El tuyo</small>' : '') + '</button>'; }).join("") + '</div>'
+      + '<ol class="inststeps"></ol>'
+      + '<p class="instnote">¿Usas otro navegador? Busca en su menú la opción «Añadir a pantalla de inicio» o «Instalar».</p>'
       + '<button type="button" class="btn" data-acclose>Entendido</button></div></div>');
-    var arrow = el('<div class="instarrow ' + st.arrow + '" aria-hidden="true">' + (/up/.test(st.arrow) ? ICO_ARROW_UP : ICO_ARROW_DN) + '</div>');
+    var arrow = el('<div class="instarrow" aria-hidden="true"></div>');
     document.body.appendChild(w); document.body.appendChild(arrow);
+    function show(g){
+      cur = g;
+      w.querySelector(".inststeps").innerHTML = g.steps.map(function(x){ return '<li><span>' + x + '</span></li>'; }).join("");
+      [].forEach.call(w.querySelectorAll("[data-ig]"), function(b){ var on = b.dataset.ig === g.id; b.classList.toggle("on", on); b.setAttribute("aria-selected", on ? "true" : "false"); });
+      // the arrow points at the button of the browser being used (not of a guide read "just in case")
+      arrow.hidden = g.id !== mine;
+      arrow.className = "instarrow " + g.arrow; arrow.innerHTML = /up/.test(g.arrow) ? ICO_ARROW_UP : ICO_ARROW_DN;
+    }
+    show(cur);
     function close(){ arrow.remove(); w.classList.add("closing"); setTimeout(function(){ w.remove(); }, 220); }
-    w.addEventListener("click", function(e){ if (e.target === w || e.target.closest("[data-acclose]")) close(); });
+    w.addEventListener("click", function(e){
+      if (e.target === w || e.target.closest("[data-acclose]")){ close(); return; }
+      var c = e.target.closest("[data-ig]"); if (c) show(G.filter(function(g){ return g.id === c.dataset.ig; })[0]);
+    });
   }
   function doInstall(){
     // Android, Chrome…: the browser's own «Instalar» window, in one tap
