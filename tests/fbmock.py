@@ -6,6 +6,7 @@ from urllib.parse import urlparse, parse_qs, unquote
 
 USERS = {}    # email -> {pw, uid}
 TOKENS = {}   # id/refresh token -> uid
+REVOKED = set()   # tokens ended by a password change
 DOCS = {}     # full doc name -> {fields}
 LOG = []
 
@@ -26,6 +27,8 @@ class H(BaseHTTPRequestHandler):
     def auth_uid(self):
         h = self.headers.get("Authorization", "")
         return TOKENS.get(h[7:]) if h.startswith("Bearer ") else None
+    def revoke(self, uid):
+        for t in [t for t, v in TOKENS.items() if v == uid]: del TOKENS[t]; REVOKED.add(t)
     def tokens(self, uid):
         it, rt = "it-" + uuid.uuid4().hex, "rt-" + uuid.uuid4().hex
         TOKENS[it] = uid; TOKENS[rt] = uid
@@ -36,6 +39,15 @@ class H(BaseHTTPRequestHandler):
     def do_POST(self):
         u = urlparse(self.path); n = int(self.headers.get("Content-Length") or 0); raw = self.rfile.read(n).decode()
         LOG.append(u.path)
+        # the admin API the Clarea server uses with a recovery code (local tests: the account by uid, or «uid-<user>»)
+        ma = re.match(r"^/v1/projects/[^/]+/accounts:update$", u.path)
+        if ma:
+            b = json.loads(raw); lid = b.get("localId", "")
+            e = next((k for k, v in USERS.items() if v["uid"] == lid or "uid-" + k.split("@")[0] == lid), None)
+            if not e: return self.err(400, "USER_NOT_FOUND")
+            if "password" in b: USERS[e]["pw"] = b["password"]
+            self.revoke(USERS[e]["uid"])   # a new password or «validSince»: the sessions so far end
+            return self.out(200, {"localId": USERS[e]["uid"]})
         if u.path.startswith("/v1/accounts:"):
             kind = u.path.split(":")[1]; b = json.loads(raw); e, pw = b.get("email", "x@y.z"), b.get("password", "")
             if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", e): return self.err(400, "INVALID_EMAIL")
@@ -48,14 +60,25 @@ class H(BaseHTTPRequestHandler):
                 if not uid: return self.err(400, "INVALID_ID_TOKEN")
                 for k in [k for k, v in USERS.items() if v["uid"] == uid]: del USERS[k]
                 return self.out(200, {"kind": "identitytoolkit#DeleteAccountResponse"})
+            elif kind == "update":   # a new password: the other sessions of the account end (like Firebase)
+                uid = TOKENS.get(b.get("idToken"))
+                if not uid: return self.err(400, "INVALID_ID_TOKEN")
+                if len(pw) < 6: return self.err(400, "WEAK_PASSWORD : Password should be at least 6 characters")
+                for k, v in USERS.items():
+                    if v["uid"] == uid: v["pw"] = pw; e = k
+                self.revoke(uid); it, rt = self.tokens(uid)
+                return self.out(200, {"localId": uid, "idToken": it, "refreshToken": rt, "expiresIn": "3600", "email": e})
             elif kind == "signInWithPassword":
                 if e not in USERS or USERS[e]["pw"] != pw: return self.err(400, "INVALID_LOGIN_CREDENTIALS")
             uid = USERS[e]["uid"]; it, rt = self.tokens(uid)
             return self.out(200, {"localId": uid, "idToken": it, "refreshToken": rt, "expiresIn": "3600", "email": e})
         if u.path == "/v1/token":
             q = parse_qs(raw); rt = q.get("refresh_token", [""])[0]
+            if rt in REVOKED: return self.err(400, "TOKEN_EXPIRED")
             if rt not in TOKENS: return self.err(400, "INVALID_REFRESH_TOKEN")
-            uid = TOKENS[rt]; it, rt2 = self.tokens(uid)
+            uid = TOKENS[rt]
+            if not any(v["uid"] == uid for v in USERS.values()): return self.err(400, "USER_NOT_FOUND")
+            it, rt2 = self.tokens(uid)
             return self.out(200, {"id_token": it, "refresh_token": rt2, "expires_in": "3600", "user_id": uid})
         uid = self.auth_uid()
         m = re.match(r"^/v1/(projects/[^/]+/databases/\(default\)/documents)(.*)$", u.path)

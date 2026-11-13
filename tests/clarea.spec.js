@@ -1,6 +1,6 @@
 // End-to-end checks of the main screens, plus an accessibility scan (WCAG 2.1 AA) of each one.
 const { test, expect } = require("@playwright/test");
-const { signUp, go, axe } = require("./helpers");
+const { signUp, go, putLocal, ymdIn, axe } = require("./helpers");
 
 test("inicio: saludo, Hoy, las asignaturas en «Estudiar» y el buscador", async ({ page }) => {
   await signUp(page);
@@ -14,6 +14,30 @@ test("inicio: saludo, Hoy, las asignaturas en «Estudiar» y el buscador", async
   await expect(page.locator(".srchi").first()).toContainText("PJ6");
   await page.keyboard.press("Escape");
   expect(await axe(page, "inicio")).toEqual([]);
+});
+
+test("inicio: «Por hacer» con la entrega de hoy y el examen de mañana (y lo que necesitas)", async ({ page }) => {
+  const now = new Date(); test.skip(now.getHours() === 23 && now.getMinutes() === 59, "a las 23:59 la entrega de hoy ya ha vencido");
+  const user = await signUp(page);
+  await expect(page.locator(".plan")).toHaveCount(0);                                      // nothing close: no «Por hacer»
+  await putLocal(page, user, "clarea-events", {t: Date.now(), list: [
+    {id: "e1", type: "entrega", name: "Práctica 3", subj: "SM7", date: ymdIn(0), from: "23:59", to: "23:59", group: "DAW-2A"},
+    {id: "e2", type: "teorico", name: "Servicios web", subj: "SM7", date: ymdIn(1), from: "09:00", to: "10:00", group: "DAW-2A"},
+    {id: "e3", type: "teorico", name: "Muy lejos", subj: "PJ6", date: ymdIn(30), from: "09:00", to: "10:00", group: "DAW-2A"}]});
+  await putLocal(page, user, "clarea-notas-SM7", {t: Date.now(), pass: 5, items: [
+    {id: "a1", code: "A1", name: "Examen", pct: 40, kind: "examen", grade: 6}, {id: "a2", code: "A2", name: "Proyecto", pct: 60, kind: "proyecto", grade: null}]});
+  await go(page, "");
+  await expect(page.locator(".plan h3")).toHaveText("Por hacer");
+  const rows = page.locator(".plan .planr");
+  await expect(rows).toHaveCount(2);
+  await expect(rows.nth(0)).toContainText("Práctica 3");
+  await expect(rows.nth(0)).toContainText("Entrega hoy hasta las 23:59");
+  await expect(rows.nth(1)).toContainText("Servicios web");
+  await expect(rows.nth(1)).toContainText("Ex. teórico mañana");
+  await expect(rows.nth(1)).toContainText("mañana · Para aprobar SM7 necesitas un 4,34 de media en lo que falta.");
+  expect(await axe(page, "inicio · Por hacer")).toEqual([]);
+  await rows.nth(0).click();
+  await expect(page).toHaveURL(/\/calendario$/);
 });
 
 test("calendario: un evento se ve, con sus avisos, y crea el recordatorio de hoy", async ({ page }) => {
