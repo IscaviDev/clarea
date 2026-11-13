@@ -187,3 +187,56 @@ test("chat del grupo: como WhatsApp (cabecera, burbujas, día y escribir abajo)"
   await expect(page.locator(".chm.me").last()).toContainText("Hecho");
 
 });
+
+test("chat con un amigo: desde su perfil, en la lista de chats y con sin leer", async ({ page }) => {
+  await page.addInitScript(() => { Object.defineProperty(window, "clareaIdToken", {get: () => async () => "test-token", set(){}, configurable: true}); });
+  const user = await signUp(page);
+  const now = Date.now(), dm = [{id: "1", u: "ana", text: "¿Me pasas la hoja de SM6?", at: now - 600e3}], sent = [];
+  const G = {id: "g1", name: "Los chavales", color: "#7b5ea7", owner: "u0", mine: true, muted: false, members: [{uid: "u0", u: user}, {uid: "u1", u: "ana"}], events: [], tasks: []};
+  await page.route("**/social", async route => {
+    const b = JSON.parse(route.request().postData() || "{}"); sent.push(b);
+    let out = {u: user, code: "TEST-4F2K", mute: false, friends: [{uid: "u1", u: "ana"}, {uid: "u2", u: "leo"}], inReq: [], outReq: [], groups: [G]};
+    if (b.op === "chat-unread") { const seen = (b.seen || {})["@u1"] || 0; out = {unread: {g1: 0, "@u1": dm.filter(m => +m.id > seen && m.u !== user).length},
+      last: {g1: {id: 1, at: now - 7200e3, u: "ana", text: "Hola grupo"}, "@u1": Object.assign({}, dm[dm.length - 1], {id: +dm[dm.length - 1].id})}}; }
+    if (b.op === "chat-list") out = {msgs: b.dm === "u1" ? dm : []};
+    if (b.op === "chat-send") { const m = {id: String(dm.length + 1), u: user, text: b.text, at: Date.now()}; dm.push(m); out = {msg: m}; }
+    await route.fulfill({ status: 200, contentType: "application/json", headers: {"Access-Control-Allow-Origin": "*"}, body: JSON.stringify(out) });
+  });
+  await page.evaluate(async () => { await socCall("me"); await chatUnread(); window.clareaGo("grupos"); });
+  const skip = page.locator("[data-wskip]"); if (await skip.isVisible()) await skip.click();
+
+  // the list of chats: the friend's chat first (newest), with its last message and 1 unread; the number is on «Grupos» too
+  const rows = page.locator(".chrow");
+  await expect(rows).toHaveCount(2);
+  await expect(rows.first()).toContainText("ana");
+  await expect(rows.first()).toContainText("¿Me pasas la hoja de SM6?");
+  await expect(rows.first().locator(".mbad")).toHaveText("1");
+  await expect(rows.nth(1)).toContainText("ana: Hola grupo");
+  await expect(page.locator('[data-tab="grupos"] .tbdot')).toHaveText("1");
+  await page.waitForTimeout(200);
+  await page.screenshot({ path: "test-results/chats-lista.png" });
+  expect(await axe(page, "lista de chats")).toEqual([]);
+
+  // opening it: no names on the bubbles (it's just the two of you), and it's read
+  await rows.first().click();
+  await expect(page).toHaveURL(/\/chat\/u1$/);
+  await expect(page.locator(".chhead .chwho b")).toHaveText("ana");
+  await expect(page.locator(".chm")).toHaveCount(1);
+  await expect(page.locator(".chm .chu")).toHaveCount(0);
+  await expect(page.locator(".chnote").first()).toContainText("Solo lo veis ana y tú");
+  await expect(page.locator('[data-tab="grupos"]')).toHaveClass(/on/);
+  await page.locator('#chf [name="m"]').fill("Claro, te la mando");
+  await page.locator("#chf .chsend").click();
+  await expect(page.locator(".chm.me")).toContainText("Claro, te la mando");
+  expect(sent.some(b => b.op === "chat-send" && b.dm === "u1" && !b.gid)).toBe(true);
+  await page.waitForTimeout(200);
+  await page.screenshot({ path: "test-results/chat-amigo.png" });
+  expect(await axe(page, "chat con un amigo")).toEqual([]);
+
+  // from a friend's profile: «Enviar mensaje»
+  await page.evaluate(() => window.clareaGo("grupos/amigos"));
+  await page.locator('[data-socprof="u2"]').click();
+  await page.locator('.pkp [data-pv="msg"]').click();
+  await expect(page).toHaveURL(/\/chat\/u2$/);
+  await expect(page.locator(".chfirst")).toContainText("¡Saluda a leo!");
+});
