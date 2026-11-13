@@ -1,57 +1,43 @@
 // End-to-end checks of the main screens, plus an accessibility scan (WCAG 2.1 AA) of each one.
 const { test, expect } = require("@playwright/test");
-const AxeBuilder = require("@axe-core/playwright").default;
+const { signUp, go, putLocal, ymdIn, axe } = require("./helpers");
 
-const PASS = "prueba123";
-const newUser = () => "t" + Math.random().toString(36).slice(2, 10);
-
-// a fresh account on the local stand-in for Firebase, class DAW-2A, welcome skipped
-async function signUp(page){
-  await page.addInitScript(() => { try { localStorage.setItem("clarea-dev-api", "http://127.0.0.1:9299"); } catch(e){} });
-  await page.goto("/index.html");
-  const user = newUser();
-  const f = page.locator(".authwrap form");
-  // the «Crear cuenta» tab (tapped again until the second password field shows: the page may still be starting)
-  for (let i = 0; i < 3 && !(await f.locator('[name="pass2"]').isVisible()); i++){
-    await page.getByRole("button", { name: "Crear cuenta" }).first().click();
-    await f.locator('[name="pass2"]').waitFor({ state: "visible", timeout: 4000 }).catch(() => {});
-  }
-  await f.locator('[name="user"]').fill(user);
-  await f.locator('[name="pass"]').fill(PASS);
-  await f.locator('[name="pass2"]').fill(PASS);
-  await f.locator('button[type="submit"], .btn[type="submit"]').first().click();
-  await page.locator('[data-grp="DAW-2A"]').click();
-  await page.locator("[data-gok]").click();
-  await page.locator("[data-wskip]").click();                         // the welcome, once
-  await expect(page.locator(".hello h1")).toContainText(user);
-  return user;
-}
-const go = (page, route) => page.evaluate(r => window.clareaGo(r), route);
-
-async function axe(page, name){
-  // light and dark: every screen is checked in both themes
-  const light = await axeOnce(page, name);
-  await page.emulateMedia({ colorScheme: "dark" }); await page.waitForTimeout(150);
-  const dark = await axeOnce(page, name + " (oscuro)");
-  await page.emulateMedia({ colorScheme: "light" });
-  return light.concat(dark);
-}
-async function axeOnce(page, name){
-  const r = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
-  const bad = r.violations.filter(v => v.impact === "serious" || v.impact === "critical");
-  if (bad.length) console.log("\n[a11y] " + name + ":\n" + bad.map(v => "  - " + v.id + " (" + v.impact + ", " + v.nodes.length + "): " + v.help + "\n      " + v.nodes.slice(0, 3).map(n => n.target.join(" ")).join("\n      ")).join("\n"));
-  return bad;
-}
-
-test("inicio: saludo, Hoy, asignaturas y buscador", async ({ page }) => {
+test("inicio: saludo, Hoy, las asignaturas en «Estudiar» y el buscador", async ({ page }) => {
   await signUp(page);
   await expect(page.locator(".today h2")).toContainText("Hoy");
+  await expect(page.locator(".sgrid .scard")).toHaveCount(0);                      // Inicio: only today
+  await page.locator('[data-tab="estudiar"]').click();
   expect(await page.locator(".sgrid .scard").count()).toBeGreaterThan(8);
+  await page.locator('[data-tab=""]').click();
   await page.locator("[data-search]").click();
   await page.locator(".srch input").fill("pj6");
   await expect(page.locator(".srchi").first()).toContainText("PJ6");
   await page.keyboard.press("Escape");
   expect(await axe(page, "inicio")).toEqual([]);
+});
+
+test("inicio: «Por hacer» con la entrega de hoy y el examen de mañana (y lo que necesitas)", async ({ page }) => {
+  const now = new Date(); test.skip(now.getHours() === 23 && now.getMinutes() === 59, "a las 23:59 la entrega de hoy ya ha vencido");
+  const user = await signUp(page);
+  await expect(page.locator(".plan")).toHaveCount(0);                                      // nothing close: no «Por hacer»
+  await putLocal(page, user, "clarea-events", {t: Date.now(), list: [
+    {id: "e1", type: "entrega", name: "Práctica 3", subj: "SM7", date: ymdIn(0), from: "23:59", to: "23:59", group: "DAW-2A"},
+    {id: "e2", type: "teorico", name: "Servicios web", subj: "SM7", date: ymdIn(1), from: "09:00", to: "10:00", group: "DAW-2A"},
+    {id: "e3", type: "teorico", name: "Muy lejos", subj: "PJ6", date: ymdIn(30), from: "09:00", to: "10:00", group: "DAW-2A"}]});
+  await putLocal(page, user, "clarea-notas-SM7", {t: Date.now(), pass: 5, items: [
+    {id: "a1", code: "A1", name: "Examen", pct: 40, kind: "examen", grade: 6}, {id: "a2", code: "A2", name: "Proyecto", pct: 60, kind: "proyecto", grade: null}]});
+  await go(page, "");
+  await expect(page.locator(".plan h3")).toHaveText("Por hacer");
+  const rows = page.locator(".plan .planr");
+  await expect(rows).toHaveCount(2);
+  await expect(rows.nth(0)).toContainText("Práctica 3");
+  await expect(rows.nth(0)).toContainText("Entrega hoy hasta las 23:59");
+  await expect(rows.nth(1)).toContainText("Servicios web");
+  await expect(rows.nth(1)).toContainText("Ex. teórico mañana");
+  await expect(rows.nth(1)).toContainText("mañana · Para aprobar SM7 necesitas un 4,34 de media en lo que falta.");
+  expect(await axe(page, "inicio · Por hacer")).toEqual([]);
+  await rows.nth(0).click();
+  await expect(page).toHaveURL(/\/calendario$/);
 });
 
 test("calendario: un evento se ve, con sus avisos, y crea el recordatorio de hoy", async ({ page }) => {
@@ -73,7 +59,8 @@ test("calendario: un evento se ve, con sus avisos, y crea el recordatorio de hoy
 test("mi progreso y simulacro", async ({ page }) => {
   await signUp(page);
   await go(page, "progreso");
-  await expect(page.locator(".pgtiles")).toBeVisible();
+  await expect(page.locator(".back")).toHaveText("← Estudiar");
+  await expect(page.locator(".pgtiles")).toHaveCount(0);                           // no tiles with «–»: only sentences, when there is something
   expect(await axe(page, "mi progreso")).toEqual([]);
 });
 

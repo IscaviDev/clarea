@@ -125,6 +125,12 @@ window.CL = (function () {
       return r.text();
     }}));
   }
+  // the newest commit of the main branch (one request)
+  async function latestCommit(full) {
+    const l = await gh("/repos/" + full + "/commits?per_page=1"), c = l && l[0];
+    if (!c) return null;
+    return {sha: c.sha, date: (c.commit && c.commit.committer && c.commit.committer.date) || (c.commit && c.commit.author && c.commit.author.date) || "", msg: ((c.commit && c.commit.message) || "").split(String.fromCharCode(10))[0].slice(0, 120)};
+  }
   /* branches, commits and pull requests, kept small enough to sync */
   async function gitHistory(full, def, onProgress) {
     const say = t => onProgress && onProgress(t);
@@ -214,7 +220,82 @@ window.CL = (function () {
   }
   const lineCount = t => t === "" ? 0 : t.split("\n").length - (t.endsWith("\n") ? 1 : 0);
 
-  return {collect, folderEntries, zipEntries, parseRepo, repoInfo, githubEntries, gitHistory, ghMsg, langOf, ext, functionsOf, lineCount, MAX_TOTAL};
+  /* ----- a new version of a file: the explained blocks whose lines did not change, moved to where they are now ----- */
+  // blocks: [{from, to, …}] of the old text → {blocks: the ones kept (with new line numbers), gaps: [[from, to]] of new lines without explanation}
+  function carryBlocks(oldText, newText, blocks) {
+    const split = t => { const a = t.split("\n"); if (t.endsWith("\n")) a.pop(); return a; };
+    const O = split(oldText), N = split(newText), at = {};
+    N.forEach((l, i) => { (at[l] = at[l] || []).push(i); });
+    const kept = []; let min = 0, shift = 0;
+    (blocks || []).slice().sort((a, b) => a.from - b.from).forEach(b => {
+      // the block without its blank lines at the edges: blank lines are free to move
+      let s = b.from - 1, e = b.to - 1;
+      while (s <= e && !(O[s] || "").trim()) s++;
+      while (e >= s && !(O[e] || "").trim()) e--;
+      if (s > e) return;
+      const seq = O.slice(s, e + 1), want = s + shift;
+      let best = -1;
+      (at[seq[0]] || []).forEach(i => {
+        if (i < min || i + seq.length > N.length) return;
+        for (let k = 1; k < seq.length; k++) if (N[i + k] !== seq[k]) return;
+        if (best < 0 || Math.abs(i - want) < Math.abs(best - want)) best = i;
+      });
+      if (best < 0) return;
+      kept.push(Object.assign({}, b, {from: best + 1, to: best + seq.length}));
+      min = best + seq.length; shift = best - s;
+    });
+    // the new lines not covered by a kept block (blank lines don't need an explanation)
+    const cov = new Uint8Array(N.length);
+    kept.forEach(b => { for (let i = b.from - 1; i < b.to; i++) cov[i] = 1; });
+    const gaps = []; let g = -1;
+    for (let i = 0; i <= N.length; i++) {
+      const open = i < N.length && !cov[i];
+      if (open && g < 0) g = i;
+      if (!open && g >= 0) { if (N.slice(g, i).some(l => l.trim())) gaps.push([g + 1, i]); g = -1; }
+    }
+    return {blocks: kept, gaps};
+  }
+
+  /* ----- things that look like passwords or keys (before sharing the code) ----- */
+  // each rule: what it is, and a pattern whose group 1 is the secret itself
+  const SECRET_RULES = [
+    ["Clave privada", /(-----BEGIN [A-Z ]*PRIVATE KEY-----)/],
+    ["Clave de Google", /\b(AIza[0-9A-Za-z_-]{35})\b/],
+    ["Clave de AWS", /\b(AKIA[0-9A-Z]{16})\b/],
+    ["Token de GitHub", /\b((?:ghp|gho|ghu|ghs|github_pat)_[A-Za-z0-9_]{20,})\b/],
+    ["Clave de API", /\b((?:sk|pk|rk)[-_](?:live[-_]|test[-_]|proj[-_]|ant[-_])?[A-Za-z0-9_-]{20,})\b/],
+    ["Contraseña en un enlace", /\b(?:mongodb(?:\+srv)?|mysql|postgres(?:ql)?|redis|amqp|ftp|smtp):\/\/[^:\s"'\/]+:([^@\s"'\/]{3,})@/i],
+    ["Contraseña de la base de datos", /\b(?:mysqli_connect|new\s+mysqli|mysqli|mysql_connect)\s*\(\s*["'][^"']*["']\s*,\s*["'][^"']*["']\s*,\s*["']([^"']{3,})["']/i],
+    ["Contraseña o clave", /(?:pass(?:word|wd)?|pwd|contrase(?:ñ|n)a|clave|secret|secreto|api[_-]?key|apikey|access[_-]?key|auth[_-]?token|token|private[_-]?key)["']?\s*(?:=>|:=|[:=])\s*["'`]([^"'`\s]{4,})["'`]/i],
+    ["Contraseña o clave", /^\s*(?:export\s+)?[A-Z0-9_]*(?:PASS(?:WORD)?|PWD|SECRET|API_?KEY|TOKEN|PRIVATE_KEY|ACCESS_KEY)[A-Z0-9_]*\s*=\s*["']?([^"'\s#]{4,})/]
+  ];
+  // examples and blanks that are fine to share
+  const SECRET_FAKE = /^(?:\*+|x+|\.+|-+|change_?me|your[_-]?\S*|tu[_-]?\S*|mi[_-]?(?:clave|contrase(?:ñ|n)a)|example|ejemplo|placeholder|password|contrase(?:ñ|n)a|secret|null|none|undefined|true|false|\$\{?\w+\}?|process\.env\.\w+|<[^>]*>|\{\{.*\}\})$/i;
+  function secretsOf(files) {
+    const out = [];
+    Object.keys(files).sort().forEach(p => {
+      const name = p.split("/").pop().toLowerCase(), isEnv = /^\.env(\..+)?$/.test(name);
+      if (/example|sample|template|\.dist$/.test(name)) return;                      // files made to show what goes where
+      files[p].split("\n").forEach((l, i) => {
+        if (l.length > 2000) return;
+        for (const [what, re] of SECRET_RULES) {
+          const m = l.match(re), v = m && m[1];
+          if (!v || SECRET_FAKE.test(v)) continue;
+          out.push({path: p, line: i + 1, what: isEnv ? "En un archivo .env" : what, val: v}); return;
+        }
+      });
+    });
+    return out.slice(0, 200);
+  }
+  // a copy of anything (code, explanations, glossary…) with those secrets replaced by •••
+  function maskSecrets(obj, vals) {
+    let s = JSON.stringify(obj);
+    [...new Set(vals)].filter(v => v && v.length >= 3).sort((a, b) => b.length - a.length)
+      .forEach(v => { s = s.split(JSON.stringify(v).slice(1, -1)).join("•••"); });
+    return JSON.parse(s);
+  }
+
+  return {collect, folderEntries, zipEntries, parseRepo, repoInfo, githubEntries, latestCommit, gitHistory, ghMsg, langOf, ext, functionsOf, lineCount, carryBlocks, secretsOf, maskSecrets, MAX_TOTAL};
 })();
 
 ;
@@ -232,14 +313,10 @@ window.CLAI = (function () {
 
   /* ---------- providers and the key (the key lives only on this device) ---------- */
   const PROV = {
-    claude: {t: "Claude", s: "Anthropic", url: "https://console.anthropic.com/settings/keys", note: "De pago por uso: unos céntimos por proyecto."},
-    openai: {t: "ChatGPT", s: "OpenAI", url: "https://platform.openai.com/api-keys", note: "De pago por uso: unos céntimos por proyecto."},
-    gemini: {t: "Gemini", s: "Google", url: "https://aistudio.google.com/apikey", note: "Tiene un uso gratuito con límites diarios."},
-    openrouter: {t: "OpenRouter", s: "Modelos gratis", url: "https://openrouter.ai/settings/keys", note: "Da acceso gratis a varios modelos (unas 50 peticiones al día sin pagar nada)."}
+    gemini: {t: "Gemini", s: "Google", url: "https://aistudio.google.com/apikey", note: "Tiene un uso gratuito con límites diarios."}
   };
   // only for testing on this computer: a local stand-in that answers like Gemini
   const GEMINI = (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && (function () { try { return localStorage.getItem("clarea-dev-ai"); } catch (e) { return null; } })()) || "https://generativelanguage.googleapis.com";
-  const CLAUDE_MODELS = ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"];
   // the AI settings (keys, models, the default AI) go with the account: synced to every device
   function cfg() {
     try {
@@ -276,10 +353,15 @@ window.CLAI = (function () {
     const jobs = []; let cur = [], curN = 0, k = 0;
     const flush = () => { if (cur.length) { jobs.push({id: "code-" + (k++), kind: "code", parts: cur}); cur = []; curN = 0; } };
     c.paths.filter(p => explainable(c, p)).forEach(p => {
-      const n = CL.lineCount(c.CODE.files[p]);
-      if (n > LIM) { flush(); for (let a = 1; a <= n; a += LIM) jobs.push({id: "code-" + (k++), kind: "code", parts: [{p, from: a, to: Math.min(n, a + LIM - 1)}]}); return; }
-      if (curN + n > LIM) flush();
-      cur.push({p, from: 1, to: n}); curN += n;
+      const n = CL.lineCount(c.CODE.files[p]), F = c.AID.files[p];
+      // after updating the code, a file that changed a little is explained only where it changed (its «gaps»)
+      const ranges = F && Array.isArray(F.gaps) && F.gaps.length ? F.gaps.map(g => [Math.max(1, +g[0]), Math.min(n, +g[1])]).filter(g => g[0] <= g[1]) : [[1, n]];
+      ranges.forEach(([a0, z]) => {
+        const len = z - a0 + 1;
+        if (len > LIM) { flush(); for (let a = a0; a <= z; a += LIM) jobs.push({id: "code-" + (k++), kind: "code", parts: [{p, from: a, to: Math.min(z, a + LIM - 1)}]}); return; }
+        if (curN + len > LIM) flush();
+        cur.push({p, from: a0, to: z}); curN += len;
+      });
     });
     flush();
     jobs.push({id: "gloss", kind: "gloss"});
@@ -288,14 +370,21 @@ window.CLAI = (function () {
     return jobs;
   }
   function jobTitle(c, j) {
-    if (j.kind === "code") return j.parts.length === 1 ? (j.parts[0].from > 1 || j.parts[0].to < CL.lineCount(c.CODE.files[j.parts[0].p]) ? baseName(j.parts[0].p) + " (líneas " + j.parts[0].from + "–" + j.parts[0].to + ")" : baseName(j.parts[0].p)) : j.parts.length + " archivos: " + j.parts.slice(0, 3).map(x => baseName(x.p)).join(", ") + (j.parts.length > 3 ? "…" : "");
+    if (j.kind === "code") return j.parts.length === 1 ? (j.parts[0].from > 1 || j.parts[0].to < CL.lineCount(c.CODE.files[j.parts[0].p]) ? baseName(j.parts[0].p) + " (líneas " + j.parts[0].from + "–" + j.parts[0].to + ")" : baseName(j.parts[0].p)) : ((u => u.length === 1 ? u[0] + " (partes que cambian)" : u.length + " archivos: " + u.slice(0, 3).join(", ") + (u.length > 3 ? "…" : ""))([...new Set(j.parts.map(x => baseName(x.p)))]));
     return {gloss: "Glosario", git: "Ramas y pull requests"}[j.kind] || "Exámenes · " + DT[j.diff];
   }
   const jobWhat = j => j.kind === "code" ? "Qué hace cada archivo y cada línea" : j.kind === "gloss" ? "Conceptos con ejemplos de tu código" : j.kind === "git" ? "Para qué es cada rama y cada PR" : "20 preguntas de test y 6 escritas";
   // a code part is done when its lines are explained (whatever size the parts had when they were made)
   function isDone(c, j) {
     if (j.kind !== "code") return !!c.AID.done[j.id];
-    return j.parts.every(x => { const F = c.AID.files[x.p], B = F && F.blocks; return !!(B && B.length && B.some(b => b.from <= x.from) && B.some(b => b.to >= x.to)); });
+    // every line of the part with code in it is inside an explained block (blank lines don't count)
+    return j.parts.every(x => {
+      const F = c.AID.files[x.p], B = F && F.blocks; if (!B || !B.length) return false;
+      const ls = c.lines(x.p), cov = new Uint8Array(x.to - x.from + 1);
+      B.forEach(b => { for (let i = Math.max(b.from, x.from); i <= Math.min(b.to, x.to); i++) cov[i - x.from] = 1; });
+      for (let i = x.from; i <= x.to; i++) if (!cov[i - x.from] && (ls[i - 1] || "").trim()) return false;
+      return true;
+    });
   }
   function status(c, opt) { const js = buildJobs(c, opt); return {total: js.length, done: js.filter(j => isDone(c, j)).length, jobs: js}; }
 
@@ -352,7 +441,11 @@ window.CLAI = (function () {
   }
   async function mcpConnect() { const c = cfg(); c.mcp = {k: randKey(), t: Date.now()}; cfgSet(c); await mcpPost("/mcp-hello", {}); return mcpUrl(); }
   async function mcpDisconnect() { try { await mcpPost("/mcp-forget", {}); } catch (e) {} const c = cfg(); delete c.mcp; cfgSet(c); }
-  const mcpPush = task => mcpPost("/mcp-push", {task});
+  // with the task goes this device's notice address (if notices are on): the server tells the phone when Claude finishes
+  async function mcpPush(task) {
+    let pk = null; try { pk = window.clareaPushK ? await window.clareaPushK() : null; } catch (e) {}
+    return mcpPost("/mcp-push", {task: Object.assign({url: (location.pathname.slice(new URL(document.baseURI).pathname.length) || "./") + location.search}, task), pk});
+  }
   const mcpDrop = id => mcpPost("/mcp-drop", {id}).catch(() => {});
   const mcpApplied = {}, MST = {}, MTITLES = {};
   const escH = t => String(t == null ? "" : t).replace(/[&<>"]/g, ch => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[ch]));
@@ -405,6 +498,12 @@ window.CLAI = (function () {
     let n = 0, bad = [];
     Object.keys(r.parts || {}).forEach(p => { try { applyPart(p, r.parts[p]); n++; } catch (e) { bad.push(p); } A.add(p); });
     return {n, bad, saved: (r.saved || []).length, total: r.total || 0, done: (r.saved || []).length >= (r.total || 1)};
+  }
+  // how far a task sent to Claude is, without bringing its parts again (for «Para hoy»); have: the parts already counted
+  async function mcpStatus(id, have) {
+    const r = await mcpPost("/mcp-res", {id, have: have || []});
+    if (r.gone) return {gone: true};
+    return {saved: (r.saved || []).length, savedIds: r.saved || [], total: r.total || 0, read: r.read || 0};
   }
   const MCP_SAY = "Prepara lo que tengo pendiente en Clarea";
   // Claude opens with the message already written: the student only taps «send» (Claude doesn't let a link send it)
@@ -530,40 +629,49 @@ window.CLAI = (function () {
     if (!c.save()) throw new Error("No queda espacio en este dispositivo.");
   }
 
+  /* ---------- the free use of Gemini today: Google doesn't say how much is left, so Clarea counts the requests (on every device:
+     it goes with the account) and compares them with the usual free limit of the model. It is an estimate: «unas». ---------- */
+  const PT = "America/Los_Angeles";                                          // the free use is renewed at midnight in California
+  const ptDay = () => new Date().toLocaleDateString("en-CA", {timeZone: PT});
+  const FREE = m => /pro/.test(m) ? 0 : /flash-lite/.test(m) ? 500 : /flash/.test(m) ? 20 : null;
+  function useGet() { const u = lget("clarea-aiuse") || {}; return u.day === ptDay() ? u : {day: ptDay(), n: {}, out: {}}; }
+  function useAdd(model, k) { if (!model) return; const u = useGet(); u.n[model] = (u.n[model] || 0) + (k || 1); u.t = Date.now(); lset("clarea-aiuse", u); }
+  function useOut(model) { const u = useGet(); u.out[model] = Date.now(); u.t = Date.now(); lset("clarea-aiuse", u); }
+  // the local hour when it is renewed (midnight in California: 9:00 in Spain in winter)
+  function renewAt() {
+    const d = new Date(), off = tz => (new Date(d.toLocaleString("en-US", {timeZone: tz})) - new Date(d.toLocaleString("en-US", {timeZone: "UTC"}))) / 36e5;
+    const h = (((-d.getTimezoneOffset() / 60) - off(PT)) % 24 + 24) % 24;
+    return Math.floor(h) + ":" + String(Math.round((h % 1) * 60)).padStart(2, "0");
+  }
+  function useInfo() {
+    const c = cfg(), model = (c.models || {}).gemini || "", u = useGet(), used = u.n[model] || 0, limit = FREE(model);
+    return {model, used, limit, left: limit == null ? null : Math.max(0, limit - used), out: !!u.out[model], renew: renewAt()};
+  }
+  // one short line for Configuración
+  function useLine() {
+    const x = useInfo(); if (!x.model) return "";
+    if (x.out) return "Has gastado el uso gratis de hoy con «" + esc(x.model) + "». Se renueva a las " + x.renew + ".";
+    if (x.limit === 0) return "«" + esc(x.model) + "» no tiene uso gratis: elige un modelo «Flash-Lite».";
+    if (x.limit == null) return x.used ? "Hoy llevas " + x.used + " peticiones con «" + esc(x.model) + "». Se renueva a las " + x.renew + "." : "";
+    return "Uso gratis hoy: unas " + x.used + " de " + x.limit + " peticiones. Te quedan unas " + x.left + ". Se renueva a las " + x.renew + ".";
+  }
+  // a few words, for the card of Gemini in Configuración
+  function useShort() { const x = useInfo(); return !x.model ? "" : x.out ? "gastado hasta las " + x.renew : x.left != null && x.limit ? "quedan unas " + x.left + " gratis hoy" : ""; }
+  // a notice in the ✦ IA tab when what is left today is not enough for what is missing
+  function useWarn(need) {
+    const x = useInfo(); if (!need || !x.model) return "";
+    const t = x.out ? "Has gastado el uso gratis de hoy de Gemini. Lo que falta se hará a partir de las " + x.renew + "."
+      : x.left != null && x.left < need ? "Hoy te quedan unas " + x.left + " peticiones gratis de Gemini y hacen falta " + need + ": puede que una parte se haga a partir de las " + x.renew + "." : "";
+    return t ? '<p class="aimsg" role="status">' + t + '</p>' : "";
+  }
+
   /* ---------- calling the user's own AI (straight from the browser, with their key) ---------- */
   async function listModels(prov, key) {
-    if (prov === "claude") {
-      const r = await fetch("https://api.anthropic.com/v1/models?limit=100", {headers: {"x-api-key": key, "anthropic-version": "2026-10-21", "anthropic-dangerous-direct-browser-access": "true"}});
-      if (!r.ok) throw await apiErr(r, prov);
-      const ids = ((await r.json()).data || []).map(m => m.id);
-      return CLAUDE_MODELS.filter(m => ids.includes(m)).concat(ids.filter(m => !CLAUDE_MODELS.includes(m)));
-    }
-    if (prov === "openai") {
-      const r = await fetch("https://api.openai.com/v1/models", {headers: {Authorization: "Bearer " + key}});
-      if (!r.ok) throw await apiErr(r, prov);
-      return ((await r.json()).data || []).map(m => m.id).filter(id => /^(gpt-|o\d|chatgpt)/.test(id) && !/(audio|realtime|image|tts|transcribe|search|embedding|instruct|moderation)/.test(id)).sort().reverse();
-    }
-    if (prov === "openrouter") {
-      const k = await fetch("https://openrouter.ai/api/v1/key", {headers: {Authorization: "Bearer " + key}});
-      if (!k.ok) throw await apiErr(k, prov);
-      const r = await fetch("https://openrouter.ai/api/v1/models");
-      if (!r.ok) throw await apiErr(r, prov);
-      const all = ((await r.json()).data || []).filter(m => /:free$/.test(m.id) && !/(vision|image|audio|embed|guard|tts)/i.test(m.id));
-      // big context (whole parts of code fit), full-size models before small or preview ones
-      // size in the name («70b», «550b-a55b»): tiny models write poor explanations
-      const size = m => { const x = m.id.match(/(\d+(?:\.\d+)?)b(?![a-z])/i); return x ? parseFloat(x[1]) : 0; };
-      const score = m => ((m.context_length || 0) >= 128000 ? 4 : 0) - (/(small|mini|lite|lightning|nano|tiny|micro)/i.test(m.id) ? 2 : 0) - (/(preview|beta|exp)/i.test(m.id) ? 1 : 0)
-        - (size(m) && size(m) < 20 ? 2 : 0) + (size(m) >= 100 ? 1 : 0);
-      return all.sort((a, b) => score(b) - score(a) || (b.context_length || 0) - (a.context_length || 0) || (b.created || 0) - (a.created || 0)).map(m => m.id);
-    }
     const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=" + encodeURIComponent(key));
     if (!r.ok) throw await apiErr(r, prov);
     return ((await r.json()).models || []).filter(m => (m.supportedGenerationMethods || []).includes("generateContent") && /gemini/.test(m.name) && !/(image|tts|audio|embedding|live)/.test(m.name)).map(m => m.name.replace(/^models\//, "")).sort().reverse();
   }
   function pickModel(prov, list) {
-    if (prov === "claude") return list.includes("claude-opus-5-5") ? "claude-opus-5-5" : list[0];
-    if (prov === "openai") return list.find(m => /^gpt-\d+(\.\d+)?$/.test(m)) || list.find(m => /^gpt-/.test(m)) || list[0];
-    if (prov === "openrouter") return list[0];                       // already sorted: the free model with the biggest context
     // Gemini: «Flash-Lite» first. Its free use is much bigger (about 500 requests a day, against about 20 for «Flash»)
     const ok = m => !/(preview|exp|thinking|image|tts|live|audio|embedding|computer)/.test(m);
     return list.find(m => ok(m) && /^gemini-[\d.]+-flash-lite$/.test(m)) || list.find(m => ok(m) && /flash-lite/.test(m))
@@ -579,20 +687,11 @@ window.CLAI = (function () {
       det.forEach(d => { if (d.retryDelay) after = Math.ceil(parseFloat(d.retryDelay) || 0); });
     } catch (e) {}
     const model = (cfg().models || {})[prov] || "";
-    // OpenRouter: free use per day / per minute, or a free model that is gone
-    if (prov === "openrouter") {
-      let q = null;
-      if (r.status === 429 && /per-day|per day|daily/i.test(m)) { q = new Error("Has gastado el uso gratis de hoy de OpenRouter (unas 50 peticiones al día). Se renueva cada día: sigue mañana, o usa Gemini Flash-Lite, que tiene mucho más."); q.retry = false; q.quotaKind = "day"; }
-      else if (r.status === 429) { q = new Error("OpenRouter: límite por minuto o el modelo gratis está muy solicitado."); q.retry = true; q.wait = Math.min(Math.max(after || 30, 15), 120); q.why = /upstream/i.test(m) ? "El modelo gratis está muy solicitado" : "Límite por minuto del uso gratis de OpenRouter"; }
-      else if (r.status === 404 || /no endpoints/i.test(m)) { q = new Error("Este modelo gratis de OpenRouter ya no está disponible. Cambia a otro y sigue."); q.retry = false; q.quotaKind = "model"; }
-      else if (r.status === 402) { q = new Error("OpenRouter pide saldo para este modelo. Elige uno gratis (los que acaban en «:free»)."); q.retry = false; q.quotaKind = "model"; }
-      if (q) { q.status = r.status; q.detail = m; return q; }
-    }
     // Gemini, too many requests: it can be a limit per minute (wait), per day (tomorrow) or a model with no free use at all
     if (prov === "gemini" && r.status === 429) {
       let q;
       if (/limit:\s*0\b/.test(m)) { q = new Error("Tu clave gratis no puede usar el modelo «" + model + "»: Google no da uso gratis de ese modelo. Cambia a otro modelo y sigue."); q.retry = false; q.quotaKind = "model"; }
-      else if (/PerDay/i.test(quota) || /per day|daily/i.test(m)) { q = new Error("Has gastado el uso gratis de hoy de tu clave de Gemini con «" + model + "». Se renueva cada día: sigue mañana o cambia a otro modelo, que tiene su propio límite. Lo ya hecho se queda guardado."); q.retry = false; q.quotaKind = "day"; }
+      else if (/PerDay/i.test(quota) || /per day|daily/i.test(m)) { useOut(model); q = new Error("Has gastado el uso gratis de hoy de tu clave de Gemini con «" + model + "». Se renueva cada día: sigue mañana o cambia a otro modelo, que tiene su propio límite. Lo ya hecho se queda guardado."); q.retry = false; q.quotaKind = "day"; }
       else { q = new Error("Gemini: has llegado al límite por minuto del uso gratis."); q.retry = true; q.wait = Math.min(Math.max(after || 60, 15), 120); q.why = "Límite por minuto del uso gratis de Gemini"; }
       q.status = 429; q.detail = m; return q;
     }
@@ -620,54 +719,16 @@ window.CLAI = (function () {
     e.retry = r.status === 429 || r.status === 500 || r.status === 502 || r.status === 503 || r.status === 504 || r.status === 529;
     return e;
   }
-  /* files (photos and PDFs) go with the text: [{mime, b64, name}]. All 4 AIs read images and PDFs, each in its own format */
+  /* files (photos and PDFs) go with the text: [{mime, b64, name}]. Gemini reads images and PDFs */
   async function callOnce(text, wantJSON, files, opt) {
     opt = opt || {};
     const c = cfg(), prov = c.prov, key = c.keys[prov], model = opt.model || c.models[prov], signal = opt.signal;
     files = files || [];
     let r;
     try {
-      if (prov === "claude") {
-        const content = files.length ? files.map(f => f.mime === "application/pdf" ? {type: "document", source: {type: "base64", media_type: f.mime, data: f.b64}} : {type: "image", source: {type: "base64", media_type: f.mime, data: f.b64}}).concat([{type: "text", text}]) : text;
-        const body = {model, max_tokens: 32000, stream: true, messages: [{role: "user", content}]};
-        const h = {"content-type": "application/json", "x-api-key": key, "anthropic-version": "2026-10-21", "anthropic-dangerous-direct-browser-access": "true"};
-        // if a safety check declines, the API retries on a fallback model by itself
-        if (/^claude-(opus-5|sonnet-5-5|fable)/.test(model)) { body.fallbacks = "default"; h["anthropic-beta"] = "server-side-fallback-2026-07-01"; }
-        r = await fetch("https://api.anthropic.com/v1/messages", {method: "POST", headers: h, body: JSON.stringify(body), signal});
-        if (!r.ok) throw await apiErr(r, prov);
-        // read the stream: text pieces come in "content_block_delta" events
-        const rd = r.body.getReader(), dec = new TextDecoder(); let buf = "", out = "", stop = "";
-        for (;;) {
-          const {done, value} = await rd.read(); if (done) break;
-          buf += dec.decode(value, {stream: true});
-          let i; while ((i = buf.indexOf("\n")) >= 0) {
-            const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
-            if (!line.startsWith("data:")) continue;
-            let ev; try { ev = JSON.parse(line.slice(5)); } catch (e) { continue; }
-            if (ev.type === "content_block_delta" && ev.delta && ev.delta.type === "text_delta") out += ev.delta.text;
-            else if (ev.type === "message_delta" && ev.delta && ev.delta.stop_reason) stop = ev.delta.stop_reason;
-            else if (ev.type === "error") { const er = new Error("Claude: " + ((ev.error && ev.error.message) || "error")); er.retry = /overloaded/i.test(JSON.stringify(ev.error || "")); throw er; }
-          }
-        }
-        if (stop === "refusal") throw new Error("Claude no ha querido responder a esta parte.");
-        if (stop === "max_tokens") throw new Error("La respuesta era demasiado larga y se ha cortado.");
-        return out;
-      }
-      if (prov === "openai" || prov === "openrouter") {
-        const or = prov === "openrouter";
-        const content = files.length ? [{type: "text", text}].concat(files.map(f => f.mime === "application/pdf" ? {type: "file", file: {filename: f.name || "documento.pdf", file_data: "data:application/pdf;base64," + f.b64}} : {type: "image_url", image_url: {url: "data:" + f.mime + ";base64," + f.b64}})) : text;
-        const body = {model, messages: [{role: "user", content}]}; if (wantJSON && !or) body.response_format = {type: "json_object"};
-        const h = {"Content-Type": "application/json", Authorization: "Bearer " + key};
-        if (or) { h["HTTP-Referer"] = "https://clarea.dev"; h["X-Title"] = "Clarea"; }
-        r = await fetch(or ? "https://openrouter.ai/api/v1/chat/completions" : "https://api.openai.com/v1/chat/completions", {method: "POST", headers: h, body: JSON.stringify(body), signal});
-        if (!r.ok) throw await apiErr(r, prov);
-        const j = await r.json(), ch = j.choices && j.choices[0];
-        if (!ch && j.error) { const er = new Error("OpenRouter: " + (j.error.message || "error")); er.retry = true; er.why = "El modelo de OpenRouter no ha respondido"; throw er; }
-        if (ch && ch.finish_reason === "length") throw new Error("La respuesta era demasiado larga y se ha cortado.");
-        return (ch && ch.message && ch.message.content) || "";
-      }
       const body = {contents: [{role: "user", parts: files.map(f => ({inline_data: {mime_type: f.mime, data: f.b64}})).concat([{text}])}]}; if (wantJSON) body.generationConfig = {responseMimeType: "application/json"};
       r = await fetch(GEMINI + "/v1beta/models/" + encodeURIComponent(model) + ":generateContent?key=" + encodeURIComponent(key), {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body), signal});
+      if (r.status !== 429) useAdd(model);
       if (!r.ok) throw await apiErr(r, prov);
       const j = await r.json(), cand = j.candidates && j.candidates[0];
       if (!cand) throw new Error("Gemini no ha devuelto respuesta" + (j.promptFeedback && j.promptFeedback.blockReason ? " (" + j.promptFeedback.blockReason + ")." : "."));
@@ -776,10 +837,11 @@ window.CLAI = (function () {
     const cf = cfg(), prov = cf.prov;
     await toLite();
     let alts = []; try { const list = await listModels(prov, cf.keys[prov]); const now = cfg().models[prov];
-      alts = prov === "openrouter" ? list.filter(m => m !== now).slice(0, 2) : list.filter(m => m !== now && /flash/.test(m) && !/(preview|exp|thinking|image|tts|live|audio|embedding|computer)/.test(m)).slice(0, 2); } catch (e) {}
+      alts = list.filter(m => m !== now && /flash/.test(m) && !/(preview|exp|thinking|image|tts|live|audio|embedding|computer)/.test(m)).slice(0, 2); } catch (e) {}
     const k = window.clareaPushK ? await window.clareaPushK() : null;
     const r = await fetch(PUSHURL() + "/gen", {method: "POST", headers: {"Content-Type": "application/json"},
       body: JSON.stringify({prov, model: cfg().models[prov], alts, key: cf.keys[prov], k, title: o.title, url: o.url, parts: o.parts})});
+    if (r.ok) useAdd(cfg().models[prov], o.parts.length);
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(r.status === 413 ? "Es demasiado grande para la nube." : "error " + r.status);
     return {id: j.id, s: j.secret, push: !!k, at: Date.now()};
@@ -807,10 +869,11 @@ window.CLAI = (function () {
       const parts = q.ids.map(id => { const j = jobs.find(x => x.id === id); return {id, text: prompt(c, j)}; });
       // other models of the SAME AI, in case the chosen one is saturated (never another AI)
       let alts = []; try { const list = await listModels(prov, cf.keys[prov]); const now = cfg().models[prov];
-        alts = prov === "openrouter" ? list.filter(m => m !== now).slice(0, 2) : list.filter(m => m !== now && /flash/.test(m) && !/(preview|exp|thinking|image|tts|live|audio|embedding|computer)/.test(m)).slice(0, 2); } catch (e) {}
+        alts = list.filter(m => m !== now && /flash/.test(m) && !/(preview|exp|thinking|image|tts|live|audio|embedding|computer)/.test(m)).slice(0, 2); } catch (e) {}
       const k = window.clareaPushK ? await window.clareaPushK() : null;
       const r = await fetch(PUSHURL() + "/gen", {method: "POST", headers: {"Content-Type": "application/json"},
         body: JSON.stringify({prov, model: cfg().models[prov], alts, key: cf.keys[prov], k, title: q.name, url: "proyecto.html?id=" + encodeURIComponent(q.pid), parts})});
+      if (r.ok) useAdd(cfg().models[prov], parts.length);
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(r.status === 413 ? "El proyecto es demasiado grande para generarlo en la nube." : "error " + r.status);
       q = qGet(); if (!q) return;
@@ -939,14 +1002,14 @@ window.CLAI = (function () {
   }
   // «Seguir con otro modelo»: the next «flash» model not tried yet, and the generation goes on where it stopped
   async function nextModel(tried) {
-    const c = cfg(), prov = c.prov; if ((prov !== "gemini" && prov !== "openrouter") || !c.keys || !c.keys[prov]) return null;
+    const c = cfg(), prov = c.prov; if (prov !== "gemini" || !c.keys || !c.keys[prov]) return null;
     const list = await listModels(prov, c.keys[prov]);
     const ok = m => !tried.includes(m) && !/(preview|exp|thinking|image|tts|live|audio|embedding|computer)/.test(m);
     // «flash» models have free use: the full one first, then «lite», then anything else
-    return prov === "openrouter" ? list.find(m => !tried.includes(m)) || null : list.find(m => ok(m) && /flash$/.test(m)) || list.find(m => ok(m) && /flash/.test(m)) || list.find(ok) || null;
+    return list.find(m => ok(m) && /flash$/.test(m)) || list.find(m => ok(m) && /flash/.test(m)) || list.find(ok) || null;
   }
   async function switchModel(pid) {
-    const c = cfg(), prov = c.prov; if ((prov !== "gemini" && prov !== "openrouter") || !c.keys || !c.keys[prov]) throw new Error("Cambia el modelo en la pestaña IA.");
+    const c = cfg(), prov = c.prov; if (prov !== "gemini" || !c.keys || !c.keys[prov]) throw new Error("Cambia el modelo en la pestaña IA.");
     const q = qGet(), tried = ((q && q.tried) || []).concat([c.models[prov]]);
     const next = await nextModel(tried);
     if (!next) throw new Error("No quedan más modelos gratis de " + PROV[prov].t + " para probar hoy. Vuelve mañana.");
@@ -980,7 +1043,8 @@ window.CLAI = (function () {
     const paint = () => {
       paintVia();
       box.innerHTML = (msgs.length ? "" : '<p class="chathint">' + esc(o.hint || "Pregunta lo que quieras: tu IA responde con este contenido delante.") + (ready() || mcpOn() ? "" : " <b>Primero conecta Claude o pon tu clave de Gemini en Mi cuenta → Configuración.</b>") + '</p>')
-        + msgs.map(m => '<div class="chatb ' + (m.r === "u" ? "me" : "ai") + '">' + (m.r === "u" ? esc(m.t).replace(/\n/g, "<br>") : chatFmt(m.t)) + '</div>').join("")
+        + msgs.map((m, i) => '<div class="chatb ' + (m.r === "u" ? "me" : "ai") + '">' + (m.r === "u" ? esc(m.t).replace(/\n/g, "<br>") : chatFmt(m.t)) + '</div>'
+          + (o.subj && m.r === "a" && i && msgs[i - 1].r === "u" && !/^No (he podido|se ha podido)/.test(m.t) ? (m.saved ? '<p class="chatsaved">✓ Guardada para repasar en «Mis dudas de ' + esc(o.subj) + '»</p>' : '<button type="button" class="chatsave" data-chatsave="' + i + '">Guardar para repasar</button>') : '')).join("")
         + (busyNow ? '<div class="chatb ai wait"><i></i><i></i><i></i></div>' : "")
         + (pend ? '<div class="chatb ai claude"><b>Pregunta enviada a Claude.</b> Pulsa enviar en Claude: te responde allí, y su respuesta aparecerá aquí también. <button type="button" class="chatreopen">Abrir Claude otra vez</button> <button type="button" class="chatnopend">Dejar de esperar</button></div>' : "")
         + (msgs.length ? '<button type="button" class="chatclear">Borrar la conversación</button>' : "");
@@ -1000,6 +1064,10 @@ window.CLAI = (function () {
     w.addEventListener("click", ev => {
       if (ev.target === w || ev.target.closest(".chatx")) close();
       else if (ev.target.closest(".chatclear")) { msgs = []; pend = null; save(); paint(); }
+      else if (ev.target.closest("[data-chatsave]")) {
+        const i = +ev.target.closest("[data-chatsave]").dataset.chatsave, a = msgs[i], q = msgs[i - 1];
+        if (a && q && !a.saved) { saveDoubt(o.subj, q.t + (o.about ? " (sobre «" + o.about + "»)" : ""), a.t); a.saved = true; save(); paint(); if (window.clareaToast) window.clareaToast("Guardada en «Mis dudas de " + o.subj + "»: sale al repasar."); }
+      }
       else if (ev.target.closest(".chatreopen") && pend) mcpOpenClaude(pend.msg);
       else if (ev.target.closest(".chatnopend")) { if (pend) mcpDrop(pend.id); pend = null; save(); paint(); }
       else { const v = ev.target.closest("[data-via]"); if (v) { const c = cfg(); c.chatVia = v.dataset.via; cfgSet(c); paint(); } }
@@ -1019,7 +1087,7 @@ window.CLAI = (function () {
         }, msg);
         return;
       }
-      if (!ready()) { paint(); return; }
+      if (!ready()) { welcome(); return; }
       msgs.push({r: "u", t: q}); ta.value = ""; busyNow = true; save(); paint();
       const hist = msgs.slice(-10).map(m => (m.r === "u" ? "Estudiante: " : "Tú: ") + m.t).join("\n\n");
       const text = o.context + "\n\n---\nResponde en español, claro y breve (como un profesor que ayuda a preparar el examen), con ejemplos del contenido de arriba cuando sirva. Pon el código entre ``` y los nombres de código entre « ».\n\nConversación:\n" + hist + "\n\nTú:";
@@ -1029,9 +1097,148 @@ window.CLAI = (function () {
     });
     document.body.appendChild(w); paint(); ta.focus(); if (pend) poll();
     if (!document.getElementById("chatviacss")) { const st = document.createElement("style"); st.id = "chatviacss";
-      st.textContent = '.chatvia{display:flex;align-items:center;gap:6px;padding:0 14px 8px;font-size:13px;color:var(--muted)}.chatvia[hidden]{display:none}.chatvia button{font:inherit;font-size:13px;font-weight:700;color:var(--fg);background:var(--surface);border:1.5px solid var(--line);border-radius:999px;padding:5px 12px;cursor:pointer}.chatvia button.on{background:var(--accent);border-color:var(--accent);color:#fff}'
+      st.textContent = '.chatvia{display:flex;align-items:center;gap:6px;padding:0 14px 8px;font-size:13px;color:var(--muted)}.chatvia[hidden]{display:none}.chatvia button{font:inherit;font-size:13px;font-weight:700;color:var(--fg);background:var(--surface);border:1.5px solid var(--line);border-radius:999px;padding:5px 12px;cursor:pointer}.chatvia button.on{background:var(--accent);border-color:var(--accent);color:#fff}@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .chatvia button.on{color:#14171b}}:root[data-theme="dark"] .chatvia button.on{color:#14171b}'
+        + '.chatsave{align-self:flex-start;font:inherit;font-size:13px;font-weight:700;color:var(--accent-ink,var(--accent));background:none;border:1.5px solid var(--line);border-radius:999px;padding:5px 12px;cursor:pointer;margin:-2px 0 4px}@media (hover:hover){.chatsave:hover{border-color:var(--accent)}}.chatsaved{margin:-2px 0 4px;font-size:12.5px;color:var(--muted)}'
         + '.chatb.claude{border:1.5px dashed var(--accent)}.chatb.claude button{font:inherit;font-size:13px;font-weight:700;color:var(--accent-ink,var(--accent));background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;margin-right:8px}';
       document.head.appendChild(st); }
+  }
+
+  /* ---------- the two ways to use the AI: Gemini (free key, by itself) or the student's Claude account (connector) ---------- */
+  function pickCss() {
+    if (document.getElementById("aipickcss")) return;
+    const st = document.createElement("style"); st.id = "aipickcss";
+    st.textContent = '.aipick{display:grid;grid-template-columns:1fr;gap:10px}@media (min-width:620px){.aipick{grid-template-columns:1fr 1fr}}'
+      + '.aipc{display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1.5px solid var(--line);border-radius:14px;padding:14px}'
+      + '.aipc b{font-size:15.5px}.aipc span{font-size:13.5px;line-height:1.45;color:var(--muted)}.aipc .qa{margin-top:4px}'
+      + '.aipc em{align-self:flex-start;font-style:normal;font-size:11.5px;font-weight:800;letter-spacing:.02em;padding:2px 8px;border-radius:999px;background:var(--accent-soft,rgba(31,95,191,.12));color:var(--fg)}'
+      + '.aimore{background:var(--surface);border:1px solid var(--line);border-radius:14px}'
+      + '.aimore>summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;align-items:center;gap:10px}'
+      + '.aimore>summary::-webkit-details-marker{display:none}'
+      + '.aimore>summary>span{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.aimore>summary b{font-size:14.5px}.aimore>summary small{font-size:12.5px;color:var(--muted)}'
+      + '.aimore>summary::after{content:"";flex:none;width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin:-4px 4px 0 0}'
+      + '.aimore[open]>summary::after{transform:rotate(-135deg);margin-top:4px}'
+      + '.aimoreb{padding:0 12px 12px;display:flex;flex-direction:column;gap:12px}'
+      + '.aiwel{position:fixed;inset:0;z-index:1000;background:rgba(10,14,24,.55);display:flex;align-items:flex-end;justify-content:center}'
+      + '.aiwel>div{position:relative;background:var(--bg);color:var(--fg);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:20px 20px 0 0;padding:22px 16px calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}'
+      + '@media (min-width:620px){.aiwel{align-items:center}.aiwel>div{border-radius:20px}}'
+      + '.aiwel h3{margin:0;padding-right:44px;font-size:19px}.aiwel p{margin:0;font-size:14px;line-height:1.45;color:var(--muted)}'
+      + '.aiwel .topx{position:absolute;top:12px;right:12px}';
+    document.head.appendChild(st);
+  }
+  // the two cards: shown in the ✦ IA tab while nothing is set up, and in the welcome
+  function chooseHtml() {
+    pickCss();
+    return '<div class="aipick">'
+      + '<div class="aipc"><em>Gratis</em><b>Gemini</b><span>Con una clave gratis de Google. Clarea lo prepara todo sola, en la nube: puedes cerrarla y te avisa.</span><div class="qa"><button type="button" class="btn" data-aipick="gemini">Usar Gemini</button></div></div>'
+      + '<div class="aipc"><em>Tu cuenta</em><b>Claude</b><span>Con tu cuenta de Claude (gratis, Pro o Max), sin clave. Clarea abre Claude con el mensaje escrito y tú solo pulsas enviar.</span><div class="qa"><button type="button" class="btn" data-aipick="claude">Usar Claude</button></div></div>'
+      + '</div>';
+  }
+  // «Otras formas»: copying and pasting into any chat, folded away
+  function moreHtml(inner, open) {
+    pickCss();
+    return '<details class="aimore"' + (open ? ' open' : '') + '><summary><span><b>Otras formas</b><small>Copiar y pegar en tu chat de IA (ChatGPT, Claude, Gemini…)</small></span></summary><div class="aimoreb">' + inner + '</div></details>';
+  }
+  function goConfig() {
+    const a = document.createElement("a"); a.href = "configuracion"; a.setAttribute("data-go", "#/configuracion");
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+  // the first time the AI is used with nothing set up: choose Gemini or Claude
+  function welcome() {
+    if (document.querySelector(".aiwel")) return;
+    const c = cfg(); c.welcomed = true; cfgSet(c);
+    const w = document.createElement("div"); w.className = "aiwel";
+    w.innerHTML = '<div role="dialog" aria-modal="true" aria-labelledby="aiwelt"><button type="button" class="topx" data-aiwelx aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>'
+      + '<h3 id="aiwelt">¿Con qué IA quieres estudiar?</h3><p>Elige una. Puedes cambiarlo cuando quieras en Configuración.</p>' + chooseHtml() + '</div>';
+    const close = () => { document.removeEventListener("keydown", key); w.remove(); };
+    const key = e => { if (e.key === "Escape") close(); };
+    w.addEventListener("click", e => { if (e.target === w || e.target.closest("[data-aiwelx]")) close(); });
+    document.addEventListener("keydown", key);
+    document.body.appendChild(w);
+    setTimeout(() => { const b = w.querySelector("[data-aipick]"); if (b) b.focus(); }, 30);
+  }
+  // nothing set up yet and never asked: show the welcome (once per account)
+  function welcomeOnce() { if (!ready() && !mcpOn() && !cfg().welcomed) { welcome(); return true; } return false; }
+  async function pick(k, btn) {
+    const c = cfg(); c.pick = k; c.welcomed = true; cfgSet(c);
+    if (k === "claude" && !mcpOn()) {
+      btn.disabled = true; btn.textContent = "Conectando…";
+      try { await mcpConnect(); }
+      catch (x) { const d = cfg(); delete d.mcp; cfgSet(d); btn.disabled = false; btn.textContent = "Usar Claude"; if (window.clareaToast) window.clareaToast(x instanceof TypeError ? "No se ha podido conectar. ¿Hay internet?" : x.message); return; }
+    }
+    const wl = document.querySelector(".aiwel"); if (wl) wl.remove();
+    goConfig();
+  }
+  document.addEventListener("click", e => { const b = e.target.closest("[data-aipick]"); if (b && !b.disabled) { e.preventDefault(); pick(b.dataset.aipick, b); } });
+
+  /* a good answer of the chat, kept as an exam question already prepared, in «Mis dudas de <subject>»:
+     it goes into the rounds, «Para hoy» and the mock exams like any other question */
+  function saveDoubt(subj, q, a) {
+    const L = lget("clarea-qsets") || {}, list = L.list || [];
+    let S = list.find(x => x.dudas && x.subj === subj);
+    if (!S) {
+      const o = list.find(x => x.subj === subj) || {};
+      S = {id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), subj, subjName: o.subjName || "", name: "Mis dudas de " + subj, lang: o.lang || "es", qs: [], created: Date.now(), dudas: true};
+      if (o.group) S.group = o.group;
+      list.push(S);
+    }
+    const n = S.qs.reduce((m, x) => Math.max(m, +x.n || 0), 0) + 1, qt = String(q).replace(/\s+/g, " ").trim().slice(0, 400), at = String(a).trim().slice(0, 4000);
+    S.qs.push({n, q: qt});
+    lset("clarea-qsets", {t: Date.now(), list});
+    const k = "clarea-qai-" + S.id, A = lget(k) || {}; A.items = A.items || {};
+    A.items[n] = {q: qt, level: "media", why: "", short: (at.match(/^[\s\S]*?[.!?](\s|$)/) || [at])[0].trim().slice(0, 600), answer: at, points: [], keyTerms: [], example: "", mistakes: [], tip: "", from: "chat"};
+    A.t = Date.now(); lset(k, A);
+    return S;
+  }
+
+  /* ---------- «Enviar a Claude lo pendiente»: every project and every set of exam questions with something to prepare, in one go.
+     Each one goes as its own task (the same as from its page), Claude reads them all with clarea_pendiente in one chat,
+     and each page collects its part when it is opened; Inicio shows how it goes («Para hoy»). ---------- */
+  // the instructions for a part of exam questions (also used by the questions page)
+  function qPromptFor(S, part) {
+    const lang = S.lang === "ca" ? "en catalán" : "en español";
+    return 'Eres profesor de Desarrollo de Aplicaciones Web (DAW). Un estudiante prepara el examen de ' + S.subj + (S.subjName ? ' (' + S.subjName + ')' : '') + '. El profesor les ha dado estas preguntas, que son las que caerán en el examen. Algunas tienen faltas de ortografía o están a medias: entiéndelas como mejor encaje en la asignatura.\n\n'
+      + 'Responde SOLO con un objeto JSON válido, sin texto antes ni después y sin ```. Forma exacta:\n{"items":[{"n":1,"q":"la pregunta bien escrita","level":"facil|media|dificil","why":"por qué tiene esa dificultad, 1 frase","short":"la respuesta en 1-2 frases","answer":"la respuesta completa para el examen: 5-10 frases bien organizadas, con definiciones y el porqué","points":["3 a 6 ideas que no pueden faltar"],"keyTerms":["3 a 6 conceptos o palabras clave que el profe espera leer"],"example":"un ejemplo concreto o un trozo de código corto, si ayuda (si no, vacío)","mistakes":["1 a 3 errores típicos o confusiones"],"tip":"un truco para recordarla"}]}\n\n'
+      + 'Reglas:\n- Una entrada por cada pregunta, con su mismo número "n".\n- Todo ' + lang + '. Los nombres de código entre « » (por ejemplo «let», «Express»).\n- "level": facil = definición directa; media = hay que explicar o comparar; dificil = varios conceptos, ejemplos o razonamiento.\n- Si la pregunta trae una pista del profe, úsala.\n\nPreguntas:\n'
+      + part.map(q => q.n + ". " + q.q + (q.hint ? "  [Pista del profe: " + q.hint + "]" : "")).join("\n");
+  }
+  const QCHUNK = 5, qChunkId = p => "c" + p[0].n + "-" + p[p.length - 1].n;
+  function qPending(S) {
+    const A = (lget("clarea-qai-" + S.id) || {}).items || {}, out = [];
+    for (let i = 0; i < (S.qs || []).length; i += QCHUNK) { const p = S.qs.slice(i, i + QCHUNK); if (p.some(q => !A[q.n])) out.push(p); }
+    return out;
+  }
+  // what is left to prepare and not sent yet
+  function pendingAll() {
+    const out = [];
+    ((lget("clarea-projs") || {}).list || []).forEach(P => {
+      if (lget("clarea-mcpt-p-" + P.id)) return;
+      const c = ctx(P.id); if (!c) return;
+      const jobs = buildJobs(c, {paste: true}).filter(j => !isDone(c, j));
+      if (jobs.length) out.push({kind: "p", id: P.id, name: P.name, c, jobs});
+    });
+    ((lget("clarea-qsets") || {}).list || []).forEach(S => {
+      if (S.dudas || lget("clarea-mcpt-q-" + S.id)) return;
+      const parts = qPending(S);
+      if (parts.length) out.push({kind: "q", id: S.id, name: S.name, S, parts});
+    });
+    return out;
+  }
+  async function sendAll(list) {
+    let n = 0;
+    for (const x of list || pendingAll()) {
+      try {
+        if (x.kind === "p") {
+          await mcpPush(mcpProjectTask(x.c, x.jobs));
+          lset("clarea-mcpt-p-" + x.id, {t: Date.now(), parts: x.jobs.map(j => j.id)});
+        } else {
+          await mcpPush({id: "q-" + x.id, kind: "preguntas", title: x.S.name + " (" + x.S.subj + ")", intro: "Prepara las respuestas de estas preguntas de examen, por partes. Para cada parte, crea el objeto JSON exacto que piden sus instrucciones y guárdalo con clarea_guardar.",
+            parts: x.parts.map(p => ({id: qChunkId(p), title: "Preguntas " + p[0].n + "–" + p[p.length - 1].n, instructions: qPromptFor(x.S, p)}))});
+          lset("clarea-mcpt-q-" + x.id, {t: Date.now(), parts: x.parts.map(qChunkId)});
+        }
+        n++;
+      } catch (err) {}
+    }
+    return n;
   }
 
   /* ---------- notices ---------- */
@@ -1077,35 +1284,15 @@ window.CLAI = (function () {
       'Toca <b>«Crear clave de API»</b> (en inglés, <i>Create API key</i>). Si te pregunta por un proyecto, elige el que te propone o toca «Crear proyecto».',
       'Cuando aparezca la clave, toca el <b>botón de copiar</b> que hay a su lado. No la selecciones a mano: es muy fácil dejarse un trozo.',
       'Vuelve a Clarea, pégala en <b>«Clave de Gemini»</b> y toca <b>«Comprobar la clave»</b>.'],
-      tips: ['Si Clarea dice que Google no reconoce la clave, normalmente es que se borró o no se copió entera: vuelve al paso 3 y crea otra.', 'Clarea usa el modelo «Flash-Lite», que tiene mucho más uso gratis (unas 500 peticiones al día) que «Flash» (unas 20). Si se acaba, espera a mañana o toca «Seguir con otro modelo».']},
-    claude: {free: "De pago: unos céntimos por proyecto.", steps: [
-      'Abre <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a> y crea una cuenta o inicia sesión.',
-      'En <b>Billing</b>, añade saldo (con unos pocos dólares tienes para muchos proyectos).',
-      'Ve a <b>Settings → API keys</b> y toca <b>«Create Key»</b>. Ponle de nombre «Clarea».',
-      'Copia la clave (empieza por <code>sk-ant-</code>) con el <b>botón de copiar</b>. Solo se enseña una vez: si la pierdes, crea otra.',
-      'Vuelve a Clarea, pégala en <b>«Clave de Claude»</b> y toca <b>«Comprobar la clave»</b>.'],
-      tips: ['Si sale que no tienes saldo, añade saldo en Billing y vuelve a intentarlo.']},
-    openrouter: {free: "Gratis, sin tarjeta (unas 50 peticiones al día).", steps: [
-      'Abre <a href="https://openrouter.ai" target="_blank" rel="noopener">openrouter.ai</a> y crea una cuenta o entra con Google o GitHub.',
-      'Ve a <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener">Settings → Keys</a> y toca <b>«Create API Key»</b>. Ponle de nombre «Clarea» y déjalo sin límite de gasto (no vas a gastar: Clarea solo usa modelos gratis).',
-      'Copia la clave (empieza por <code>sk-or-</code>) con el <b>botón de copiar</b>. Solo se enseña una vez: si la pierdes, crea otra.',
-      'Vuelve a Clarea, pégala en <b>«Clave de OpenRouter»</b> y toca <b>«Comprobar la clave»</b>. Clarea elegirá el mejor modelo gratis (los que acaban en «:free»).'],
-      tips: ['Sin pagar nada tienes unas 50 peticiones al día. Si compras 10 $ de saldo una sola vez, sube a unas 1000 al día con los mismos modelos gratis.', 'Los modelos gratis cambian a menudo. Si uno deja de funcionar, toca «Seguir con otro modelo».']},
-    openai: {free: "De pago: unos céntimos por proyecto.", steps: [
-      'Abre <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a> e inicia sesión (no es lo mismo que la suscripción de ChatGPT Plus).',
-      'En <b>Settings → Billing</b>, añade saldo.',
-      'Vuelve a <b>API keys</b> y toca <b>«Create new secret key»</b>. Ponle de nombre «Clarea».',
-      'Copia la clave (empieza por <code>sk-</code>) con el <b>botón de copiar</b>. Solo se enseña una vez: si la pierdes, crea otra.',
-      'Vuelve a Clarea, pégala en <b>«Clave de ChatGPT»</b> y toca <b>«Comprobar la clave»</b>.'],
-      tips: ['Si sale que has llegado al límite o no tienes saldo, revisa Billing en OpenAI.']}
+      tips: ['Si Clarea dice que Google no reconoce la clave, normalmente es que se borró o no se copió entera: vuelve al paso 3 y crea otra.', 'Clarea usa el modelo «Flash-Lite», que tiene mucho más uso gratis (unas 500 peticiones al día) que «Flash» (unas 20). Si se acaba, espera a mañana o toca «Seguir con otro modelo».']}
   };
   function keyGuide(prov, hasKey){
     const g = KEYGUIDE[prov]; if (!g) return "";
     return '<details class="kguide"' + (hasKey ? '' : ' open') + '><summary>Cómo conseguir tu clave de ' + PROV[prov].t + ', paso a paso<small>' + g.free + '</small></summary>'
       + '<ol>' + g.steps.map(x => '<li><span>' + x + '</span></li>').join("") + '</ol>'
-      + '<div class="kgtips"><b>Importante</b><ul><li>No compartas la clave ni la enseñes en capturas: quien la tenga puede usarla con tu cuenta.</li><li>Se guarda solo en este dispositivo. En otro móvil u ordenador tendrás que pegarla otra vez.</li>' + g.tips.map(x => '<li>' + x + '</li>').join("") + '</ul></div></details>';
+      + '<div class="kgtips"><b>Importante</b><ul><li>No compartas la clave ni la enseñes en capturas: quien la tenga puede usarla con tu cuenta.</li><li>Se guarda en tu cuenta: la tendrás en todos tus dispositivos.</li>' + g.tips.map(x => '<li>' + x + '</li>').join("") + '</ul></div></details>';
   }
-  return {KEYGUIDE, keyGuide, PROV, CLAUDE_MODELS, cfg, cfgSet, ready, ctx, buildJobs, jobTitle, jobWhat, status, prompt, parseJSON, applyResult,
-          listModels, pickModel, callAI, callSmart, modelNow, mcpOn, mcpUrl, mcpConnect, mcpProgressHtml, mcpPaint, mcpDisconnect, mcpPush, mcpDrop, mcpCollect, mcpProjectTask, MCP_SAY, MCP_URL, mcpOpenClaude, mcpGo, jsonBlocks, promptAll, applyAll, openChat, projectContext, isDone, switchModel, nextModel, errEs, cloudOn, cloudSubmit, cloudFetch, cloudCancel, wakeSupported, wakeWanted, wakeSet, wakeOn: () => !!wake, intro, JSONONLY, waitText, start, stop, dismiss, resume, busy, queue: qGet, runningHere: () => runningHere};
+  return {qPromptFor, pendingAll, sendAll, saveDoubt, useInfo, useLine, useShort, useWarn, chooseHtml, moreHtml, welcome, welcomeOnce, KEYGUIDE, keyGuide, PROV, cfg, cfgSet, ready, ctx, buildJobs, jobTitle, jobWhat, status, prompt, parseJSON, applyResult,
+          listModels, pickModel, callAI, callSmart, modelNow, mcpOn, mcpUrl, mcpConnect, mcpProgressHtml, mcpPaint, mcpDisconnect, mcpPush, mcpDrop, mcpCollect, mcpStatus, mcpProjectTask, MCP_SAY, MCP_URL, mcpOpenClaude, mcpGo, jsonBlocks, promptAll, applyAll, openChat, projectContext, isDone, switchModel, nextModel, errEs, cloudOn, cloudSubmit, cloudFetch, cloudCancel, wakeSupported, wakeWanted, wakeSet, wakeOn: () => !!wake, intro, JSONONLY, waitText, start, stop, dismiss, resume, busy, queue: qGet, runningHere: () => runningHere};
 })();
 
