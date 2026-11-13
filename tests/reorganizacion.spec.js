@@ -68,7 +68,7 @@ test("grupo: chat con una foto marcada con su asignatura, y galería por asignat
   await go(B, "grupos");
   await B.locator(".grow", { hasText: "Los de PJ" }).click();
   await expect(B.locator(".chfirst")).toBeVisible();                                   // an empty chat: «¡Saluda al grupo!»
-  await expect(B.locator("[data-tabs]")).toBeHidden();                                 // the message box takes the bottom
+  await expect(B.locator("[data-tabs]")).toBeVisible();                                // the tabs stay (design rule): the message box sits above them
   await B.locator('#chf [name="m"]').fill("¿Tenéis los apuntes de SM6?");
   await B.locator("#chf .chsend").click();
   await expect(B.locator(".chm.me .chtx")).toContainText("¿Tenéis los apuntes de SM6?");

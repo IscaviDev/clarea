@@ -158,18 +158,19 @@ test("chat del grupo: como WhatsApp (cabecera, burbujas, día y escribir abajo)"
   await page.evaluate(() => window.clareaGo("grupos/g1"));
   const skip = page.locator("[data-wskip]"); if (await skip.isVisible()) await skip.click();
 
-  // its own header (no app bar, no tabs): back, the group, who's in it, photos
+  // its own bar, under the Clarea header (which stays, like the tabs): back, the group, who's in it, photos
   await expect(page.locator(".chhead .chwho")).toContainText("Los chavales");
   await expect(page.locator(".chhead .chwho small")).toHaveText("ana, leo, tú");
-  await expect(page.locator(".cbar")).toBeHidden();
+  await expect(page.locator(".cbar")).toBeVisible();
+  await expect(page.locator(".tabbar")).toBeVisible();
   // bubbles: mine on the right, the others' with their name once per run
   await expect(page.locator(".chm")).toHaveCount(5);
   await expect(page.locator(".chm.me")).toHaveCount(2);
   await expect(page.locator(".chm .chu")).toHaveText(["ana", "leo"]);
   await expect(page.locator(".chday").last()).toHaveText("Hoy");
-  // the bar to write is at the bottom of the screen
-  const bar = await page.locator("#chf").boundingBox(), vh = page.viewportSize().height;
-  expect(bar.y + bar.height).toBeGreaterThan(vh - 4);
+  // the bar to write sits right above the tabs
+  const bar = await page.locator("#chf").boundingBox(), tabs = await page.locator(".tabbar").boundingBox();
+  expect(Math.abs(bar.y + bar.height - tabs.y)).toBeLessThan(12);
   await page.waitForTimeout(300);
   await page.screenshot({ path: "test-results/chat-claro.png" });
   expect(await axe(page, "chat del grupo")).toEqual([]);
