@@ -75,7 +75,7 @@ test("grupo: chat con una foto marcada con su asignatura, y galería por asignat
   // A hasn't seen it: a number on «Grupos» and on the group
   await go(A, "grupos"); await A.evaluate(() => chatUnread());
   await expect(A.locator('[data-tab="grupos"] .tbdot')).toHaveText("1");
-  await expect(A.locator(".chrow .mbad")).toHaveText("1");
+  await expect(A.locator(".chrow .chn")).toHaveText("1");
   // A sends a photo: Clarea asks the subject and the kind
   const img = await A.evaluate(() => { const k = document.createElement("canvas"); k.width = 40; k.height = 30; k.getContext("2d").fillRect(0, 0, 40, 30); const d = k.toDataURL("image/jpeg", .8).split(",")[1]; return {data: d, thumb: d, w: 40, h: 30}; });
   await soc(A, "chat-send", {gid, img: Object.assign(img, {subj: "SM6", album: "notes"})});
