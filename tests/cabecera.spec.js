@@ -31,6 +31,14 @@ test("cabecera y pestañas: en todas las páginas y con las capas abiertas", asy
   // long pages, scrolled to the bottom
   await go(page, "estudiar"); await page.evaluate(() => scrollTo(0, document.body.scrollHeight)); await page.waitForTimeout(150);
   await headerAndTabs(page, "Estudiar, abajo del todo");
+  // the header never moves: fixed at the very top (no sticky that bounces), and the page starts below it
+  const fixedTop = await page.evaluate(() => { const c = document.querySelector(".cbar"); return {pos: getComputedStyle(c).position, top: Math.round(c.getBoundingClientRect().top)}; });
+  expect(fixedTop).toEqual({pos: "fixed", top: 0});
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).overscrollBehaviorY)).toBe("none");
+  await page.evaluate(() => scrollTo(0, 0));
+  const gap = await page.evaluate(() => Math.round(document.querySelector("main").getBoundingClientRect().top - document.querySelector(".cbar").getBoundingClientRect().bottom));
+  expect(gap, "el contenido empieza justo debajo de la cabecera").toBeGreaterThanOrEqual(0);
+  expect(gap).toBeLessThan(4);
 
   // the search
   await go(page, "");
@@ -57,6 +65,10 @@ test("cabecera y pestañas: en todas las páginas y con las capas abiertas", asy
   for (const url of ["/proyecto.html?id=tcab", "/preguntas.html?id=qcab", "/privacidad.html"]){
     await page.goto(url); await page.waitForTimeout(400);
     await headerAndTabs(page, url);
+    if (url.startsWith("/proyecto")){   // its own tabs stay right under the header when scrolling
+      const d = await page.evaluate(() => { const t = document.querySelector(".tabs"); return t ? Math.round(parseFloat(getComputedStyle(t).top) - document.querySelector(".cbar").offsetHeight) : 0; });
+      expect(Math.abs(d), "las pestañas del proyecto, pegadas debajo de la cabecera").toBeLessThan(2);
+    }
   }
   await expect(page.locator('.tabbar [data-tab="yo"]')).toHaveAttribute("aria-current", "page");
 });

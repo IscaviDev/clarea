@@ -21,6 +21,21 @@ async function signUp(page){
   await expect(page.locator(".hello h1")).toContainText(user);
   return user;
 }
+// the chat fills the screen between Clarea's header and the tabs, with no gaps: header · chat's top · messages · box to write · tabs
+async function chatLayout(page){
+  return page.evaluate(() => { const r = q => document.querySelector(q).getBoundingClientRect();
+    return {hdr: r(".cbar"), top: r(".chhead"), log: r("#chatlog"), comp: r("#chf"), tabs: r(".tabbar"), vh: innerHeight, scrollY: scrollY}; });
+}
+function expectNoGaps(L, label){
+  const near = (a, b, what) => expect(Math.abs(a - b), label + ": " + what + " (" + a + " / " + b + ")").toBeLessThan(2);
+  near(L.hdr.top, 0, "la cabecera arriba del todo");
+  near(L.top.top, L.hdr.bottom, "la barra del chat justo debajo de la cabecera");
+  near(L.log.top, L.top.bottom, "los mensajes justo debajo");
+  near(L.comp.top, L.log.bottom, "la caja de escribir justo debajo de los mensajes");
+  near(L.comp.bottom, L.tabs.top, "la caja de escribir justo encima de las pestañas");
+  near(L.tabs.bottom, L.vh, "las pestañas abajo del todo");
+  expect(L.scrollY, label + ": la página no se desplaza").toBe(0);
+}
 async function axe(page, name){
   const out = [];
   for (const scheme of ["light", "dark"]){
@@ -158,9 +173,13 @@ test("chat del grupo: como WhatsApp (cabecera, burbujas, día y escribir abajo)"
   await page.evaluate(() => window.clareaGo("grupos/g1"));
   const skip = page.locator("[data-wskip]"); if (await skip.isVisible()) await skip.click();
 
-  // its own bar, under the Clarea header (which stays, like the tabs): back, the group, who's in it, photos
-  await expect(page.locator(".chhead .chwho")).toContainText("Los chavales");
+  // the chat's bar (as in the style guide): ←, the group's circle, its name and who's in it, and its photos
+  await expect(page.locator('.chhead [aria-label="Volver a Grupos"]')).toBeVisible();
+  await expect(page.locator(".chhead .chwho b")).toHaveText("Los chavales");
   await expect(page.locator(".chhead .chwho small")).toHaveText("ana, leo, tú");
+  await expect(page.locator('.chhead [aria-label="Fotos del grupo"]')).toBeVisible();
+  // «Enviar» is off while there's nothing written
+  await expect(page.locator("#chf .chsend")).toBeDisabled();
   await expect(page.locator(".cbar")).toBeVisible();
   await expect(page.locator(".tabbar")).toBeVisible();
   // bubbles: mine on the right, the others' with their name once per run
@@ -168,16 +187,32 @@ test("chat del grupo: como WhatsApp (cabecera, burbujas, día y escribir abajo)"
   await expect(page.locator(".chm.me")).toHaveCount(2);
   await expect(page.locator(".chm .chu")).toHaveText(["ana", "leo"]);
   await expect(page.locator(".chday").last()).toHaveText("Hoy");
-  // the bar to write sits right above the tabs
-  const bar = await page.locator("#chf").boundingBox(), tabs = await page.locator(".tabbar").boundingBox();
-  expect(Math.abs(bar.y + bar.height - tabs.y)).toBeLessThan(12);
+  // the whole screen, with no gaps, and the newest message in sight (the messages scroll inside)
   await page.waitForTimeout(300);
+  expectNoGaps(await chatLayout(page), "chat del grupo");
+  const lastIn = await page.evaluate(() => { const b = document.querySelector("#chatlog"), m = [...b.querySelectorAll(".chm")].pop().getBoundingClientRect(), r = b.getBoundingClientRect(); return m.bottom <= r.bottom + 1 && m.top >= r.top - 1; });
+  expect(lastIn).toBe(true);
+  // the phone's keyboard (iOS shows less of the screen and shifts it): the header, the chat's top and the box follow what you see
+  const kb = await page.evaluate(async () => {
+    const real = window.visualViewport, fake = new EventTarget(); fake.height = innerHeight - 300; fake.offsetTop = 120; fake.width = innerWidth;
+    Object.defineProperty(window, "visualViewport", {value: fake, configurable: true}); dispatchEvent(new Event("resize"));
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const r = q => document.querySelector(q).getBoundingClientRect(), out = {hdr: r(".cbar"), top: r(".chhead"), comp: r("#chf"), vis: {top: fake.offsetTop, bottom: fake.offsetTop + fake.height}};
+    Object.defineProperty(window, "visualViewport", {value: real, configurable: true}); dispatchEvent(new Event("resize"));
+    return out;
+  });
+  expect(Math.abs(kb.hdr.top - kb.vis.top)).toBeLessThan(2);                 // Clarea's header at the top of what you see
+  expect(Math.abs(kb.top.top - kb.hdr.bottom)).toBeLessThan(2);              // the chat's top right under it
+  expect(Math.abs(kb.comp.bottom - kb.vis.bottom)).toBeLessThan(2);          // the box to write right over the keyboard
+  await page.waitForTimeout(200);
+  expectNoGaps(await chatLayout(page), "chat del grupo, al cerrar el teclado");
   await page.screenshot({ path: "test-results/chat-claro.png" });
   expect(await axe(page, "chat del grupo")).toEqual([]);
   await page.emulateMedia({ colorScheme: "dark" }); await page.waitForTimeout(200);
   await page.screenshot({ path: "test-results/chat-oscuro.png" });
   await page.emulateMedia({ colorScheme: "light" });
-  await page.setViewportSize({ width: 1280, height: 800 }); await page.waitForTimeout(200);
+  await page.setViewportSize({ width: 1280, height: 800 }); await page.waitForTimeout(300);
+  expectNoGaps(await chatLayout(page), "chat en el ordenador");
   await page.screenshot({ path: "test-results/chat-ordenador.png" });
   await page.setViewportSize({ width: 390, height: 664 });
 
@@ -205,13 +240,14 @@ test("chat con un amigo: desde su perfil, en la lista de chats y con sin leer", 
   await page.evaluate(async () => { await socCall("me"); await chatUnread(); window.clareaGo("grupos"); });
   const skip = page.locator("[data-wskip]"); if (await skip.isVisible()) await skip.click();
 
-  // the list of chats: the friend's chat first (newest), with its last message and 1 unread; the number is on «Grupos» too
-  const rows = page.locator(".chrow");
+  // the list of chats (.mlist): the friend's chat first (newest), with its last message, when and 1 unread; the number is on «Grupos» too
+  const rows = page.locator(".mlist .chrow");
   await expect(rows).toHaveCount(2);
-  await expect(rows.first()).toContainText("ana");
-  await expect(rows.first()).toContainText("¿Me pasas la hoja de SM6?");
-  await expect(rows.first().locator(".mbad")).toHaveText("1");
-  await expect(rows.nth(1)).toContainText("ana: Hola grupo");
+  await expect(rows.first().locator(".chrt b")).toHaveText("ana");
+  await expect(rows.first().locator(".chrt small")).toHaveText("¿Me pasas la hoja de SM6?");
+  await expect(rows.first().locator(".chn")).toHaveText("1");
+  await expect(rows.nth(1).locator(".chrt b")).toHaveText("Los chavales");
+  await expect(rows.nth(1).locator(".chrt small")).toHaveText("ana: Hola grupo");
   await expect(page.locator('[data-tab="grupos"] .tbdot')).toHaveText("1");
   await page.waitForTimeout(200);
   await page.screenshot({ path: "test-results/chats-lista.png" });
@@ -221,6 +257,8 @@ test("chat con un amigo: desde su perfil, en la lista de chats y con sin leer", 
   await rows.first().click();
   await expect(page).toHaveURL(/\/chat\/u1$/);
   await expect(page.locator(".chhead .chwho b")).toHaveText("ana");
+  await page.waitForTimeout(200);
+  expectNoGaps(await chatLayout(page), "chat con un amigo");
   await expect(page.locator(".chm")).toHaveCount(1);
   await expect(page.locator(".chm .chu")).toHaveCount(0);
   await expect(page.locator(".chnote").first()).toContainText("Solo lo veis ana y tú");
