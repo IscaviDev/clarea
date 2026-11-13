@@ -336,4 +336,50 @@ for (const scheme of ["light", "dark"]) test.describe("modo " + scheme, () => {
     const trash = await openTrash(page);
     await expect(trash).toContainText("Entrega PJ6");
   });
+  test("cambiar el usuario: todo sigue, y en el otro dispositivo se entra con el nuevo", async ({ page, browser }) => {
+    test.skip(!(await workerUp()), "sin el servidor local de Clarea (wrangler dev)");
+    await devApi(page); await useWorker(page);
+    const user = await signUp(page), nuevo = "n" + Math.random().toString(36).slice(2, 9);
+    await lsPut(page, user, "clarea-tasks", {t: Date.now(), list: [{id: "k1", name: "Deberes de SM6"}]});
+    await page.evaluate(() => window.clareaAcct.sync());
+    // the same account on a second device
+    const other = await browser.newPage();
+    await devApi(other); await useWorker(other);
+    await other.goto("/index.html");
+    await logIn(other, user, PASS);
+    await expect(other.locator(".hello h1")).toContainText(user);
+    // a name that is already someone's
+    const taken = "o" + Math.random().toString(36).slice(2, 9);
+    await fetch(FB + "/v1/accounts:signUp?key=x", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({email: taken + "@clarea-6ec91.firebaseapp.com", password: PASS, returnSecureToken: true})});
+    const sec = await openSecurity(page);
+    await sec.getByRole("button", { name: "Cambiar el usuario" }).click();
+    await axe(page, "cambiar usuario");
+    const f = sec.locator("form[data-un]");
+    await f.locator('[name="to"]').fill(taken);
+    await f.locator('[name="p0"]').fill("mala1234");
+    await f.getByRole("button", { name: "Cambiar" }).click();
+    await expect(f.locator(".autherr")).toContainText("no es correcta");
+    await f.locator('[name="p0"]').fill(PASS);
+    await f.getByRole("button", { name: "Cambiar" }).click();
+    await expect(f.locator(".autherr")).toContainText("ya existe");
+    await f.locator('[name="to"]').fill(nuevo);
+    await f.getByRole("button", { name: "Cambiar" }).click();
+    // the page opens again with the new name, and everything is there
+    await expect(page.locator(".hello h1")).toContainText(nuevo, { timeout: 15000 });
+    await expect(page.locator(".toast").last()).toContainText("ahora eres «" + nuevo + "»");
+    expect((await lsRead(page, nuevo, "clarea-tasks")).list[0].name).toBe("Deberes de SM6");
+    expect(await lsRead(page, user, "clarea-tasks")).toBeNull();
+    expect(await page.evaluate(() => window.clareaAcct.info().on)).toBe(true);
+    // the other device: its session ends; with the new name it enters, and what it had is under the new name
+    await other.evaluate(u => { const k = "clarea-cloud/" + u, c = JSON.parse(localStorage.getItem(k)); c.exp = 0; localStorage.setItem(k, JSON.stringify(c)); }, user);
+    await other.evaluate(() => window.clareaAcct.sync());
+    await expect(other.locator(".authinfo")).toContainText("o ha cambiado su contraseña o su usuario", { timeout: 10000 });
+    await logIn(other, user, PASS);
+    await expect(other.locator(".autherr")).toContainText("incorrect");
+    await logIn(other, nuevo, PASS);
+    await expect(other.locator(".hello h1")).toContainText(nuevo);
+    expect((await lsRead(other, nuevo, "clarea-tasks")).list[0].name).toBe("Deberes de SM6");
+    expect(await lsRead(other, user, "clarea-tasks")).toBeNull();
+    await other.close();
+  });
 });
