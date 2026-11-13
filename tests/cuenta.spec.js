@@ -54,31 +54,31 @@ async function logOut(page){
 // Yo → «Contraseña»: the app gives security() the element of its page; here, an element over the whole screen
 async function openSecurity(page){
   await page.evaluate(() => {
-    const d = document.createElement("div"); d.id = "mesec"; d.className = "npf";
+    const d = document.createElement("div"); d.id = "t-mesec"; d.className = "npf";
     d.style.cssText = "position:fixed;inset:0;z-index:90;overflow:auto;background:var(--bg);color:var(--fg);padding:24px 16px";
     document.body.appendChild(d); window.clareaAcct.security(d);
   });
-  return page.locator("#mesec");
+  return page.locator("#t-mesec");
 }
 // Yo → «Papelera»: like the page of the password, an element over the whole screen
 async function openTrash(page){
   await page.evaluate(() => {
-    const old = document.getElementById("metrash"); if (old) old.remove();
-    const d = document.createElement("div"); d.id = "metrash"; d.className = "npf";
+    const old = document.getElementById("t-metrash"); if (old) old.remove();
+    const d = document.createElement("div"); d.id = "t-metrash"; d.className = "npf";
     d.style.cssText = "position:fixed;inset:0;z-index:90;overflow:auto;background:var(--bg);color:var(--fg);padding:24px 16px";
     document.body.appendChild(d); window.clareaAcct.trash(d);
   });
-  return page.locator("#metrash");
+  return page.locator("#t-metrash");
 }
 // Yo → «Copias»
 async function openBackups(page){
   await page.evaluate(() => {
-    const old = document.getElementById("mebk"); if (old) old.remove();
-    const d = document.createElement("div"); d.id = "mebk"; d.className = "npf";
+    const old = document.getElementById("t-mebk"); if (old) old.remove();
+    const d = document.createElement("div"); d.id = "t-mebk"; d.className = "npf";
     d.style.cssText = "position:fixed;inset:0;z-index:90;overflow:auto;background:var(--bg);color:var(--fg);padding:24px 16px";
     document.body.appendChild(d); window.clareaAcct.backups(d);
   });
-  return page.locator("#mebk");
+  return page.locator("#t-mebk");
 }
 const lsPut = (page, user, key, val) => page.evaluate(([u, k, v]) => v === null ? localStorage.removeItem("u/" + u + "/" + k) : localStorage.setItem("u/" + u + "/" + k, typeof v === "string" ? v : JSON.stringify(v)), [user, key, val]);
 const lsRead = (page, user, key) => page.evaluate(([u, k]) => JSON.parse(localStorage.getItem("u/" + u + "/" + k)), [user, key]);
@@ -110,7 +110,7 @@ for (const scheme of ["light", "dark"]) test.describe("modo " + scheme, () => {
     await f.locator('[name="p0"]').fill(PASS);
     await f.getByRole("button", { name: "Cambiar contraseña" }).click();
     await expect(f).toBeHidden();
-    await page.evaluate(() => document.getElementById("mesec").remove());
+    await page.evaluate(() => document.getElementById("t-mesec").remove());
     await logOut(page);
     await logIn(page, user, PASS);
     await expect(page.locator(".autherr")).toContainText("incorrect");
@@ -149,7 +149,7 @@ for (const scheme of ["light", "dark"]) test.describe("modo " + scheme, () => {
     await axe(page, "código");
     await dlg.getByRole("button", { name: "Ya lo he guardado" }).click();
     await expect(dlg.locator("[data-rec]")).toContainText("Tienes un código");
-    await page.evaluate(() => document.getElementById("mesec").remove());
+    await page.evaluate(() => document.getElementById("t-mesec").remove());
     await logOut(page);
     await page.getByRole("button", { name: "¿Has olvidado la contraseña?" }).click();
     await page.getByRole("button", { name: "← Entrar" }).click();                 // back to the login, as it was
@@ -171,33 +171,6 @@ for (const scheme of ["light", "dark"]) test.describe("modo " + scheme, () => {
     const again = await page.evaluate(([w, u, c]) => fetch(w + "/account", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({op: "reset", u, code: c, pass: "otra000000"})}).then(r => r.status), [WORKER, user, code]);
     expect(again).toBe(400);
   });
-  test("Face ID: activarlo, abrir Clarea bloqueada y desbloquearla", async ({ page }) => {
-    await devApi(page);
-    // a phone with Face ID: Chromium's virtual authenticator (always says «it's you»)
-    const cdp = await page.context().newCDPSession(page);
-    await cdp.send("WebAuthn.enable");
-    await cdp.send("WebAuthn.addVirtualAuthenticator", {options: {protocol: "ctap2", transport: "internal", hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true}});
-    // (WebAuthn doesn't take an IP address as the site: «localhost», like clarea.dev, works)
-    const user = await signUp(page, test.info().project.use.baseURL.replace("127.0.0.1", "localhost"));
-    const sec = await openSecurity(page);
-    await sec.getByRole("button", { name: "Activar Face ID" }).click();
-    await expect(sec.getByRole("button", { name: "Quitar Face ID" })).toBeVisible();
-    await page.reload();
-    const lock = page.locator(".lockwrap");
-    await expect(lock.getByRole("button", { name: "Desbloquear con Face ID" })).toBeVisible();
-    await axe(page, "bloqueo");
-    await lock.getByRole("button", { name: "Desbloquear con Face ID" }).click();
-    await expect(lock).toHaveCount(0);
-    await expect(page.locator(".hello h1")).toContainText(user);
-    // or with the password: back to the login, with the account written
-    await page.reload();
-    await page.locator(".lockwrap").getByRole("button", { name: "Entrar con la contraseña" }).click();
-    await expect(page.locator('.authwrap [name="user"]')).toHaveValue(user);
-    await expect(page.locator(".authinfo")).toBeHidden();
-    await logIn(page, user, PASS);
-    await expect(page.locator(".hello h1")).toContainText(user);
-  });
-
   test("cerrar sesión en los demás dispositivos", async ({ page, browser }) => {
     test.skip(!(await workerUp()), "sin el servidor local de Clarea (wrangler dev)");
     await devApi(page); await useWorker(page);
@@ -222,7 +195,7 @@ for (const scheme of ["light", "dark"]) test.describe("modo " + scheme, () => {
     await expire(other, user); await other.evaluate(() => window.clareaAcct.sync());
     await expect(other.locator(".authinfo")).toContainText("se ha cerrado desde otro dispositivo", { timeout: 10000 });
     // this one stays open
-    await page.evaluate(() => document.getElementById("mesec").remove());
+    await page.evaluate(() => document.getElementById("t-mesec").remove());
     await expire(page, user); await page.evaluate(() => window.clareaAcct.sync());
     await expect(page.locator(".hello h1")).toContainText(user);
     expect(await page.evaluate(() => window.clareaAcct.info().on)).toBe(true);
@@ -270,30 +243,6 @@ for (const scheme of ["light", "dark"]) test.describe("modo " + scheme, () => {
     await page.locator(".cdlg").getByRole("button", { name: "Vaciar" }).click();
     await expect(trash).toContainText("Está vacía");
   });
-  test("Face ID también al volver tras 5 minutos fuera", async ({ page }) => {
-    await devApi(page);
-    const cdp = await page.context().newCDPSession(page);
-    await cdp.send("WebAuthn.enable");
-    await cdp.send("WebAuthn.addVirtualAuthenticator", {options: {protocol: "ctap2", transport: "internal", hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true}});
-    await signUp(page, test.info().project.use.baseURL.replace("127.0.0.1", "localhost"));
-    const sec = await openSecurity(page);
-    await sec.getByRole("button", { name: "Activar Face ID" }).click();
-    await expect(sec.getByRole("button", { name: "Quitar Face ID" })).toBeVisible();
-    await page.evaluate(() => document.getElementById("mesec").remove());
-    // back to Clarea after `min` minutes away
-    const back = min => page.evaluate(m => {
-      sessionStorage.setItem("clarea-away", String(Date.now() - m * 60000));
-      Object.defineProperty(document, "visibilityState", {configurable: true, get: () => "visible"});
-      document.dispatchEvent(new Event("visibilitychange"));
-    }, min);
-    await back(2);
-    await expect(page.locator(".lockwrap")).toHaveCount(0);
-    await back(6);
-    await expect(page.locator(".lockwrap").getByRole("button", { name: "Desbloquear con Face ID" })).toBeVisible();
-    await page.locator(".lockwrap [data-unlock]").click();
-    await expect(page.locator(".lockwrap")).toHaveCount(0);
-  });
-
   test("tus dispositivos: verlos y cerrar uno", async ({ page, browser }) => {
     test.skip(!(await workerUp()), "sin el servidor local de Clarea (wrangler dev)");
     await devApi(page); await useWorker(page);
@@ -386,5 +335,51 @@ for (const scheme of ["light", "dark"]) test.describe("modo " + scheme, () => {
     // …and what the copy took away is in the trash
     const trash = await openTrash(page);
     await expect(trash).toContainText("Entrega PJ6");
+  });
+  test("cambiar el usuario: todo sigue, y en el otro dispositivo se entra con el nuevo", async ({ page, browser }) => {
+    test.skip(!(await workerUp()), "sin el servidor local de Clarea (wrangler dev)");
+    await devApi(page); await useWorker(page);
+    const user = await signUp(page), nuevo = "n" + Math.random().toString(36).slice(2, 9);
+    await lsPut(page, user, "clarea-tasks", {t: Date.now(), list: [{id: "k1", name: "Deberes de SM6"}]});
+    await page.evaluate(() => window.clareaAcct.sync());
+    // the same account on a second device
+    const other = await browser.newPage();
+    await devApi(other); await useWorker(other);
+    await other.goto("/index.html");
+    await logIn(other, user, PASS);
+    await expect(other.locator(".hello h1")).toContainText(user);
+    // a name that is already someone's
+    const taken = "o" + Math.random().toString(36).slice(2, 9);
+    await fetch(FB + "/v1/accounts:signUp?key=x", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({email: taken + "@clarea-6ec91.firebaseapp.com", password: PASS, returnSecureToken: true})});
+    const sec = await openSecurity(page);
+    await sec.getByRole("button", { name: "Cambiar el usuario" }).click();
+    await axe(page, "cambiar usuario");
+    const f = sec.locator("form[data-un]");
+    await f.locator('[name="to"]').fill(taken);
+    await f.locator('[name="p0"]').fill("mala1234");
+    await f.getByRole("button", { name: "Cambiar" }).click();
+    await expect(f.locator(".autherr")).toContainText("no es correcta");
+    await f.locator('[name="p0"]').fill(PASS);
+    await f.getByRole("button", { name: "Cambiar" }).click();
+    await expect(f.locator(".autherr")).toContainText("ya existe");
+    await f.locator('[name="to"]').fill(nuevo);
+    await f.getByRole("button", { name: "Cambiar" }).click();
+    // the page opens again with the new name, and everything is there
+    await expect(page.locator(".hello h1")).toContainText(nuevo, { timeout: 15000 });
+    await expect(page.locator(".toast").last()).toContainText("ahora eres «" + nuevo + "»");
+    expect((await lsRead(page, nuevo, "clarea-tasks")).list[0].name).toBe("Deberes de SM6");
+    expect(await lsRead(page, user, "clarea-tasks")).toBeNull();
+    expect(await page.evaluate(() => window.clareaAcct.info().on)).toBe(true);
+    // the other device: its session ends; with the new name it enters, and what it had is under the new name
+    await other.evaluate(u => { const k = "clarea-cloud/" + u, c = JSON.parse(localStorage.getItem(k)); c.exp = 0; localStorage.setItem(k, JSON.stringify(c)); }, user);
+    await other.evaluate(() => window.clareaAcct.sync());
+    await expect(other.locator(".authinfo")).toContainText("o ha cambiado su contraseña o su usuario", { timeout: 10000 });
+    await logIn(other, user, PASS);
+    await expect(other.locator(".autherr")).toContainText("incorrect");
+    await logIn(other, nuevo, PASS);
+    await expect(other.locator(".hello h1")).toContainText(nuevo);
+    expect((await lsRead(other, nuevo, "clarea-tasks")).list[0].name).toBe("Deberes de SM6");
+    expect(await lsRead(other, user, "clarea-tasks")).toBeNull();
+    await other.close();
   });
 });

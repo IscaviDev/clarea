@@ -66,16 +66,16 @@ test("grupo: chat con una foto marcada con su asignatura, y galería por asignat
   const gid = (await soc(A, "me")).groups[0].id;
   await soc(B, "me");
   await go(B, "grupos");
-  await B.locator(".grow", { hasText: "Los de PJ" }).click();
+  await B.locator(".chrow", { hasText: "Los de PJ" }).click();
   await expect(B.locator(".chfirst")).toBeVisible();                                   // an empty chat: «¡Saluda al grupo!»
-  await expect(B.locator("[data-tabs]")).toBeHidden();                                 // the message box takes the bottom
+  await expect(B.locator("[data-tabs]")).toBeVisible();                                // the tabs stay (design rule): the message box sits above them
   await B.locator('#chf [name="m"]').fill("¿Tenéis los apuntes de SM6?");
   await B.locator("#chf .chsend").click();
   await expect(B.locator(".chm.me .chtx")).toContainText("¿Tenéis los apuntes de SM6?");
   // A hasn't seen it: a number on «Grupos» and on the group
   await go(A, "grupos"); await A.evaluate(() => chatUnread());
   await expect(A.locator('[data-tab="grupos"] .tbdot')).toHaveText("1");
-  await expect(A.locator(".grow .mbad")).toHaveText("1");
+  await expect(A.locator(".chrow .mbad")).toHaveText("1");
   // A sends a photo: Clarea asks the subject and the kind
   const img = await A.evaluate(() => { const k = document.createElement("canvas"); k.width = 40; k.height = 30; k.getContext("2d").fillRect(0, 0, 40, 30); const d = k.toDataURL("image/jpeg", .8).split(",")[1]; return {data: d, thumb: d, w: 40, h: 30}; });
   await soc(A, "chat-send", {gid, img: Object.assign(img, {subj: "SM6", album: "notes"})});

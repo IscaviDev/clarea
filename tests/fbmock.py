@@ -46,6 +46,9 @@ class H(BaseHTTPRequestHandler):
             e = next((k for k, v in USERS.items() if v["uid"] == lid or "uid-" + k.split("@")[0] == lid), None)
             if not e: return self.err(400, "USER_NOT_FOUND")
             if "password" in b: USERS[e]["pw"] = b["password"]
+            if "email" in b and b["email"] != e:          # a new user name (its e-mail)
+                if b["email"] in USERS: return self.err(400, "EMAIL_EXISTS")
+                USERS[b["email"]] = USERS.pop(e); e = b["email"]
             self.revoke(USERS[e]["uid"])   # a new password or «validSince»: the sessions so far end
             return self.out(200, {"localId": USERS[e]["uid"]})
         if u.path.startswith("/v1/accounts:"):
