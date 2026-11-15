@@ -1,6 +1,6 @@
 # Clarea
 
-App personal de estudio para DAW2 (funciona sin internet): asignaturas, horario, faltas de asistencia y el repaso del proyecto PJ6.
+App personal de estudio: asignaturas, horario, faltas de asistencia y el repaso del proyecto PJ6.
 
 ## Instalar en el iPhone
 1. Abre la página en **Safari** (con internet, solo la primera vez).
